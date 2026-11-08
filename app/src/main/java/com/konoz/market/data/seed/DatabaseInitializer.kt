@@ -6,7 +6,6 @@ import com.konoz.market.data.entity.AppSetting
 import com.konoz.market.data.entity.Category
 import com.konoz.market.data.entity.User
 import com.konoz.market.data.entity.UserRole
-import kotlinx.coroutines.flow.first
 
 object SettingKeys {
     const val CURRENCY = "currency"
@@ -54,7 +53,7 @@ object DatabaseInitializer {
                 )
                 db.settings().upsert(AppSetting(SettingKeys.MUST_CHANGE_ADMIN_PIN, "true"))
             }
-            if (db.categories().observeAll().first().isEmpty()) {
+            if (db.categories().count() == 0) {
                 defaultCategories.forEachIndexed { i, name -> db.categories().insert(Category(name = name, sortOrder = i)) }
             }
             for ((k, v) in defaultSettings) {

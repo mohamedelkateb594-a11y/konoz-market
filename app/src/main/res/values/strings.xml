@@ -7,4 +7,53 @@
     <string name="nav_products">Products</string>
     <string name="nav_more">More</string>
     <string name="placeholder_soon">This screen is being built in the next batch.</string>
+
+    <string name="search_products">Search by name, code or barcode</string>
+    <string name="no_products">No products yet. Tap + to add one.</string>
+    <string name="add_product">Add product</string>
+    <string name="new_product">New product</string>
+    <string name="edit_product">Edit product</string>
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    <string name="ok">OK</string>
+    <string name="remove">Remove</string>
+    <string name="stock_fmt">Stock: %1$s %2$s</string>
+    <string name="low_stock">Low stock</string>
+    <string name="inactive">Inactive</string>
+    <string name="favorite_label">Favorite</string>
+    <string name="active_label">Active (available for sale)</string>
+
+    <string name="field_name">Product name</string>
+    <string name="field_internal_code">Internal code (optional)</string>
+    <string name="field_category">Category</string>
+    <string name="no_category">No category</string>
+    <string name="field_unit">Unit</string>
+    <string name="field_cost">Cost price</string>
+    <string name="field_sale_price">Sale price</string>
+    <string name="field_margin">Profit margin</string>
+    <string name="field_low_stock">Low-stock alert at</string>
+    <string name="field_pieces_per_carton">Pieces per carton</string>
+    <string name="field_opening_qty">Opening quantity</string>
+    <string name="opening_in_cartons">Opening quantity is in cartons</string>
+    <string name="field_expiry">Expiry date (optional)</string>
+    <string name="clear_date">Clear</string>
+    <string name="field_barcodes">Barcodes / QR codes</string>
+    <string name="barcode_code">Code</string>
+    <string name="barcode_units">Units per scan</string>
+    <string name="add_barcode">Add another barcode</string>
+
+    <string name="unit_piece">Piece</string>
+    <string name="unit_carton">Carton</string>
+    <string name="unit_kg">Kg</string>
+    <string name="unit_gram">Gram</string>
+    <string name="unit_liter">Liter</string>
+    <string name="unit_pack">Pack</string>
+
+    <string name="err_name_required">Product name is required.</string>
+    <string name="err_price_invalid">Enter valid prices.</string>
+    <string name="err_carton_invalid">Enter a valid number of pieces per carton.</string>
+    <string name="err_barcode_duplicate">Barcode %1$s belongs to another product.</string>
+    <string name="err_code_duplicate">Internal code %1$s belongs to another product.</string>
+    <string name="err_qty_invalid">Enter a valid quantity.</string>
+    <string name="err_unknown">Something went wrong. Please try again.</string>
 </resources>

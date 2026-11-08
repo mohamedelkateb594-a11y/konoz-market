@@ -19,6 +19,7 @@ interface CategoryDao {
     fun observeAll(): Flow<List<Category>>
     @Query("SELECT * FROM categories WHERE name = :name LIMIT 1")
     suspend fun findByName(name: String): Category?
+    @Query("SELECT COUNT(*) FROM categories") suspend fun count(): Int
 }
 
 @Dao
@@ -38,9 +39,11 @@ interface ProductDao {
     @Query("SELECT * FROM products WHERE id = :id") fun observeById(id: Long): Flow<Product?>
 
     @Query("SELECT * FROM products ORDER BY name") fun observeAll(): Flow<List<Product>>
+    @Query("SELECT * FROM products WHERE isActive = 1 ORDER BY name") suspend fun getAllActive(): List<Product>
     @Query("SELECT * FROM products WHERE isFavorite = 1 AND isActive = 1 ORDER BY name")
     fun observeFavorites(): Flow<List<Product>>
 
+    /** Cashier search: active products only. */
     @Query(
         """SELECT * FROM products WHERE isActive = 1 AND (
             name LIKE '%' || :q || '%' OR internalCode LIKE '%' || :q || '%'
@@ -48,6 +51,15 @@ interface ProductDao {
         ) ORDER BY name LIMIT 50"""
     )
     fun search(q: String): Flow<List<Product>>
+
+    /** Management search: includes deactivated products. */
+    @Query(
+        """SELECT * FROM products WHERE (
+            name LIKE '%' || :q || '%' OR internalCode LIKE '%' || :q || '%'
+            OR id IN (SELECT productId FROM barcodes WHERE code LIKE :q || '%')
+        ) ORDER BY name LIMIT 200"""
+    )
+    fun searchManage(q: String): Flow<List<Product>>
 
     @Query(
         """SELECT p.* FROM products p INNER JOIN barcodes b ON b.productId = p.id
@@ -93,7 +105,7 @@ interface BarcodeDao {
     @Query("DELETE FROM barcodes WHERE id = :id") suspend fun delete(id: Long)
     @Query("SELECT * FROM barcodes WHERE productId = :productId ORDER BY isPrimary DESC, id")
     fun observeForProduct(productId: Long): Flow<List<Barcode>>
-    @Query("SELECT * FROM barcodes WHERE productId = :productId")
+    @Query("SELECT * FROM barcodes WHERE productId = :productId ORDER BY isPrimary DESC, id")
     suspend fun getForProduct(productId: Long): List<Barcode>
     @Query("SELECT * FROM barcodes WHERE code = :code LIMIT 1") suspend fun findByCode(code: String): Barcode?
 }

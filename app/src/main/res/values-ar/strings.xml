@@ -7,4 +7,53 @@
     <string name="nav_products">المنتجات</string>
     <string name="nav_more">المزيد</string>
     <string name="placeholder_soon">هذه الشاشة قيد البناء في الدفعة القادمة.</string>
+
+    <string name="search_products">ابحث بالاسم أو الكود أو الباركود</string>
+    <string name="no_products">لا توجد منتجات بعد. اضغط + لإضافة منتج.</string>
+    <string name="add_product">إضافة منتج</string>
+    <string name="new_product">منتج جديد</string>
+    <string name="edit_product">تعديل منتج</string>
+    <string name="save">حفظ</string>
+    <string name="cancel">إلغاء</string>
+    <string name="ok">موافق</string>
+    <string name="remove">حذف</string>
+    <string name="stock_fmt">المخزون: %1$s %2$s</string>
+    <string name="low_stock">مخزون منخفض</string>
+    <string name="inactive">موقوف</string>
+    <string name="favorite_label">مفضل</string>
+    <string name="active_label">مفعّل (متاح للبيع)</string>
+
+    <string name="field_name">اسم المنتج</string>
+    <string name="field_internal_code">الكود الداخلي (اختياري)</string>
+    <string name="field_category">التصنيف</string>
+    <string name="no_category">بدون تصنيف</string>
+    <string name="field_unit">وحدة القياس</string>
+    <string name="field_cost">سعر الشراء</string>
+    <string name="field_sale_price">سعر البيع</string>
+    <string name="field_margin">هامش الربح</string>
+    <string name="field_low_stock">تنبيه انخفاض المخزون عند</string>
+    <string name="field_pieces_per_carton">عدد القطع في الكرتونة</string>
+    <string name="field_opening_qty">الكمية الافتتاحية</string>
+    <string name="opening_in_cartons">الكمية الافتتاحية بالكراتين</string>
+    <string name="field_expiry">تاريخ الصلاحية (اختياري)</string>
+    <string name="clear_date">مسح</string>
+    <string name="field_barcodes">الباركود / QR</string>
+    <string name="barcode_code">الكود</string>
+    <string name="barcode_units">قطع لكل مسح</string>
+    <string name="add_barcode">إضافة باركود آخر</string>
+
+    <string name="unit_piece">قطعة</string>
+    <string name="unit_carton">كرتونة</string>
+    <string name="unit_kg">كيلو</string>
+    <string name="unit_gram">جرام</string>
+    <string name="unit_liter">لتر</string>
+    <string name="unit_pack">عبوة</string>
+
+    <string name="err_name_required">اسم المنتج مطلوب.</string>
+    <string name="err_price_invalid">أدخل أسعارًا صحيحة.</string>
+    <string name="err_carton_invalid">أدخل عدد قطع صحيح لكل كرتونة.</string>
+    <string name="err_barcode_duplicate">الباركود %1$s مسجل لمنتج آخر.</string>
+    <string name="err_code_duplicate">الكود الداخلي %1$s مسجل لمنتج آخر.</string>
+    <string name="err_qty_invalid">أدخل كمية صحيحة.</string>
+    <string name="err_unknown">حدث خطأ. حاول مرة أخرى.</string>
 </resources>
