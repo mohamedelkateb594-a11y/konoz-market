@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">كنوز ماركت</string>
+    <string name="brand_name">KONOZ MARKET</string>
+    <string name="nav_dashboard">الرئيسية</string>
+    <string name="nav_cashier">الكاشير</string>
+    <string name="nav_products">المنتجات</string>
+    <string name="nav_more">المزيد</string>
+    <string name="placeholder_soon">هذه الشاشة قيد البناء في الدفعة القادمة.</string>
+</resources>
