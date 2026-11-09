@@ -17,6 +17,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -26,6 +27,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.konoz.market.R
+import com.konoz.market.ui.cashier.CashierRoute
 import com.konoz.market.ui.products.ProductsRoute
 
 private data class Tab(val labelRes: Int, val icon: ImageVector)
@@ -38,11 +40,13 @@ private val tabs = listOf(
     Tab(R.string.nav_more, Icons.Filled.Menu),
 )
 
+private const val TAB_CASHIER = 0
 private const val TAB_PRODUCTS = 2
 
 @Composable
 fun KonozRoot() {
-    var selected by rememberSaveable { mutableIntStateOf(0) }
+    var selected by rememberSaveable { mutableIntStateOf(TAB_CASHIER) }
+    var pendingBarcode by rememberSaveable { mutableStateOf<String?>(null) }
     Scaffold(
         bottomBar = {
             NavigationBar {
@@ -58,7 +62,15 @@ fun KonozRoot() {
         },
     ) { padding ->
         when (selected) {
-            TAB_PRODUCTS -> ProductsRoute(Modifier.padding(padding))
+            TAB_CASHIER -> CashierRoute(
+                onRegisterBarcode = { code -> pendingBarcode = code; selected = TAB_PRODUCTS },
+                modifier = Modifier.padding(padding),
+            )
+            TAB_PRODUCTS -> ProductsRoute(
+                modifier = Modifier.padding(padding),
+                newProductBarcode = pendingBarcode,
+                onBarcodeConsumed = { pendingBarcode = null },
+            )
             else -> Box(
                 modifier = Modifier.fillMaxSize().padding(padding).padding(24.dp),
                 contentAlignment = Alignment.Center,
