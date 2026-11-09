@@ -28,6 +28,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.konoz.market.R
 import com.konoz.market.ui.cashier.CashierRoute
+import com.konoz.market.ui.more.MoreRoute
 import com.konoz.market.ui.products.ProductsRoute
 
 private data class Tab(val labelRes: Int, val icon: ImageVector)
@@ -42,6 +43,7 @@ private val tabs = listOf(
 
 private const val TAB_CASHIER = 0
 private const val TAB_PRODUCTS = 2
+private const val TAB_MORE = 3
 
 @Composable
 fun KonozRoot() {
@@ -71,6 +73,7 @@ fun KonozRoot() {
                 newProductBarcode = pendingBarcode,
                 onBarcodeConsumed = { pendingBarcode = null },
             )
+            TAB_MORE -> MoreRoute(Modifier.padding(padding))
             else -> Box(
                 modifier = Modifier.fillMaxSize().padding(padding).padding(24.dp),
                 contentAlignment = Alignment.Center,
