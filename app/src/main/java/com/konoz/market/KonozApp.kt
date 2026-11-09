@@ -6,6 +6,7 @@ import com.konoz.market.data.repo.CatalogRepository
 import com.konoz.market.data.repo.ProductCsvService
 import com.konoz.market.data.repo.ProductRepository
 import com.konoz.market.data.seed.DatabaseInitializer
+import com.konoz.market.domain.PurchaseService
 import com.konoz.market.domain.SaleService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -17,6 +18,7 @@ class KonozApp : Application() {
 
     val database: KonozDatabase by lazy { KonozDatabase.get(this) }
     val saleService: SaleService by lazy { SaleService(database) }
+    val purchaseService: PurchaseService by lazy { PurchaseService(database) }
     val productRepository: ProductRepository by lazy { ProductRepository(database) }
     val catalogRepository: CatalogRepository by lazy { CatalogRepository(database) }
     val productCsvService: ProductCsvService by lazy { ProductCsvService(database, productRepository) }

@@ -58,12 +58,30 @@ interface PurchaseDao {
     @Update suspend fun updateInvoice(i: PurchaseInvoice)
     @Insert suspend fun insertItems(items: List<PurchaseItem>): List<Long>
     @Query("DELETE FROM purchase_items WHERE invoiceId = :invoiceId") suspend fun deleteItems(invoiceId: Long)
+    @Query("DELETE FROM purchase_invoices WHERE id = :id AND status = 'DRAFT'") suspend fun deleteDraft(id: Long)
     @Query("SELECT * FROM purchase_invoices WHERE id = :id") suspend fun getInvoice(id: Long): PurchaseInvoice?
+    @Query("SELECT * FROM purchase_invoices WHERE uuid = :uuid") suspend fun getByUuid(uuid: String): PurchaseInvoice?
     @Query("SELECT * FROM purchase_items WHERE invoiceId = :invoiceId") suspend fun getItems(invoiceId: Long): List<PurchaseItem>
     @Query("SELECT COALESCE(MAX(number), 0) + 1 FROM purchase_invoices") suspend fun nextNumber(): Long
     @Query("SELECT * FROM purchase_invoices ORDER BY createdAt DESC") fun observeAll(): Flow<List<PurchaseInvoice>>
     @Query("SELECT * FROM purchase_invoices WHERE supplierId = :supplierId ORDER BY createdAt DESC")
     fun observeForSupplier(supplierId: Long): Flow<List<PurchaseInvoice>>
+
+    @Query("SELECT * FROM purchase_invoices WHERE supplierId = :supplierId AND status = 'APPROVED' ORDER BY approvedAt, id")
+    suspend fun approvedForSupplier(supplierId: Long): List<PurchaseInvoice>
+
+    /** What we owe the supplier: unsettled part of purchases minus unsettled part of returns (negative = they owe us). */
+    @Query(
+        """SELECT COALESCE(SUM(CASE WHEN isReturn = 1 THEN -remaining ELSE remaining END), 0)
+           FROM purchase_invoices WHERE supplierId = :supplierId AND status = 'APPROVED'"""
+    )
+    suspend fun supplierBalance(supplierId: Long): Long
+
+    @Query(
+        """SELECT COALESCE(SUM(CASE WHEN isReturn = 1 THEN -remaining ELSE remaining END), 0)
+           FROM purchase_invoices WHERE supplierId = :supplierId AND status = 'APPROVED'"""
+    )
+    fun observeSupplierBalance(supplierId: Long): Flow<Long>
 }
 
 @Dao
