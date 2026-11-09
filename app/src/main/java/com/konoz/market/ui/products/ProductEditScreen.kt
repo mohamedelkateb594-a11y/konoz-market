@@ -1,5 +1,8 @@
 package com.konoz.market.ui.products
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -8,6 +11,7 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
@@ -18,6 +22,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.QrCodeScanner
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
@@ -38,20 +45,26 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.konoz.market.R
+import com.konoz.market.core.ExpiryDates
 import com.konoz.market.core.Money
 import com.konoz.market.data.entity.UnitType
+import com.konoz.market.ui.common.ProductImage
+import com.konoz.market.ui.common.ProductImages
 import com.konoz.market.ui.common.unitLabelRes
-import java.text.SimpleDateFormat
-import java.util.Locale
-import java.util.TimeZone
+import com.konoz.market.ui.scanner.CameraBarcodeScanner
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -62,8 +75,22 @@ fun ProductEditScreen(
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
     val categories by vm.categories.collectAsStateWithLifecycle()
+    val suppliers by vm.suppliers.collectAsStateWithLifecycle()
     LaunchedEffect(state.saved) { if (state.saved) onClose() }
     val form = state.form
+
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var scanIndex by remember { mutableStateOf<Int?>(null) }
+    var showNewCategory by remember { mutableStateOf(false) }
+    var showNewSupplier by remember { mutableStateOf(false) }
+
+    val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri != null) scope.launch {
+            val path = withContext(Dispatchers.IO) { ProductImages.save(context, uri) }
+            if (path != null) vm.update { it.copy(imagePath = path) }
+        }
+    }
 
     Column(modifier.fillMaxSize()) {
         Row(
@@ -99,6 +126,21 @@ fun ProductEditScreen(
             Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                ProductImage(form.imagePath, 88.dp)
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(stringResource(R.string.product_image), style = MaterialTheme.typography.titleMedium)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedButton(onClick = { imagePicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }) {
+                            Text(stringResource(R.string.choose_image))
+                        }
+                        if (form.imagePath != null) {
+                            TextButton(onClick = { vm.update { it.copy(imagePath = null) } }) { Text(stringResource(R.string.remove_image)) }
+                        }
+                    }
+                }
+            }
+
             TextField(stringResource(R.string.field_name), form.name) { v -> vm.update { it.copy(name = v) } }
             TextField(stringResource(R.string.field_internal_code), form.internalCode) { v -> vm.update { it.copy(internalCode = v) } }
 
@@ -118,6 +160,26 @@ fun ProductEditScreen(
                         label = { Text(c.name) },
                     )
                 }
+                item { AssistChip(onClick = { showNewCategory = true }, label = { Text(stringResource(R.string.new_category)) }) }
+            }
+
+            Text(stringResource(R.string.field_supplier), style = MaterialTheme.typography.titleMedium)
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                item {
+                    FilterChip(
+                        selected = form.supplierId == null,
+                        onClick = { vm.update { it.copy(supplierId = null) } },
+                        label = { Text(stringResource(R.string.no_supplier)) },
+                    )
+                }
+                items(suppliers, key = { it.id }) { s ->
+                    FilterChip(
+                        selected = form.supplierId == s.id,
+                        onClick = { vm.update { it.copy(supplierId = s.id) } },
+                        label = { Text(s.name) },
+                    )
+                }
+                item { AssistChip(onClick = { showNewSupplier = true }, label = { Text(stringResource(R.string.new_supplier)) }) }
             }
 
             Text(stringResource(R.string.field_unit), style = MaterialTheme.typography.titleMedium)
@@ -151,11 +213,14 @@ fun ProductEditScreen(
 
             Text(stringResource(R.string.field_barcodes), style = MaterialTheme.typography.titleMedium)
             form.barcodes.forEachIndexed { i, row ->
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
                     TextField(stringResource(R.string.barcode_code), row.code, Modifier.weight(1f)) { v ->
                         vm.update { f -> f.copy(barcodes = f.barcodes.toMutableList().also { l -> l[i] = row.copy(code = v) }) }
                     }
-                    TextField(stringResource(R.string.barcode_units), row.unitsPerScan, Modifier.width(96.dp), KeyboardType.Number) { v ->
+                    IconButton(onClick = { scanIndex = i }) {
+                        Icon(Icons.Filled.QrCodeScanner, contentDescription = stringResource(R.string.scan_barcode))
+                    }
+                    TextField(stringResource(R.string.barcode_units), row.unitsPerScan, Modifier.width(88.dp), KeyboardType.Number) { v ->
                         vm.update { f -> f.copy(barcodes = f.barcodes.toMutableList().also { l -> l[i] = row.copy(unitsPerScan = v) }) }
                     }
                     if (form.barcodes.size > 1) {
@@ -173,6 +238,78 @@ fun ProductEditScreen(
             SwitchRow(stringResource(R.string.active_label), form.active) { v -> vm.update { it.copy(active = v) } }
         }
     }
+
+    scanIndex?.let { index ->
+        AlertDialog(
+            onDismissRequest = { scanIndex = null },
+            title = { Text(stringResource(R.string.scan_barcode_title)) },
+            text = {
+                CameraBarcodeScanner(
+                    enabled = true,
+                    onBarcode = { code ->
+                        vm.update { f ->
+                            if (index in f.barcodes.indices) {
+                                f.copy(barcodes = f.barcodes.toMutableList().also { l -> l[index] = l[index].copy(code = code) })
+                            } else f
+                        }
+                        scanIndex = null
+                    },
+                    modifier = Modifier.fillMaxWidth().height(260.dp),
+                )
+            },
+            confirmButton = { TextButton(onClick = { scanIndex = null }) { Text(stringResource(R.string.cancel)) } },
+        )
+    }
+
+    if (showNewCategory) {
+        NewItemDialog(
+            title = stringResource(R.string.new_category),
+            nameLabel = stringResource(R.string.new_category_name),
+            extraLabel = null,
+            onConfirm = { name, _ -> vm.addCategory(name); showNewCategory = false },
+            onDismiss = { showNewCategory = false },
+        )
+    }
+    if (showNewSupplier) {
+        NewItemDialog(
+            title = stringResource(R.string.new_supplier),
+            nameLabel = stringResource(R.string.supplier_name),
+            extraLabel = stringResource(R.string.supplier_phone),
+            onConfirm = { name, phone -> vm.addSupplier(name, phone); showNewSupplier = false },
+            onDismiss = { showNewSupplier = false },
+        )
+    }
+}
+
+@Composable
+private fun NewItemDialog(
+    title: String,
+    nameLabel: String,
+    extraLabel: String?,
+    onConfirm: (String, String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var name by remember { mutableStateOf("") }
+    var extra by remember { mutableStateOf("") }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text(nameLabel) }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                if (extraLabel != null) {
+                    OutlinedTextField(
+                        value = extra, onValueChange = { extra = it }, label = { Text(extraLabel) }, singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone), modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            Button(onClick = { onConfirm(name, extra) }, enabled = name.isNotBlank()) { Text(stringResource(R.string.add_action)) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
+    )
 }
 
 @Composable
@@ -221,7 +358,7 @@ private fun ExpiryField(millis: Long?, onChange: (Long?) -> Unit) {
     var show by remember { mutableStateOf(false) }
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
         OutlinedButton(onClick = { show = true }) {
-            Text(if (millis == null) stringResource(R.string.field_expiry) else formatDate(millis))
+            Text(if (millis == null) stringResource(R.string.field_expiry) else ExpiryDates.format(millis))
         }
         if (millis != null) TextButton(onClick = { onChange(null) }) { Text(stringResource(R.string.clear_date)) }
     }
@@ -235,9 +372,6 @@ private fun ExpiryField(millis: Long?, onChange: (Long?) -> Unit) {
         ) { DatePicker(state = picker) }
     }
 }
-
-private fun formatDate(utcMillis: Long): String =
-    SimpleDateFormat("yyyy-MM-dd", Locale.US).apply { timeZone = TimeZone.getTimeZone("UTC") }.format(utcMillis)
 
 @Composable
 private fun errorText(e: FormError, arg: String?): String = when (e) {

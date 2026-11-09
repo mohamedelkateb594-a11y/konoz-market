@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="filter_all">All</string>
+    <string name="menu_more">More</string>
+    <string name="bulk_price_title">Bulk price update</string>
+    <string name="bulk_scope_label">Applies to</string>
+    <string name="bulk_percent_label">Change in % (e.g. 10 or -5)</string>
+    <string name="bulk_apply">Apply</string>
+    <string name="bulk_done_fmt">Updated the prices of %1$d products.</string>
+    <string name="import_csv">Import from CSV</string>
+    <string name="export_csv">Export to CSV</string>
+    <string name="export_done">Products exported.</string>
+    <string name="import_done_fmt">Created %1$d and updated %2$d products.</string>
+    <string name="import_errors_title">Rows with errors</string>
+    <string name="import_error_line_fmt">Line %1$d: %2$s</string>
+    <string name="op_failed">The operation could not be completed.</string>
+    <string name="confirm_deactivate_title">Deactivate product</string>
+    <string name="confirm_deactivate_body">%1$s will be hidden from the cashier. Its data and past invoices are kept.</string>
+    <string name="deactivate">Deactivate</string>
+    <string name="new_category">+ Category</string>
+    <string name="new_category_name">Category name</string>
+    <string name="new_supplier">+ Supplier</string>
+    <string name="supplier_name">Supplier name</string>
+    <string name="supplier_phone">Phone (optional)</string>
+    <string name="field_supplier">Supplier</string>
+    <string name="no_supplier">No supplier</string>
+    <string name="scan_barcode">Scan with camera</string>
+    <string name="scan_barcode_title">Point the camera at the barcode</string>
+    <string name="product_image">Product image</string>
+    <string name="choose_image">Choose image</string>
+    <string name="remove_image">Remove image</string>
+    <string name="add_action">Add</string>
+</resources>

@@ -2,6 +2,8 @@ package com.konoz.market
 
 import android.app.Application
 import com.konoz.market.data.KonozDatabase
+import com.konoz.market.data.repo.CatalogRepository
+import com.konoz.market.data.repo.ProductCsvService
 import com.konoz.market.data.repo.ProductRepository
 import com.konoz.market.data.seed.DatabaseInitializer
 import com.konoz.market.domain.SaleService
@@ -16,6 +18,8 @@ class KonozApp : Application() {
     val database: KonozDatabase by lazy { KonozDatabase.get(this) }
     val saleService: SaleService by lazy { SaleService(database) }
     val productRepository: ProductRepository by lazy { ProductRepository(database) }
+    val catalogRepository: CatalogRepository by lazy { CatalogRepository(database) }
+    val productCsvService: ProductCsvService by lazy { ProductCsvService(database, productRepository) }
 
     override fun onCreate() {
         super.onCreate()

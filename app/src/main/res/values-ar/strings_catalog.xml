@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="filter_all">الكل</string>
+    <string name="menu_more">المزيد</string>
+    <string name="bulk_price_title">تحديث الأسعار بالجملة</string>
+    <string name="bulk_scope_label">النطاق</string>
+    <string name="bulk_percent_label">نسبة التغيير % (مثال: 10 أو -5)</string>
+    <string name="bulk_apply">تطبيق</string>
+    <string name="bulk_done_fmt">تم تحديث أسعار %1$d منتج.</string>
+    <string name="import_csv">استيراد من CSV</string>
+    <string name="export_csv">تصدير إلى CSV</string>
+    <string name="export_done">تم تصدير المنتجات.</string>
+    <string name="import_done_fmt">تم إنشاء %1$d وتحديث %2$d منتج.</string>
+    <string name="import_errors_title">أسطر بها أخطاء</string>
+    <string name="import_error_line_fmt">سطر %1$d: %2$s</string>
+    <string name="op_failed">تعذر تنفيذ العملية.</string>
+    <string name="confirm_deactivate_title">إيقاف المنتج</string>
+    <string name="confirm_deactivate_body">سيتم إيقاف %1$s ولن يظهر في الكاشير، وتبقى بياناته وفواتيره القديمة.</string>
+    <string name="deactivate">إيقاف</string>
+    <string name="new_category">+ تصنيف</string>
+    <string name="new_category_name">اسم التصنيف</string>
+    <string name="new_supplier">+ مورد</string>
+    <string name="supplier_name">اسم المورد</string>
+    <string name="supplier_phone">الهاتف (اختياري)</string>
+    <string name="field_supplier">المورد</string>
+    <string name="no_supplier">بدون مورد</string>
+    <string name="scan_barcode">مسح بالكاميرا</string>
+    <string name="scan_barcode_title">وجّه الكاميرا إلى الباركود</string>
+    <string name="product_image">صورة المنتج</string>
+    <string name="choose_image">اختيار صورة</string>
+    <string name="remove_image">إزالة الصورة</string>
+    <string name="add_action">إضافة</string>
+</resources>

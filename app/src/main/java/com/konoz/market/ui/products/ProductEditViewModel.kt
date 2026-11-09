@@ -6,11 +6,14 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.konoz.market.KonozApp
+import com.konoz.market.core.ExpiryDates
 import com.konoz.market.core.Money
 import com.konoz.market.core.Quantities
 import com.konoz.market.data.entity.Category
+import com.konoz.market.data.entity.Supplier
 import com.konoz.market.data.entity.UnitType
 import com.konoz.market.data.repo.BarcodeInput
+import com.konoz.market.data.repo.CatalogRepository
 import com.konoz.market.data.repo.ProductDetails
 import com.konoz.market.data.repo.ProductException
 import com.konoz.market.data.repo.ProductInput
@@ -63,6 +66,7 @@ data class EditUiState(
 
 class ProductEditViewModel(
     private val repo: ProductRepository,
+    private val catalog: CatalogRepository,
     private val productId: Long,
     private val userIdProvider: suspend () -> Long,
 ) : ViewModel() {
@@ -71,6 +75,9 @@ class ProductEditViewModel(
     val state: StateFlow<EditUiState> = _state.asStateFlow()
 
     val categories: StateFlow<List<Category>> = repo.observeCategories()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    val suppliers: StateFlow<List<Supplier>> = catalog.observeSuppliers()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     init {
@@ -86,6 +93,33 @@ class ProductEditViewModel(
 
     fun update(transform: (ProductForm) -> ProductForm) {
         _state.update { it.copy(form = transform(it.form), error = null, errorArg = null) }
+    }
+
+    /** Creates the category (or reuses an existing one with the same name) and selects it. */
+    fun addCategory(name: String) {
+        viewModelScope.launch {
+            try {
+                val id = repo.addCategory(name)
+                update { it.copy(categoryId = id) }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                // blank name: nothing to add
+            }
+        }
+    }
+
+    fun addSupplier(name: String, phone: String) {
+        viewModelScope.launch {
+            try {
+                val id = catalog.addSupplier(name, phone)
+                update { it.copy(supplierId = id) }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                // blank name: nothing to add
+            }
+        }
     }
 
     fun save() {
@@ -121,8 +155,7 @@ class ProductEditViewModel(
         val input = ProductInput(
             name = f.name, id = productId, internalCode = f.internalCode, categoryId = f.categoryId, supplierId = f.supplierId,
             unit = f.unit, costPrice = cost, salePrice = price, lowStockThresholdMilli = low, piecesPerCarton = perCarton,
-            // the date picker gives UTC midnight; the product is sellable through the whole expiry day
-            expiryDate = f.expiryUtcMillis?.let { it + END_OF_DAY_OFFSET }, imagePath = f.imagePath,
+            expiryDate = f.expiryUtcMillis?.let { ExpiryDates.toStored(it) }, imagePath = f.imagePath,
             isFavorite = f.favorite, isActive = f.active, barcodes = barcodes, openingQtyMilli = opening,
         )
 
@@ -166,7 +199,7 @@ class ProductEditViewModel(
             price = Money.fromMinor(p.salePrice).toPlainString(),
             lowStock = Quantities.format(p.lowStockThresholdMilli),
             piecesPerCarton = p.piecesPerCarton?.toString().orEmpty(),
-            expiryUtcMillis = p.expiryDate?.let { it - END_OF_DAY_OFFSET },
+            expiryUtcMillis = p.expiryDate?.let { ExpiryDates.toPickerMillis(it) },
             barcodes = barcodes.map { BarcodeRow(it.code, it.unitsPerScan.toString()) }.ifEmpty { listOf(BarcodeRow()) },
             favorite = p.isFavorite,
             active = p.isActive,
@@ -175,12 +208,10 @@ class ProductEditViewModel(
     }
 
     companion object {
-        private const val END_OF_DAY_OFFSET = 86_399_999L
-
         fun factory(productId: Long) = viewModelFactory {
             initializer {
                 val app = this[APPLICATION_KEY] as KonozApp
-                ProductEditViewModel(app.productRepository, productId, app::activeUserId)
+                ProductEditViewModel(app.productRepository, app.catalogRepository, productId, app::activeUserId)
             }
         }
     }
