@@ -7,6 +7,7 @@ import com.konoz.market.core.Csv
 import com.konoz.market.data.KonozDatabase
 import com.konoz.market.data.entity.Category
 import com.konoz.market.data.entity.UnitType
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -112,7 +113,7 @@ class ProductCsvServiceTest {
         val text = "name;sale_price\nحليب;12,5\n"
         val result = csv.importCsv(text, null)
         assertEquals(1, result.created)
-        assertEquals(1250L, db.products().observeAllForTest().single().salePrice)
+        assertEquals(1250L, db.products().observeAll().first().single().salePrice)
     }
 
     @Test fun a_file_without_a_name_column_is_rejected() = runBlocking {
@@ -121,6 +122,3 @@ class ProductCsvServiceTest {
         assertEquals(1, result.errors.size)
     }
 }
-
-private suspend fun com.konoz.market.data.dao.ProductDao.observeAllForTest() =
-    kotlinx.coroutines.flow.first(this.observeAll())
