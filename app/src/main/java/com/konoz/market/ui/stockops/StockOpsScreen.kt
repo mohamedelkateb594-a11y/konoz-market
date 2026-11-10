@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -43,6 +44,8 @@ fun StockOpsScreen(vm: StockOpsViewModel, onBack: () -> Unit, modifier: Modifier
     val state by vm.state.collectAsStateWithLifecycle()
     val query by vm.query.collectAsStateWithLifecycle()
     val results by vm.results.collectAsStateWithLifecycle()
+    val source = state.product
+    val target = state.target
 
     Column(modifier.fillMaxSize()) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -50,20 +53,20 @@ fun StockOpsScreen(vm: StockOpsViewModel, onBack: () -> Unit, modifier: Modifier
             Text(stringResource(R.string.stock_ops_title), style = MaterialTheme.typography.titleLarge)
         }
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            val ops = listOf(
+                StockOp.ADJUST to R.string.op_adjust, StockOp.DAMAGED to R.string.op_damaged,
+                StockOp.EXPIRED to R.string.op_expired, StockOp.CONVERT to R.string.op_convert,
+            )
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                val ops = listOf(
-                    StockOp.ADJUST to R.string.op_adjust, StockOp.DAMAGED to R.string.op_damaged,
-                    StockOp.EXPIRED to R.string.op_expired, StockOp.CONVERT to R.string.op_convert,
-                )
-                items(ops.size) { i ->
-                    FilterChip(selected = state.op == ops[i].first, onClick = { vm.setOp(ops[i].first) }, label = { Text(stringResource(ops[i].second)) })
+                items(ops) { (op, label) ->
+                    FilterChip(selected = state.op == op, onClick = { vm.setOp(op) }, label = { Text(stringResource(label)) })
                 }
             }
 
-            if (state.product == null) {
+            if (source == null) {
                 ProductSearch(query, results, stringResource(R.string.pick_product), vm::setQuery, vm::pick)
             } else {
-                ProductCard(state.product!!, onChange = vm::clearProduct)
+                SelectedProduct(source, onChange = vm::clearProduct)
             }
 
             if (state.op == StockOp.ADJUST) {
@@ -76,11 +79,11 @@ fun StockOpsScreen(vm: StockOpsViewModel, onBack: () -> Unit, modifier: Modifier
             NumberField(stringResource(R.string.ops_qty), state.qty, vm::setQty)
 
             if (state.op == StockOp.CONVERT) {
-                if (state.target == null) {
-                    // the search box is shared: only show it for the target once the source is chosen
-                    if (state.product != null) ProductSearch(query, results, stringResource(R.string.pick_target), vm::setQuery, vm::pickTarget)
-                } else {
-                    ProductCard(state.target!!, onChange = vm::clearTarget)
+                if (target != null) {
+                    SelectedProduct(target, onChange = vm::clearTarget)
+                } else if (source != null) {
+                    // the search box is shared: it serves the target once the source has been chosen
+                    ProductSearch(query, results, stringResource(R.string.pick_target), vm::setQuery, vm::pickTarget)
                 }
                 NumberField(stringResource(R.string.ops_target_qty), state.targetQty, vm::setTargetQty)
             }
@@ -121,7 +124,7 @@ fun StockOpsScreen(vm: StockOpsViewModel, onBack: () -> Unit, modifier: Modifier
 }
 
 @Composable
-private fun ProductCard(product: Product, onChange: () -> Unit) {
+private fun SelectedProduct(product: Product, onChange: () -> Unit) {
     Card(Modifier.fillMaxWidth()) {
         Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(
