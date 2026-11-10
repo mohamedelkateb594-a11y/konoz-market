@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="menu_returns">Sales returns</string>
+    <string name="menu_stock_ops">Stock adjustments</string>
+    <string name="menu_movements">Product movement log</string>
+    <string name="menu_alerts">Stock and expiry alerts</string>
+    <string name="change_action">Change</string>
+
+    <string name="returns_title">Sales returns</string>
+    <string name="invoice_number_label">Invoice number</string>
+    <string name="find_invoice">Find</string>
+    <string name="invoice_not_found">No completed invoice with this number.</string>
+    <string name="return_invoice_info_fmt">Invoice #%1$s - total %2$s</string>
+    <string name="return_line_info_fmt">Sold %1$s - returned before %2$s</string>
+    <string name="return_qty_label">Quantity to return</string>
+    <string name="return_damaged">Damaged</string>
+    <string name="return_reason_label">Reason (optional)</string>
+    <string name="return_refund_fmt">Refund: %1$s</string>
+    <string name="return_confirm">Confirm return</string>
+    <string name="return_done_fmt">Return recorded. Refund to the customer: %1$s</string>
+    <string name="rerr_empty">Enter a quantity for at least one product.</string>
+    <string name="rerr_exceeds">The quantity is more than what can still be returned.</string>
+    <string name="rerr_invalid">Invalid quantity.</string>
+    <string name="rerr_unknown">The return could not be recorded.</string>
+
+    <string name="stock_ops_title">Stock adjustments</string>
+    <string name="op_adjust">Adjust</string>
+    <string name="op_damaged">Damaged</string>
+    <string name="op_expired">Expired</string>
+    <string name="op_convert">Convert units</string>
+    <string name="op_increase">Increase</string>
+    <string name="op_decrease">Decrease</string>
+    <string name="pick_product">Choose a product</string>
+    <string name="pick_target">Choose the resulting product</string>
+    <string name="selected_product_fmt">%1$s (stock %2$s)</string>
+    <string name="ops_qty">Quantity</string>
+    <string name="ops_target_qty">Resulting quantity</string>
+    <string name="ops_reason">Reason (required for adjustments)</string>
+    <string name="ops_apply">Apply</string>
+    <string name="ops_done_fmt">Done. Cost value: %1$s</string>
+    <string name="oerr_invalid">Check the quantities.</string>
+    <string name="oerr_reason">A reason is required for adjustments.</string>
+    <string name="oerr_stock">The quantity is more than the available stock.</string>
+    <string name="oerr_same">You cannot convert a product into itself.</string>
+    <string name="oerr_pick">Choose the product first.</string>
+    <string name="oerr_unknown">The operation failed.</string>
+
+    <string name="movements_title">Product movement log</string>
+    <string name="no_movements">No movements for this product.</string>
+    <string name="movement_cost_fmt">At cost %1$s</string>
+    <string name="mv_opening">Opening balance</string>
+    <string name="mv_purchase">Purchase</string>
+    <string name="mv_sale">Sale</string>
+    <string name="mv_return_in">Sales return</string>
+    <string name="mv_purchase_return">Purchase return</string>
+    <string name="mv_adjustment">Adjustment</string>
+    <string name="mv_damaged">Damaged</string>
+    <string name="mv_expired">Expired</string>
+    <string name="mv_unit_conversion">Unit conversion</string>
+    <string name="mv_count_adjustment">Stock count adjustment</string>
+
+    <string name="alerts_title">Stock and expiry alerts</string>
+    <string name="tab_low">Low</string>
+    <string name="tab_out">Out</string>
+    <string name="tab_expiring">Expiring</string>
+    <string name="tab_expired">Expired</string>
+    <string name="no_alerts">No alerts.</string>
+    <string name="suggested_fmt">Suggested purchase: %1$s</string>
+    <string name="expires_in_fmt">Expires in %1$d days</string>
+    <string name="expired_since_fmt">Expired %1$d days ago</string>
+    <string name="batch_qty_fmt">Quantity: %1$s</string>
+</resources>

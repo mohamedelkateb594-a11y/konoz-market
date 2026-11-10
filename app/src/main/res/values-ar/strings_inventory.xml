@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="menu_returns">مرتجعات المبيعات</string>
+    <string name="menu_stock_ops">تسويات المخزون</string>
+    <string name="menu_movements">سجل حركة المنتج</string>
+    <string name="menu_alerts">تنبيهات المخزون والصلاحية</string>
+    <string name="change_action">تغيير</string>
+
+    <string name="returns_title">مرتجعات المبيعات</string>
+    <string name="invoice_number_label">رقم الفاتورة</string>
+    <string name="find_invoice">بحث</string>
+    <string name="invoice_not_found">لا توجد فاتورة مكتملة بهذا الرقم.</string>
+    <string name="return_invoice_info_fmt">فاتورة #%1$s • الإجمالي %2$s</string>
+    <string name="return_line_info_fmt">المباع %1$s • المرتجع سابقًا %2$s</string>
+    <string name="return_qty_label">كمية الإرجاع</string>
+    <string name="return_damaged">تالف</string>
+    <string name="return_reason_label">سبب الإرجاع (اختياري)</string>
+    <string name="return_refund_fmt">المبلغ المسترد: %1$s</string>
+    <string name="return_confirm">تأكيد الإرجاع</string>
+    <string name="return_done_fmt">تم تسجيل المرتجع. المبلغ المسترد للعميل: %1$s</string>
+    <string name="rerr_empty">أدخل كمية لمنتج واحد على الأقل.</string>
+    <string name="rerr_exceeds">الكمية أكبر من المتاح للإرجاع.</string>
+    <string name="rerr_invalid">كمية غير صحيحة.</string>
+    <string name="rerr_unknown">تعذر تسجيل المرتجع.</string>
+
+    <string name="stock_ops_title">تسويات المخزون</string>
+    <string name="op_adjust">تعديل</string>
+    <string name="op_damaged">تالف</string>
+    <string name="op_expired">منتهي</string>
+    <string name="op_convert">تحويل وحدات</string>
+    <string name="op_increase">زيادة</string>
+    <string name="op_decrease">نقص</string>
+    <string name="pick_product">اختر المنتج</string>
+    <string name="pick_target">اختر المنتج الناتج</string>
+    <string name="selected_product_fmt">%1$s (المخزون %2$s)</string>
+    <string name="ops_qty">الكمية</string>
+    <string name="ops_target_qty">الكمية الناتجة</string>
+    <string name="ops_reason">السبب (مطلوب للتعديل)</string>
+    <string name="ops_apply">تنفيذ</string>
+    <string name="ops_done_fmt">تم التنفيذ. قيمة التكلفة: %1$s</string>
+    <string name="oerr_invalid">تحقق من الكميات.</string>
+    <string name="oerr_reason">السبب مطلوب للتعديل.</string>
+    <string name="oerr_stock">الكمية أكبر من المخزون المتاح.</string>
+    <string name="oerr_same">لا يمكن التحويل إلى نفس المنتج.</string>
+    <string name="oerr_pick">اختر المنتج أولًا.</string>
+    <string name="oerr_unknown">تعذر التنفيذ.</string>
+
+    <string name="movements_title">سجل حركة المنتج</string>
+    <string name="no_movements">لا توجد حركات لهذا المنتج.</string>
+    <string name="movement_cost_fmt">بتكلفة %1$s</string>
+    <string name="mv_opening">رصيد افتتاحي</string>
+    <string name="mv_purchase">شراء</string>
+    <string name="mv_sale">بيع</string>
+    <string name="mv_return_in">مرتجع مبيعات</string>
+    <string name="mv_purchase_return">مرتجع مشتريات</string>
+    <string name="mv_adjustment">تعديل</string>
+    <string name="mv_damaged">تالف</string>
+    <string name="mv_expired">منتهي الصلاحية</string>
+    <string name="mv_unit_conversion">تحويل وحدات</string>
+    <string name="mv_count_adjustment">تسوية جرد</string>
+
+    <string name="alerts_title">تنبيهات المخزون والصلاحية</string>
+    <string name="tab_low">ناقص</string>
+    <string name="tab_out">نفد</string>
+    <string name="tab_expiring">قارب الانتهاء</string>
+    <string name="tab_expired">منتهي</string>
+    <string name="no_alerts">لا توجد تنبيهات.</string>
+    <string name="suggested_fmt">المقترح شراؤه: %1$s</string>
+    <string name="expires_in_fmt">ينتهي بعد %1$d يوم</string>
+    <string name="expired_since_fmt">منتهي منذ %1$d يوم</string>
+    <string name="batch_qty_fmt">الكمية: %1$s</string>
+</resources>
