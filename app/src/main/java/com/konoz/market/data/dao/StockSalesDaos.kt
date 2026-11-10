@@ -6,7 +6,6 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import com.konoz.market.data.entity.InventoryMovement
-import com.konoz.market.data.entity.InvoiceStatus
 import com.konoz.market.data.entity.Payment
 import com.konoz.market.data.entity.ReturnItem
 import com.konoz.market.data.entity.SalesInvoice
@@ -105,6 +104,10 @@ interface SalesDao {
     // Returns
     @Insert suspend fun insertReturn(r: SalesReturn): Long
     @Insert suspend fun insertReturnItems(items: List<ReturnItem>)
+    @Query("SELECT * FROM sales_returns WHERE uuid = :uuid") suspend fun getReturnByUuid(uuid: String): SalesReturn?
+    @Query("SELECT * FROM return_items WHERE returnId = :returnId ORDER BY id") suspend fun getReturnItems(returnId: Long): List<ReturnItem>
+    @Query("SELECT * FROM sales_returns WHERE salesInvoiceId = :invoiceId ORDER BY createdAt")
+    suspend fun returnsForInvoice(invoiceId: Long): List<SalesReturn>
     @Query("SELECT COALESCE(SUM(qtyMilli), 0) FROM return_items WHERE salesItemId = :salesItemId")
     suspend fun returnedQty(salesItemId: Long): Long
     @Query("SELECT * FROM sales_returns ORDER BY createdAt DESC") fun observeReturns(): Flow<List<SalesReturn>>

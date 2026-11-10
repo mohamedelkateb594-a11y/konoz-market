@@ -131,10 +131,12 @@ data class Payment(
         ForeignKey(SalesInvoice::class, ["id"], ["salesInvoiceId"]),
         ForeignKey(User::class, ["id"], ["userId"]),
     ],
-    indices = [Index("salesInvoiceId"), Index("userId"), Index("createdAt")],
+    indices = [Index("salesInvoiceId"), Index("userId"), Index("createdAt"), Index("uuid", unique = true)],
 )
 data class SalesReturn(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    /** Idempotency key: retrying the same return never refunds or restocks twice. */
+    val uuid: String,
     val salesInvoiceId: Long,
     val userId: Long,
     val reason: String? = null,
