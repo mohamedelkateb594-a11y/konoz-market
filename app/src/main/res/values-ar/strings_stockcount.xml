@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="menu_stock_count">الجرد</string>
+    <string name="count_title">عمليات الجرد</string>
+    <string name="count_none">لا توجد عمليات جرد بعد. اضغط + لبدء جرد.</string>
+    <string name="count_new">جرد جديد</string>
+    <string name="count_start">بدء</string>
+    <string name="count_label_fmt">جرد #%1$s</string>
+    <string name="count_status_draft">مسودة</string>
+    <string name="count_status_approved">معتمد</string>
+    <string name="count_scope_all">شامل</string>
+    <string name="count_scope_category">حسب تصنيف</string>
+    <string name="count_progress_fmt">تم جرد %1$d من %2$d منتج</string>
+    <string name="count_shortage_fmt">العجز: %1$s</string>
+    <string name="count_surplus_fmt">الزيادة: %1$s</string>
+    <string name="count_search_hint">ابحث في منتجات هذا الجرد</string>
+    <string name="count_scan_hint">امسح المنتجات لجردها</string>
+    <string name="count_system_fmt">المسجل: %1$s</string>
+    <string name="count_actual_label">الكمية الفعلية</string>
+    <string name="count_approve">اعتماد الجرد</string>
+    <string name="count_approve_title">اعتماد الجرد</string>
+    <string name="count_approve_body">سيتم تعديل المخزون بالفروقات التي وُجدت. المنتجات غير المجرودة تبقى كما هي. لا يمكن التراجع.</string>
+    <string name="count_delete_draft">حذف المسودة</string>
+    <string name="count_delete_body">سيتم حذف مسودة الجرد وكل ما أُدخل فيها. المخزون لا يتأثر.</string>
+    <string name="count_approved_done_fmt">تم اعتماد الجرد. عدد المنتجات المعدّلة: %1$d</string>
+    <string name="cerr_no_products">لا توجد منتجات لجردها.</string>
+    <string name="cerr_category">اختر التصنيف المراد جرده.</string>
+    <string name="cerr_invalid">كمية غير صحيحة.</string>
+    <string name="cerr_not_in_count">هذا المنتج ليس ضمن هذا الجرد.</string>
+    <string name="cerr_unknown_barcode">باركود غير مسجل.</string>
+    <string name="cerr_unknown">حدث خطأ. حاول مرة أخرى.</string>
+</resources>

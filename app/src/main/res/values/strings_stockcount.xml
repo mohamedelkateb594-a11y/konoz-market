@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="menu_stock_count">Stock count</string>
+    <string name="count_title">Stock counts</string>
+    <string name="count_none">No counts yet. Tap + to start one.</string>
+    <string name="count_new">New count</string>
+    <string name="count_start">Start</string>
+    <string name="count_label_fmt">Count #%1$s</string>
+    <string name="count_status_draft">Draft</string>
+    <string name="count_status_approved">Approved</string>
+    <string name="count_scope_all">Everything</string>
+    <string name="count_scope_category">By category</string>
+    <string name="count_progress_fmt">Counted %1$d of %2$d products</string>
+    <string name="count_shortage_fmt">Shortage: %1$s</string>
+    <string name="count_surplus_fmt">Surplus: %1$s</string>
+    <string name="count_search_hint">Search products in this count</string>
+    <string name="count_scan_hint">Scan products to count them</string>
+    <string name="count_system_fmt">Recorded: %1$s</string>
+    <string name="count_actual_label">Actual quantity</string>
+    <string name="count_approve">Approve count</string>
+    <string name="count_approve_title">Approve the count</string>
+    <string name="count_approve_body">The stock will be adjusted by the differences found. Products that were not counted are left unchanged. This cannot be undone.</string>
+    <string name="count_delete_draft">Delete draft</string>
+    <string name="count_delete_body">The draft count and everything entered in it will be deleted. The stock is not affected.</string>
+    <string name="count_approved_done_fmt">Count approved. Products adjusted: %1$d</string>
+    <string name="cerr_no_products">There are no products to count.</string>
+    <string name="cerr_category">Choose the category to count.</string>
+    <string name="cerr_invalid">Invalid quantity.</string>
+    <string name="cerr_not_in_count">This product is not part of this count.</string>
+    <string name="cerr_unknown_barcode">Unknown barcode.</string>
+    <string name="cerr_unknown">The operation failed. Please try again.</string>
+</resources>

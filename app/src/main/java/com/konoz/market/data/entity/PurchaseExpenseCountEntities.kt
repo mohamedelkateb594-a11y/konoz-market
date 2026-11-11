@@ -61,10 +61,12 @@ data class PurchaseItem(
         ForeignKey(User::class, ["id"], ["userId"]),
         ForeignKey(Shift::class, ["id"], ["shiftId"], onDelete = ForeignKey.SET_NULL),
     ],
-    indices = [Index("createdAt"), Index("category"), Index("userId"), Index("shiftId")],
+    indices = [Index("createdAt"), Index("category"), Index("userId"), Index("shiftId"), Index("uuid", unique = true)],
 )
 data class Expense(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    /** Idempotency key: retrying the same "add expense" request never creates a second row. */
+    val uuid: String,
     val amount: Long,
     val category: ExpenseCategory,
     val description: String,
