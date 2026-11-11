@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="menu_expenses">المصروفات</string>
+    <string name="expenses_title">المصروفات اليومية</string>
+    <string name="period_day">اليوم</string>
+    <string name="period_month">هذا الشهر</string>
+    <string name="period_year">هذه السنة</string>
+    <string name="expenses_total_fmt">المصروفات: %1$s</string>
+    <string name="exp_day_fmt">اليوم %1$s</string>
+    <string name="exp_month_fmt">الشهر %1$s</string>
+    <string name="exp_year_fmt">السنة %1$s</string>
+    <string name="exp_no_items">لا توجد مصروفات في هذه الفترة. اضغط + للإضافة.</string>
+    <string name="exp_not_cash">غير مدفوع نقدًا</string>
+    <string name="add_expense">إضافة مصروف</string>
+    <string name="edit_expense">تعديل مصروف</string>
+    <string name="exp_amount">المبلغ</string>
+    <string name="exp_category">النوع</string>
+    <string name="exp_description">الوصف</string>
+    <string name="exp_notes">ملاحظات (اختياري)</string>
+    <string name="exp_paid_cash">مدفوع نقدًا (يدخل في نقدية الوردية)</string>
+    <string name="exp_choose_receipt">صورة الإيصال</string>
+    <string name="exp_remove_receipt">إزالة الصورة</string>
+    <string name="exp_delete_title">حذف مصروف</string>
+    <string name="exp_delete_body">سيتم حذف هذا المصروف ويُسجَّل الحذف في سجل التدقيق.</string>
+    <string name="eerr_amount">أدخل مبلغًا أكبر من الصفر.</string>
+    <string name="eerr_description">الوصف مطلوب.</string>
+    <string name="eerr_unknown">حدث خطأ. حاول مرة أخرى.</string>
+    <string name="cat_electricity">كهرباء</string>
+    <string name="cat_water">مياه</string>
+    <string name="cat_rent">إيجار</string>
+    <string name="cat_wages">أجور</string>
+    <string name="cat_transport">نقل وشحن</string>
+    <string name="cat_maintenance">صيانة</string>
+    <string name="cat_operating_purchases">مشتريات تشغيلية</string>
+    <string name="cat_misc">مصروفات متنوعة</string>
+</resources>

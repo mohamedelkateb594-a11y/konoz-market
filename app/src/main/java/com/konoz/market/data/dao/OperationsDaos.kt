@@ -45,6 +45,7 @@ interface ExpenseDao {
     @Update suspend fun update(e: Expense)
     @Query("DELETE FROM expenses WHERE id = :id") suspend fun delete(id: Long)
     @Query("SELECT * FROM expenses WHERE id = :id") suspend fun getById(id: Long): Expense?
+    @Query("SELECT * FROM expenses WHERE uuid = :uuid") suspend fun getByUuid(uuid: String): Expense?
     @Query("SELECT * FROM expenses WHERE createdAt BETWEEN :from AND :to ORDER BY createdAt DESC")
     fun observeBetween(from: Long, to: Long): Flow<List<Expense>>
     @Query("SELECT COALESCE(SUM(amount), 0) FROM expenses WHERE createdAt BETWEEN :from AND :to")
@@ -93,8 +94,12 @@ interface StockCountDao {
     @Update suspend fun updateItem(item: StockCountItem)
     @Query("SELECT * FROM stock_counts WHERE id = :id") suspend fun getById(id: Long): StockCount?
     @Query("SELECT * FROM stock_count_items WHERE countId = :countId") suspend fun getItems(countId: Long): List<StockCountItem>
+    @Query("SELECT * FROM stock_count_items WHERE countId = :countId AND productId = :productId")
+    suspend fun getItem(countId: Long, productId: Long): StockCountItem?
     @Query("SELECT * FROM stock_count_items WHERE countId = :countId") fun observeItems(countId: Long): Flow<List<StockCountItem>>
     @Query("SELECT * FROM stock_counts ORDER BY startedAt DESC") fun observeAll(): Flow<List<StockCount>>
+    @Query("DELETE FROM stock_count_items WHERE countId = :countId") suspend fun deleteItems(countId: Long)
+    @Query("DELETE FROM stock_counts WHERE id = :id AND status = 'DRAFT'") suspend fun deleteDraft(id: Long)
 }
 
 @Dao

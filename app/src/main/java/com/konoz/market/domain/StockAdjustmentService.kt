@@ -28,6 +28,7 @@ sealed class StockException(message: String) : Exception(message) {
  * Manual stock operations: corrections, damaged/expired write-offs and unit conversion (carton -> pieces).
  * All go through the movement ledger, all take stock out FEFO (earliest expiry first), all run in one
  * transaction and are idempotent per uuid. Stock never goes below zero here.
+ * [adjust] is also used by the stock count (type COUNT_ADJUSTMENT) when a count is approved.
  */
 class StockAdjustmentService(
     private val db: KonozDatabase,
@@ -36,28 +37,36 @@ class StockAdjustmentService(
     private val stock get() = db.stock()
     private val products get() = db.products()
 
-    /** Manual correction: delta > 0 adds stock (cost = current cost price), delta < 0 removes it. A reason is mandatory. */
-    suspend fun adjust(uuid: String, productId: Long, deltaMilli: Long, reason: String, userId: Long?): AdjustmentResult = db.tx {
+    /**
+     * Manual correction: delta > 0 adds stock (cost = current cost price), delta < 0 removes it. A reason is mandatory.
+     * [type] is ADJUSTMENT, or COUNT_ADJUSTMENT when called by the stock count.
+     */
+    suspend fun adjust(
+        uuid: String, productId: Long, deltaMilli: Long, reason: String, userId: Long?,
+        type: MovementType = MovementType.ADJUSTMENT,
+    ): AdjustmentResult = db.tx {
+        require(type == MovementType.ADJUSTMENT || type == MovementType.COUNT_ADJUSTMENT) { "type must be ADJUSTMENT or COUNT_ADJUSTMENT" }
         if (deltaMilli == 0L) throw StockException.InvalidQuantity()
         if (reason.isBlank()) throw StockException.ReasonRequired()
         if (stock.movementExists("ADJ:$uuid:0") > 0) return@tx AdjustmentResult(0, duplicate = true)
         val product = loadProduct(productId, deltaMilli)
         val now = clock()
+        val refType = if (type == MovementType.COUNT_ADJUSTMENT) "STOCK_COUNT" else "ADJUSTMENT"
 
         val value: Long
         if (deltaMilli > 0L) {
             val batchId = stock.insertBatch(StockBatch(productId = productId, qtyMilli = deltaMilli, unitCost = product.costPrice, receivedAt = now))
             stock.insertMovement(
                 InventoryMovement(
-                    productId = productId, batchId = batchId, type = MovementType.ADJUSTMENT, qtyMilli = deltaMilli,
-                    unitCost = product.costPrice, refType = "ADJUSTMENT", reason = reason.trim(), userId = userId,
+                    productId = productId, batchId = batchId, type = type, qtyMilli = deltaMilli,
+                    unitCost = product.costPrice, refType = refType, reason = reason.trim(), userId = userId,
                     idempotencyKey = "ADJ:$uuid:0", createdAt = now,
                 )
             )
             products.adjustQty(productId, deltaMilli)
             value = Money.costOf(product.costPrice, deltaMilli)
         } else {
-            value = deduct(product, -deltaMilli, MovementType.ADJUSTMENT, "ADJ:$uuid", "ADJUSTMENT", reason.trim(), userId, now).cost
+            value = deduct(product, -deltaMilli, type, "ADJ:$uuid", refType, reason.trim(), userId, now).cost
         }
         audit(userId, "STOCK_ADJUSTMENT", productId, "delta=$deltaMilli reason=${reason.trim()}", now)
         AdjustmentResult(value)
@@ -125,7 +134,7 @@ class StockAdjustmentService(
         product: Product, qty: Long, type: MovementType, keyBase: String, refType: String,
         reason: String?, userId: Long?, now: Long,
     ): Deducted {
-        if (type == MovementType.ADJUSTMENT && product.currentQtyMilli < qty) {
+        if ((type == MovementType.ADJUSTMENT || type == MovementType.COUNT_ADJUSTMENT) && product.currentQtyMilli < qty) {
             throw StockException.InsufficientStock(product.id, qty - product.currentQtyMilli)
         }
         var remaining = qty

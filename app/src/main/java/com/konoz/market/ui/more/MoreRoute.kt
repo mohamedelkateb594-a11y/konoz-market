@@ -24,6 +24,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.konoz.market.R
 import com.konoz.market.ui.alerts.StockAlertsScreen
 import com.konoz.market.ui.alerts.StockAlertsViewModel
+import com.konoz.market.ui.expenses.ExpensesScreen
+import com.konoz.market.ui.expenses.ExpensesViewModel
 import com.konoz.market.ui.movements.MovementLogScreen
 import com.konoz.market.ui.movements.MovementLogViewModel
 import com.konoz.market.ui.purchases.PurchaseScreen
@@ -43,8 +45,9 @@ private const val RETURNS = "returns"
 private const val STOCK_OPS = "stockops"
 private const val MOVEMENTS = "movements"
 private const val ALERTS = "alerts"
+private const val EXPENSES = "expenses"
 
-/** Routes: menu, suppliers, statement/{supplierId}, purchase/{supplierId}/{0|1 = return}, returns, stockops, movements, alerts. */
+/** Routes: menu, suppliers, statement/{supplierId}, purchase/{supplierId}/{0|1 = return}, returns, stockops, movements, alerts, expenses. */
 private fun parentOf(route: String): String {
     val parts = route.split('/')
     return when (parts[0]) {
@@ -102,9 +105,14 @@ fun MoreRoute(modifier: Modifier = Modifier) {
             val vm: StockAlertsViewModel = viewModel(key = "alerts_$session", factory = StockAlertsViewModel.Factory)
             StockAlertsScreen(vm, onBack = { route = MENU }, modifier = modifier)
         }
+        EXPENSES -> {
+            val vm: ExpensesViewModel = viewModel(key = "expenses_$session", factory = ExpensesViewModel.Factory)
+            ExpensesScreen(vm, onBack = { route = MENU }, modifier = modifier)
+        }
         else -> MoreMenu(
             items = listOf(
                 R.string.menu_suppliers to { route = SUPPLIERS },
+                R.string.menu_expenses to { session++; route = EXPENSES },
                 R.string.menu_returns to { session++; route = RETURNS },
                 R.string.menu_stock_ops to { session++; route = STOCK_OPS },
                 R.string.menu_movements to { session++; route = MOVEMENTS },

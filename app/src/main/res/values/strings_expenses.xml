@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="menu_expenses">Expenses</string>
+    <string name="expenses_title">Daily expenses</string>
+    <string name="period_day">Today</string>
+    <string name="period_month">This month</string>
+    <string name="period_year">This year</string>
+    <string name="expenses_total_fmt">Expenses: %1$s</string>
+    <string name="exp_day_fmt">Today %1$s</string>
+    <string name="exp_month_fmt">Month %1$s</string>
+    <string name="exp_year_fmt">Year %1$s</string>
+    <string name="exp_no_items">No expenses in this period. Tap + to add one.</string>
+    <string name="exp_not_cash">Not paid in cash</string>
+    <string name="add_expense">Add expense</string>
+    <string name="edit_expense">Edit expense</string>
+    <string name="exp_amount">Amount</string>
+    <string name="exp_category">Type</string>
+    <string name="exp_description">Description</string>
+    <string name="exp_notes">Notes (optional)</string>
+    <string name="exp_paid_cash">Paid in cash (counts in the shift cash)</string>
+    <string name="exp_choose_receipt">Receipt photo</string>
+    <string name="exp_remove_receipt">Remove photo</string>
+    <string name="exp_delete_title">Delete expense</string>
+    <string name="exp_delete_body">This expense will be deleted. The deletion is recorded in the audit log.</string>
+    <string name="eerr_amount">Enter an amount greater than zero.</string>
+    <string name="eerr_description">A description is required.</string>
+    <string name="eerr_unknown">The operation failed. Please try again.</string>
+    <string name="cat_electricity">Electricity</string>
+    <string name="cat_water">Water</string>
+    <string name="cat_rent">Rent</string>
+    <string name="cat_wages">Wages</string>
+    <string name="cat_transport">Transport and shipping</string>
+    <string name="cat_maintenance">Maintenance</string>
+    <string name="cat_operating_purchases">Operating purchases</string>
+    <string name="cat_misc">Miscellaneous</string>
+</resources>

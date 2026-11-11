@@ -1,29 +1,30 @@
 # DEVELOPER_B_HANDOFF.md
 
-_Branch: `claude/developer-b` (created from `main` @ eae104f). Developer A's files/handoff are not touched._
+_Branch: `claude/developer-b` (created from `main` @ eae104f)._
 
-## المرحلة الحالية
-المرحلة 3 — المهمة 9 (المصروفات والجرد). المهمة 9.1 (منطق المصروفات) مكتوبة؛ لم تُبنَ ولم تُختبر.
+## الحالة
+المهمة 9.1 (المصروفات) **مكتملة كتابةً** ومنطق الجرد 9.2 **مكتوب ومختبَر كتابةً** (لم تُبنَ ولم تُشغَّل اختباراتهما). لا توجد مهمة نصف مكتملة.
 
-## ملاحظة تنسيق
-لا يوجد `DEVELOPER_A_HANDOFF.md` في الريبو؛ المرجع الوحيد هو `PROJECT_STATE.md` و`TASK_LOG.md` (آخر commit من A على `main`: eae104f "Update build-apk.yml"). افترضتُ أن A لا يعمل على المصروفات. **يرجى التأكيد قبل الدمج.**
+## قرارات التنسيق (من مالك الملفات المشتركة)
+- المطوّر A لا يعمل على المصروفات أو الجرد: تم التأكيد وهذا الفرع تابع له مباشرة.
+- **تمت الموافقة على إضافة `uuid` فريد إلى `Expense`** (المخطط لم يصدر بعد فلا Migration). `ExpenseInput.uuid` هو مفتاح التكرار للـ `add` — كل نموذج يولّد واحدًا ويعيد استخدامه.
+- بالنظر للملفات المشتركة: عُدّلت `KonozApp.kt` (+`expenseService`, `stockCountService`)، `MoreRoute.kt` (+مسار المصروفات)، `OperationsDaos.kt`، `PurchaseExpenseCountEntities.kt`، `StockAdjustmentService.kt` (معامل `type` اختياري في `adjust`). لم يعدّل A هذه الملفات منذ الفرع، فلا تعارض متوقع عند الدمج.
 
-## مكتمل (على هذا الفرع)
-- **9.1 منطق المصروفات:** `domain/ExpenseService` (add/update/delete داخل Transaction + Audit، ربط الوردية المفتوحة، إجمالي يومي/شهري/سنوي)، `domain/ExpensePeriods` (`Periods.rangeOf` بـ Calendar ليعمل على minSdk 24 بدون desugaring).
-- اختبارات: `PeriodsTest` (4)، `ExpenseServiceTest` (8) — **لم تُشغَّل**.
-
-## الملفات
-- جديد: `domain/ExpensePeriods.kt`, `domain/ExpenseService.kt`, `test/.../PeriodsTest.kt`, `test/.../ExpenseServiceTest.kt`, `DEVELOPER_B_HANDOFF.md`.
-- معدّل (سطر واحد): `data/dao/OperationsDaos.kt` ← إضافة `ExpenseDao.getById(id)`. (ملف مشترك: عند الدمج تأكد من عدم تعارضه مع تعديلات A.)
+## مكتمل على هذا الفرع
+- 9.1: `domain/{ExpenseService (idempotent add),ExpensePeriods}`، `ui/expenses/{ExpensesViewModel,ExpensesScreen}` (فترات يوم/شهر/سنة، إجماليات، إضافة/تعديل/حذف بتأكيد، صورة إيصال)، `ui/common/ReceiptImages`، `strings_expenses.xml` (AR/EN)، مسار في قائمة المزيد.
+- 9.2 (منطق فقط): `domain/StockCountService` (+`CountMath`, `CountException`)، استعلامات `StockCountDao` المضافة.
+- اختبارات: `PeriodsTest` 4، `ExpenseServiceTest` 8، `ExpenseIdempotencyTest` 3، `StockCountServiceTest` 11.
 
 ## معلّق
-- 9.1 المتبقي: شاشة المصروفات (UI) + صورة الإيصال (تخزين في `filesDir`) + تمكينها في `MoreRoute` + سلك `expenseService` في `KonozApp` (ملفات A المحتملة: `KonozApp.kt`, `MoreRoute.kt`, strings — لم ألمسها).
-- 9.2 `StockCountService` (الجرد) + شاشاته.
-- ثم المهمة 10: التقارير/الأرباح/اللوحة الرئيسية.
+- **9.2 الواجهات**: قائمة الجرد (مسودات + سجل تاريخي)، بدء جرد (شامل/تصنيف)، شاشة إدخال الكميات (يدوي + باركود)، مراجعة الفروق مع القيمة، اعتماد بتأكيد. المنطق جاهز ويُستدعى من `app.stockCountService`.
+- تمكين الجرد في `MoreRoute`.
+- المهمة 10: التقارير/الأرباح/اللوحة الرئيسية.
 
-## مشاكل معروفة / قرارات للمراجعة
-- `Expense` بلا `uuid`، فإعادة محاولة `add` تُنشئ مصروفًا مكررًا. الحل المقترح (يتطلب تعديل مخطط `expenses` + إذن): إضافة `uuid` فريد. حتى ذلك يجب أن تعطّل الواجهة زر الحفظ أثناء التنفيذ.
-- لم يُبنَ المشروع قط (لا Android SDK) — التوصية السابقة بالبناء في Android Studio/Actions قبل المزيد من الكود ما زالت قائمة. قد يكون `.github/workflows/build-apk.yml` الجديد على `main` كافيًا لذلك.
+## ملاحظات
+- المصروف: الإجماليات اليومية/الشهرية/السنوية تُحسب بالتاريخ وقت إنشاء الـ ViewModel (لو بقي التطبيق مفتوحًا عبر منتصف الليل تبقى قديمة حتى يعاد فتح الشاشة).
+- صورة إيصال مستبدلة أثناء التعديل تبقى ملفاتها القديمة في `filesDir/receipts` (لا تُحذف إلا عند حذف المصروف).
+- مجلد `receipts` يجب أن يدخل في النسخ الاحتياطي (المرحلة 4).
+- لم يُبنَ المشروع قط (لا Android SDK). توصية: تشغيل workflow البناء على GitHub Actions قبل أي دمج أو كود جديد.
 
 ## الخطوة التالية بالضبط
-بعد تأكيد عدم تعارض مع A: شاشة المصروفات `ui/expenses/{ExpensesViewModel,ExpensesScreen}` + نصوص `strings_expenses.xml` (AR/EN) + سلك الخدمة وتمكين المسار، ثم 9.2.
+واجهات الجرد 9.2 (`ui/stockcount/*` + `strings_stockcount.xml` + مسار في `MoreRoute`)، ثم المهمة 10.

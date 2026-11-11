@@ -6,6 +6,7 @@ import com.konoz.market.data.entity.Expense
 import com.konoz.market.data.entity.ExpenseCategory
 import kotlinx.coroutines.flow.Flow
 import java.util.TimeZone
+import java.util.UUID
 
 sealed class ExpenseException(message: String) : Exception(message) {
     class InvalidAmount : ExpenseException("قيمة المصروف يجب أن تكون أكبر من صفر")
@@ -13,7 +14,11 @@ sealed class ExpenseException(message: String) : Exception(message) {
     class NotFound(val id: Long) : ExpenseException("المصروف غير موجود")
 }
 
-/** [amount] in piastres. [at] = null means "now" when adding, and "keep the stored time" when editing. */
+/**
+ * [amount] in piastres. [at] = null means "now" when adding, and "keep the stored time" when editing.
+ * [uuid] is the idempotency key of an ADD: a screen creates one per form and reuses it on retries, so a double tap or
+ * a retry can never create two expenses. (Defaults to a fresh random key, i.e. no de-duplication.)
+ */
 data class ExpenseInput(
     val amount: Long,
     val category: ExpenseCategory,
@@ -22,6 +27,7 @@ data class ExpenseInput(
     val receiptPath: String? = null,
     val paidInCash: Boolean = true,
     val at: Long? = null,
+    val uuid: String = UUID.randomUUID().toString(),
 )
 
 /**
@@ -35,11 +41,15 @@ class ExpenseService(
 ) {
     private val expenses get() = db.expenses()
 
+    /** Adds an expense; if [ExpenseInput.uuid] was already added, returns the existing id and writes nothing. */
     suspend fun add(input: ExpenseInput, userId: Long): Long = db.tx {
         validate(input)
+        val existing = expenses.getByUuid(input.uuid)
+        if (existing != null) return@tx existing.id
         val now = clock()
         val id = expenses.insert(
             Expense(
+                uuid = input.uuid,
                 amount = input.amount,
                 category = input.category,
                 description = input.description.trim(),
