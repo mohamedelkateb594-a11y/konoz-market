@@ -44,6 +44,7 @@ interface ExpenseDao {
     @Insert suspend fun insert(e: Expense): Long
     @Update suspend fun update(e: Expense)
     @Query("DELETE FROM expenses WHERE id = :id") suspend fun delete(id: Long)
+    @Query("SELECT * FROM expenses WHERE id = :id") suspend fun getById(id: Long): Expense?
     @Query("SELECT * FROM expenses WHERE createdAt BETWEEN :from AND :to ORDER BY createdAt DESC")
     fun observeBetween(from: Long, to: Long): Flow<List<Expense>>
     @Query("SELECT COALESCE(SUM(amount), 0) FROM expenses WHERE createdAt BETWEEN :from AND :to")
