@@ -32,6 +32,10 @@ import com.konoz.market.ui.purchases.PurchaseScreen
 import com.konoz.market.ui.purchases.PurchaseViewModel
 import com.konoz.market.ui.returns.ReturnsScreen
 import com.konoz.market.ui.returns.ReturnsViewModel
+import com.konoz.market.ui.stockcount.StockCountListScreen
+import com.konoz.market.ui.stockcount.StockCountListViewModel
+import com.konoz.market.ui.stockcount.StockCountScreen
+import com.konoz.market.ui.stockcount.StockCountViewModel
 import com.konoz.market.ui.stockops.StockOpsScreen
 import com.konoz.market.ui.stockops.StockOpsViewModel
 import com.konoz.market.ui.suppliers.StatementScreen
@@ -46,13 +50,18 @@ private const val STOCK_OPS = "stockops"
 private const val MOVEMENTS = "movements"
 private const val ALERTS = "alerts"
 private const val EXPENSES = "expenses"
+private const val COUNTS = "counts"
 
-/** Routes: menu, suppliers, statement/{supplierId}, purchase/{supplierId}/{0|1 = return}, returns, stockops, movements, alerts, expenses. */
+/**
+ * Routes: menu, suppliers, statement/{supplierId}, purchase/{supplierId}/{0|1 = return}, returns, stockops,
+ * movements, alerts, expenses, counts, count/{countId}.
+ */
 private fun parentOf(route: String): String {
     val parts = route.split('/')
     return when (parts[0]) {
         "purchase" -> "statement/${parts[1]}"
         "statement" -> SUPPLIERS
+        "count" -> COUNTS
         else -> MENU
     }
 }
@@ -109,10 +118,20 @@ fun MoreRoute(modifier: Modifier = Modifier) {
             val vm: ExpensesViewModel = viewModel(key = "expenses_$session", factory = ExpensesViewModel.Factory)
             ExpensesScreen(vm, onBack = { route = MENU }, modifier = modifier)
         }
+        COUNTS -> {
+            val vm: StockCountListViewModel = viewModel(key = "counts_$session", factory = StockCountListViewModel.Factory)
+            StockCountListScreen(vm, onOpen = { route = "count/$it" }, onBack = { route = MENU }, modifier = modifier)
+        }
+        "count" -> {
+            val countId = parts[1].toLong()
+            val vm: StockCountViewModel = viewModel(key = "count_$countId", factory = StockCountViewModel.factory(countId))
+            StockCountScreen(vm, onBack = { route = COUNTS }, modifier = modifier)
+        }
         else -> MoreMenu(
             items = listOf(
                 R.string.menu_suppliers to { route = SUPPLIERS },
                 R.string.menu_expenses to { session++; route = EXPENSES },
+                R.string.menu_stock_count to { session++; route = COUNTS },
                 R.string.menu_returns to { session++; route = RETURNS },
                 R.string.menu_stock_ops to { session++; route = STOCK_OPS },
                 R.string.menu_movements to { session++; route = MOVEMENTS },
