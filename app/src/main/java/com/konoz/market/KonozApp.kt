@@ -11,6 +11,7 @@ import com.konoz.market.domain.PurchaseService
 import com.konoz.market.domain.ReportService
 import com.konoz.market.domain.ReturnService
 import com.konoz.market.domain.SaleService
+import com.konoz.market.domain.ShiftService
 import com.konoz.market.domain.StockAdjustmentService
 import com.konoz.market.domain.StockCountService
 import kotlinx.coroutines.CoroutineScope
@@ -29,6 +30,7 @@ class KonozApp : Application() {
     val stockCountService: StockCountService by lazy { StockCountService(database, stockAdjustmentService) }
     val expenseService: ExpenseService by lazy { ExpenseService(database) }
     val reportService: ReportService by lazy { ReportService(database) }
+    val shiftService: ShiftService by lazy { ShiftService(database) }
     val productRepository: ProductRepository by lazy { ProductRepository(database) }
     val catalogRepository: CatalogRepository by lazy { CatalogRepository(database) }
     val productCsvService: ProductCsvService by lazy { ProductCsvService(database, productRepository) }
