@@ -3,6 +3,8 @@ package com.konoz.market.domain
 import com.konoz.market.core.Money
 import com.konoz.market.data.KonozDatabase
 import com.konoz.market.data.dao.QtyCostRow
+import com.konoz.market.data.entity.ExpenseCategory
+import com.konoz.market.data.entity.Product
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.util.Calendar
@@ -39,6 +41,31 @@ data class DayPoint(val dayStart: Long, val grossSales: Long, val netSales: Long
 
 data class PeriodComparison(val current: PeriodSummary, val previous: PeriodSummary)
 
+/**
+ * Net performance of one product in a period: sold minus returned.
+ * revenue = line totals (after item discounts, before invoice-level discount and tax) - refunds;
+ * cost = cost snapshots of the sold lines - cost of resellable returned units; profit = revenue - cost.
+ */
+data class ProductPerformance(
+    val productId: Long,
+    val name: String,
+    val categoryName: String?,
+    val qtyMilli: Long,
+    val revenue: Long,
+    val cost: Long,
+    val profit: Long,
+)
+
+/** [categoryName] null = products without a category. */
+data class CategorySales(val categoryName: String?, val revenue: Long, val cost: Long, val profit: Long)
+
+data class ExpenseByCategory(val category: ExpenseCategory, val total: Long)
+
+data class HourStat(val hour: Int, val invoiceCount: Int, val sales: Long)
+
+/** [dayOfWeek] is a java.util.Calendar constant (SUNDAY = 1 .. SATURDAY = 7). */
+data class WeekdayStat(val dayOfWeek: Int, val invoiceCount: Int, val sales: Long, val occurrences: Int, val averageSales: Long)
+
 /** Read-only reporting over the local database. Every call reads inside one transaction so the numbers are consistent. */
 class ReportService(
     private val db: KonozDatabase,
@@ -69,6 +96,89 @@ class ReportService(
         }
     }
 
+    // ---------- product reports ----------
+
+    /** Every product that was sold or returned in the period (unsorted). */
+    suspend fun productPerformance(range: PeriodRange): List<ProductPerformance> = db.tx { performanceIn(range) }
+
+    /** Best sellers by net quantity (sold minus returned). Products with no net sales are left out. */
+    suspend fun topByQuantity(range: PeriodRange, limit: Int = 10): List<ProductPerformance> = db.tx {
+        performanceIn(range).filter { it.qtyMilli > 0 }
+            .sortedWith(compareByDescending<ProductPerformance> { it.qtyMilli }.thenBy { it.name })
+            .take(limit)
+    }
+
+    /** Products that made the most profit. */
+    suspend fun topByProfit(range: PeriodRange, limit: Int = 10): List<ProductPerformance> = db.tx {
+        performanceIn(range).filter { it.qtyMilli > 0 }
+            .sortedWith(compareByDescending<ProductPerformance> { it.profit }.thenBy { it.name })
+            .take(limit)
+    }
+
+    /** Products that did sell, but the least. (Products that did not sell at all are in [nonMoving].) */
+    suspend fun leastSold(range: PeriodRange, limit: Int = 10): List<ProductPerformance> = db.tx {
+        performanceIn(range).filter { it.qtyMilli > 0 }
+            .sortedWith(compareBy<ProductPerformance> { it.qtyMilli }.thenBy { it.name })
+            .take(limit)
+    }
+
+    /** Active products that are in stock but had no sale at all in the period. */
+    suspend fun nonMoving(range: PeriodRange): List<Product> = db.tx {
+        val soldIds = reports.productSaleRows(range.from, range.to).map { it.productId }.toSet()
+        db.products().getAllActive().filter { it.currentQtyMilli > 0 && it.id !in soldIds }
+    }
+
+    /** Net revenue, cost and profit per category, biggest revenue first. */
+    suspend fun salesByCategory(range: PeriodRange): List<CategorySales> = db.tx {
+        performanceIn(range).groupBy { it.categoryName }.map { (name, items) ->
+            CategorySales(name, items.sumOf { it.revenue }, items.sumOf { it.cost }, items.sumOf { it.profit })
+        }.sortedByDescending { it.revenue }
+    }
+
+    suspend fun expensesByCategory(range: PeriodRange): List<ExpenseByCategory> = db.tx {
+        reports.expensesByCategory(range.from, range.to).map { ExpenseByCategory(ExpenseCategory.valueOf(it.category), it.total) }
+    }
+
+    // ---------- time analysis ----------
+
+    /** 24 entries (hour 0..23) counting completed invoices by the hour they were completed. */
+    suspend fun peakHours(range: PeriodRange): List<HourStat> = db.tx {
+        val count = IntArray(24)
+        val sales = LongArray(24)
+        val cal = Calendar.getInstance(zone)
+        for (row in reports.saleTimes(range.from, range.to)) {
+            cal.timeInMillis = row.completedAt
+            val h = cal.get(Calendar.HOUR_OF_DAY)
+            count[h]++
+            sales[h] += row.total
+        }
+        (0..23).map { HourStat(it, count[it], sales[it]) }
+    }
+
+    /**
+     * Seven entries (Calendar.SUNDAY..SATURDAY): total sales and invoices per weekday, and the average per occurrence of
+     * that weekday inside the range (counted up to now, so a month in progress is not diluted by future days).
+     */
+    suspend fun weekdayComparison(range: PeriodRange): List<WeekdayStat> = db.tx {
+        val count = IntArray(8)
+        val sales = LongArray(8)
+        val cal = Calendar.getInstance(zone)
+        for (row in reports.saleTimes(range.from, range.to)) {
+            cal.timeInMillis = row.completedAt
+            val d = cal.get(Calendar.DAY_OF_WEEK)
+            count[d]++
+            sales[d] += row.total
+        }
+        val occurrences = IntArray(8)
+        val end = minOf(range.to, clock())
+        val walker = Calendar.getInstance(zone).apply { timeInMillis = range.from }
+        while (walker.timeInMillis <= end) {
+            occurrences[walker.get(Calendar.DAY_OF_WEEK)]++
+            walker.add(Calendar.DAY_OF_MONTH, 1)
+        }
+        (Calendar.SUNDAY..Calendar.SATURDAY).map { WeekdayStat(it, count[it], sales[it], occurrences[it], average(sales[it], occurrences[it])) }
+    }
+
     // ---------- internals ----------
     private suspend fun summaryIn(range: PeriodRange): PeriodSummary {
         val agg = reports.salesAggregate(range.from, range.to)
@@ -95,6 +205,29 @@ class ReportService(
             inventoryLosses = losses,
             estimatedNetProfit = grossProfit - expenses - losses,
         )
+    }
+
+    private class Acc(val name: String, val categoryName: String?) {
+        var qty = 0L
+        var revenue = 0L
+        var cost = 0L
+    }
+
+    private suspend fun performanceIn(range: PeriodRange): List<ProductPerformance> {
+        val acc = LinkedHashMap<Long, Acc>()
+        for (r in reports.productSaleRows(range.from, range.to)) {
+            val a = acc.getOrPut(r.productId) { Acc(r.productName, r.categoryName) }
+            a.qty += r.qtyMilli
+            a.revenue += r.lineTotal
+            a.cost += Money.costOf(r.unitCost, r.qtyMilli)
+        }
+        for (r in reports.productReturnRows(range.from, range.to)) {
+            val a = acc.getOrPut(r.productId) { Acc(r.productName, r.categoryName) }
+            a.qty -= r.qtyMilli
+            a.revenue -= r.refundAmount
+            if (r.resellable) a.cost -= Money.costOf(r.unitCost, r.qtyMilli)
+        }
+        return acc.map { (id, a) -> ProductPerformance(id, a.name, a.categoryName, a.qty, a.revenue, a.cost, a.revenue - a.cost) }
     }
 
     private fun valueOf(rows: List<QtyCostRow>): Long = rows.sumOf { Money.costOf(it.unitCost, it.qtyMilli) }
