@@ -1,7 +1,5 @@
 package com.konoz.market.ui
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Dashboard
@@ -9,7 +7,6 @@ import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.PointOfSale
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
@@ -20,15 +17,15 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
 import com.konoz.market.R
 import com.konoz.market.ui.cashier.CashierRoute
+import com.konoz.market.ui.dashboard.DashboardActions
+import com.konoz.market.ui.dashboard.DashboardRoute
 import com.konoz.market.ui.more.MoreRoute
+import com.konoz.market.ui.more.MoreTargets
 import com.konoz.market.ui.products.ProductsRoute
 
 private data class Tab(val labelRes: Int, val icon: ImageVector)
@@ -42,6 +39,7 @@ private val tabs = listOf(
 )
 
 private const val TAB_CASHIER = 0
+private const val TAB_DASHBOARD = 1
 private const val TAB_PRODUCTS = 2
 private const val TAB_MORE = 3
 
@@ -49,6 +47,7 @@ private const val TAB_MORE = 3
 fun KonozRoot() {
     var selected by rememberSaveable { mutableIntStateOf(TAB_CASHIER) }
     var pendingBarcode by rememberSaveable { mutableStateOf<String?>(null) }
+    var moreTarget by rememberSaveable { mutableStateOf<String?>(null) }
     Scaffold(
         bottomBar = {
             NavigationBar {
@@ -68,22 +67,26 @@ fun KonozRoot() {
                 onRegisterBarcode = { code -> pendingBarcode = code; selected = TAB_PRODUCTS },
                 modifier = Modifier.padding(padding),
             )
+            TAB_DASHBOARD -> DashboardRoute(
+                actions = DashboardActions(
+                    onCashier = { selected = TAB_CASHIER },
+                    onAddProduct = { selected = TAB_PRODUCTS },
+                    onStockCount = { moreTarget = MoreTargets.COUNTS; selected = TAB_MORE },
+                    onExpenses = { moreTarget = MoreTargets.EXPENSES; selected = TAB_MORE },
+                    onReports = { moreTarget = MoreTargets.REPORTS; selected = TAB_MORE },
+                ),
+                modifier = Modifier.padding(padding),
+            )
             TAB_PRODUCTS -> ProductsRoute(
                 modifier = Modifier.padding(padding),
                 newProductBarcode = pendingBarcode,
                 onBarcodeConsumed = { pendingBarcode = null },
             )
-            TAB_MORE -> MoreRoute(Modifier.padding(padding))
-            else -> Box(
-                modifier = Modifier.fillMaxSize().padding(padding).padding(24.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = stringResource(tabs[selected].labelRes) + "\n" + stringResource(R.string.placeholder_soon),
-                    style = MaterialTheme.typography.titleMedium,
-                    textAlign = TextAlign.Center,
-                )
-            }
+            else -> MoreRoute(
+                modifier = Modifier.padding(padding),
+                startRoute = moreTarget,
+                onStartConsumed = { moreTarget = null },
+            )
         }
     }
 }
