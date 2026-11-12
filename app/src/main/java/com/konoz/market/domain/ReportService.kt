@@ -1,5 +1,6 @@
 package com.konoz.market.domain
 
+import com.konoz.market.core.Allocation
 import com.konoz.market.core.Money
 import com.konoz.market.data.KonozDatabase
 import com.konoz.market.data.dao.QtyCostRow
@@ -13,13 +14,15 @@ import java.util.TimeZone
 /**
  * Financial summary of one period. All money in piastres.
  *
- *  grossSales          = total of completed invoices (after discounts)
- *  netSales            = grossSales - returnsTotal
+ * Tax is a liability, not revenue, so it is taken out of sales before profit is computed:
+ *  grossSales          = total of completed invoices, tax included (what customers paid)
+ *  taxCollected        = tax on those invoices; returnsTax = the tax part of refunds (refund x invoice tax / invoice total)
+ *  netSales            = (grossSales - taxCollected) - (returnsTotal - returnsTax)   // revenue without tax
  *  cogs                = cost snapshots of the sold invoices - cost of RESELLABLE returned units
  *  grossProfit         = netSales - cogs
  *  inventoryLosses     = damaged / expired / negative adjustments / count shortages, valued at cost
  *  estimatedNetProfit  = grossProfit - expenses - inventoryLosses
- * Gross sales are never profit.
+ * Gross sales are never profit. With tax disabled (the default) tax is 0 and nothing changes.
  */
 data class PeriodSummary(
     val range: PeriodRange,
@@ -29,6 +32,7 @@ data class PeriodSummary(
     val invoiceCount: Int,
     val averageInvoice: Long,
     val returnsTotal: Long,
+    val returnsTax: Long,
     val netSales: Long,
     val cogs: Long,
     val grossProfit: Long,
@@ -37,13 +41,14 @@ data class PeriodSummary(
     val estimatedNetProfit: Long,
 )
 
+/** [netSales] excludes tax, like [PeriodSummary.netSales]. */
 data class DayPoint(val dayStart: Long, val grossSales: Long, val netSales: Long, val invoiceCount: Int)
 
 data class PeriodComparison(val current: PeriodSummary, val previous: PeriodSummary)
 
 /**
- * Net performance of one product in a period: sold minus returned.
- * revenue = line totals (after item discounts, before invoice-level discount and tax) - refunds;
+ * Net performance of one product in a period: sold minus returned, tax excluded.
+ * revenue = line totals (after item discounts, before invoice-level discount and tax) - refunds without their tax part;
  * cost = cost snapshots of the sold lines - cost of resellable returned units; profit = revenue - cost.
  */
 data class ProductPerformance(
@@ -92,7 +97,8 @@ class ReportService(
             val cal = Calendar.getInstance(zone).apply { timeInMillis = endAt; add(Calendar.DAY_OF_MONTH, -back) }
             val r = Periods.rangeOf(PeriodKind.DAY, cal.timeInMillis, zone)
             val agg = reports.salesAggregate(r.from, r.to)
-            DayPoint(r.from, agg.gross, agg.gross - reports.returnsTotal(r.from, r.to), agg.invoiceCount)
+            val net = (agg.gross - agg.tax) - (reports.returnsTotal(r.from, r.to) - returnsTaxIn(r))
+            DayPoint(r.from, agg.gross, net, agg.invoiceCount)
         }
     }
 
@@ -141,7 +147,7 @@ class ReportService(
 
     // ---------- time analysis ----------
 
-    /** 24 entries (hour 0..23) counting completed invoices by the hour they were completed. */
+    /** 24 entries (hour 0..23) counting completed invoices by the hour they were completed (invoice totals, tax included). */
     suspend fun peakHours(range: PeriodRange): List<HourStat> = db.tx {
         val count = IntArray(24)
         val sales = LongArray(24)
@@ -183,11 +189,12 @@ class ReportService(
     private suspend fun summaryIn(range: PeriodRange): PeriodSummary {
         val agg = reports.salesAggregate(range.from, range.to)
         val returns = reports.returnsTotal(range.from, range.to)
+        val returnsTax = returnsTaxIn(range)
         val returnedCost = valueOf(reports.resellableReturnRows(range.from, range.to))
         val losses = valueOf(reports.lossRows(range.from, range.to))
         val expenses = reports.expensesTotal(range.from, range.to)
 
-        val netSales = agg.gross - returns
+        val netSales = (agg.gross - agg.tax) - (returns - returnsTax)
         val cogs = agg.soldCost - returnedCost
         val grossProfit = netSales - cogs
         return PeriodSummary(
@@ -198,6 +205,7 @@ class ReportService(
             invoiceCount = agg.invoiceCount,
             averageInvoice = average(agg.gross, agg.invoiceCount),
             returnsTotal = returns,
+            returnsTax = returnsTax,
             netSales = netSales,
             cogs = cogs,
             grossProfit = grossProfit,
@@ -206,6 +214,13 @@ class ReportService(
             estimatedNetProfit = grossProfit - expenses - losses,
         )
     }
+
+    /** Tax part of the refunds of the period; each return is split in proportion to its invoice's tax / total. */
+    private suspend fun returnsTaxIn(range: PeriodRange): Long =
+        reports.returnTaxRows(range.from, range.to).sumOf { taxPart(it.refund, it.invoiceTax, it.invoiceTotal) }
+
+    private fun taxPart(refund: Long, invoiceTax: Long, invoiceTotal: Long): Long =
+        if (invoiceTax == 0L || invoiceTotal <= 0L) 0L else Allocation.portion(invoiceTax, refund, invoiceTotal)
 
     private class Acc(val name: String, val categoryName: String?) {
         var qty = 0L
@@ -224,10 +239,10 @@ class ReportService(
         for (r in reports.productReturnRows(range.from, range.to)) {
             val a = acc.getOrPut(r.productId) { Acc(r.productName, r.categoryName) }
             a.qty -= r.qtyMilli
-            a.revenue -= r.refundAmount
+            a.revenue -= r.refundAmount - taxPart(r.refundAmount, r.invoiceTax, r.invoiceTotal)
             if (r.resellable) a.cost -= Money.costOf(r.unitCost, r.qtyMilli)
         }
-        return acc.map { (id, a) -> ProductPerformance(id, a.name, a.categoryName, a.qty, a.revenue, a.cost, a.revenue - a.cost) }
+        return acc.map { (id, a) -> ProductPerformance(id, a.name, a.categoryName, a.qtyMilli, a.revenue, a.cost, a.revenue - a.cost) }
     }
 
     private fun valueOf(rows: List<QtyCostRow>): Long = rows.sumOf { Money.costOf(it.unitCost, it.qtyMilli) }
