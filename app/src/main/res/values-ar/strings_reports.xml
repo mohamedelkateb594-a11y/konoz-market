@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="menu_reports">التقارير</string>
+    <string name="reports_title">التقارير</string>
+    <string name="rep_period_last30">آخر 30 يومًا</string>
+    <string name="rep_error">تعذّر تحميل التقارير.</string>
+    <string name="rep_retry">إعادة المحاولة</string>
+    <string name="rep_none">لا توجد بيانات في هذه الفترة.</string>
+    <string name="rep_net_profit">صافي الربح التقديري</string>
+    <string name="rep_previous_fmt">الفترة السابقة: %1$s</string>
+    <string name="rep_sales_gross">إجمالي المبيعات (شامل الضريبة)</string>
+    <string name="rep_tax">الضريبة المحصّلة</string>
+    <string name="rep_returns">المرتجعات</string>
+    <string name="rep_net_sales">صافي المبيعات (بدون الضريبة)</string>
+    <string name="rep_cogs">تكلفة البضاعة المباعة</string>
+    <string name="rep_gross_profit">مجمل الربح</string>
+    <string name="rep_expenses">المصروفات التشغيلية</string>
+    <string name="rep_losses">خسائر المخزون</string>
+    <string name="rep_invoices">عدد الفواتير</string>
+    <string name="rep_avg_invoice">متوسط الفاتورة</string>
+    <string name="rep_discounts">الخصومات الممنوحة</string>
+    <string name="rep_top_qty">الأكثر مبيعًا (بالكمية)</string>
+    <string name="rep_top_profit">الأكثر ربحًا</string>
+    <string name="rep_least_sold">الأقل مبيعًا</string>
+    <string name="rep_non_moving">لم تتحرك (متوفرة ولم تُبَع)</string>
+    <string name="rep_categories">المبيعات حسب التصنيف (الربح)</string>
+    <string name="rep_expenses_by">المصروفات حسب النوع</string>
+    <string name="rep_peak_hours">أوقات الذروة</string>
+    <string name="rep_weekdays">متوسط المبيعات لكل يوم أسبوع</string>
+    <string name="rep_uncategorized">بدون تصنيف</string>
+    <string name="rep_qty_fmt">الكمية %1$s</string>
+    <string name="rep_invoices_fmt">%1$d فاتورة</string>
+
+    <string name="dash_title">لوحة التحكم</string>
+    <string name="dash_today_sales">مبيعات اليوم</string>
+    <string name="dash_invoices">فواتير اليوم</string>
+    <string name="dash_net_sales">صافي المبيعات</string>
+    <string name="dash_expenses">مصروفات اليوم</string>
+    <string name="dash_profit">الربح التقديري</string>
+    <string name="dash_inventory_value">قيمة المخزون (بالتكلفة)</string>
+    <string name="dash_low_stock">منتجات منخفضة المخزون</string>
+    <string name="dash_expiring">دفعات قاربت على الانتهاء</string>
+    <string name="dash_last7">صافي المبيعات آخر 7 أيام</string>
+    <string name="dash_recent">آخر عمليات البيع</string>
+    <string name="dash_no_sales">لا توجد مبيعات بعد.</string>
+    <string name="dash_invoice_fmt">فاتورة رقم %1$d</string>
+    <string name="dash_shortcuts">اختصارات</string>
+    <string name="dash_cashier">الكاشير</string>
+    <string name="dash_add_product">إضافة منتج</string>
+    <string name="dash_stock_count">الجرد</string>
+    <string name="dash_expenses_short">المصروفات</string>
+    <string name="dash_reports">التقارير</string>
+</resources>
