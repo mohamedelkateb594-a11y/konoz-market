@@ -1,32 +1,37 @@
 # DEVELOPER_C_HANDOFF.md
 
-_Developer C. يعمل على الفرع `claude/developer-b` بالتنسيق مع A وB (لم أعدّل `DEVELOPER_A_HANDOFF.md` ولا `DEVELOPER_B_HANDOFF.md`). `main` @ ffa2c4c لم يتغير._
+_Developer C. فرعي: `claude/developer-c` (مبني على `claude/developer-b` @ db6c139). لم أعدّل `DEVELOPER_A_HANDOFF.md` ولا `DEVELOPER_B_HANDOFF.md`. `main` @ ffa2c4c لم يتغير. لا يعمل أي مطور آخر حاليًا (حسب المالك)._
 
 ## الحالة
-- **البناء نجح** (أكده المالك بعد إصلاح `ReportService`) — أي أن كل ما حتى 11.1 يُجمّع. **لم تُشغَّل الاختبارات بعد** (لا Android SDK هنا).
-- 11.2 أُضيفت لاحقًا و**لم تُبنَ بعد** (commit ed6f812) — قد تظهر أخطاء تجميع صغيرة في ملفاتها الجديدة.
+- البناء نجح حتى 11.1 (أكده المالك). **11.2 (الورديات) و4.2 (المستخدمون) لم تُبنَ ولم تُختبر** — لا Android SDK هنا. المطلوب: تشغيل CI (`./gradlew testDebugUnitTest`) وإرسال الأخطاء.
 
-## ما أنجزته
-1. **إصلاح خطأ البناء** `ReportService.kt:245` (`Acc.qty` وليس `qtyMilli`) — commit 4a4da7e.
-2. **11.2 واجهة الورديات:**
-   - `domain/ShiftService`: أُضيفت `observeLiveSummary()` (ملخص حي للوردية المفتوحة، null = لا وردية؛ يُعاد حسابه عند أي بيع/مرتجع/مصروف عبر `combine` لثلاث استعلامات موجودة كمشغّلات فقط). باقي المنطق كما هو.
-   - `ui/shifts/ShiftViewModel` (+`OpenShiftState`, `ShiftError`) و`ui/shifts/ShiftScreen`: بطاقة الوردية الحالية (ملخص حي)، فتح وردية (رصيد افتتاحي، الفارغ = 0)، إغلاق بإدخال النقدية الفعلية مع معاينة الفرق، تقرير وردية يظهر بعد الإغلاق وعند اختيار وردية من السجل، سجل الورديات المغلقة.
-   - `strings_shifts.xml` (EN في `values/` وAR في `values-ar/`)، مسار `MoreTargets.SHIFTS` وعنصر «الورديات» أول القائمة في `MoreRoute`.
-   - اختبارات جديدة: `ShiftLiveSummaryTest` (3) — لم تُشغَّل.
-3. **تحقق من ربط `shiftId`:** `CashierSession.openShiftId()` يضع وردية البيع المفتوحة في المسودة والإتمام، و`ReturnService.createReturn` يضعها في `SalesReturn.shiftId`، و`ExpenseService.add` كذلك. لا حاجة لتعديل.
+## المنجز
+1. إصلاح `ReportService.kt:245` (`a.qty`) — 4a4da7e.
+2. **11.2 الورديات** (ShiftService.observeLiveSummary، ShiftViewModel/Screen، strings، اختبارات `ShiftServiceTest` 11 و`ShiftLiveSummaryTest` 3).
+3. **4.2 المستخدمون والصلاحيات (commit af23c02) — ملكية C:**
+   - `domain/Permissions.kt`: `Permission` + `Permissions.has(role, perm)` (ADMIN الكل؛ CASHIER: SELL/MANAGE_SHIFTS/SALES_RETURNS؛ STOCK_KEEPER: المنتجات/المشتريات/المخزون/الجرد دون اعتماد).
+   - `domain/SessionManager.kt` (المستخدم في الذاكرة فقط)، `domain/AuthService.kt` (login مع تدقيق LOGIN/LOGIN_FAILED، mustChangePin، changePin، createUser، updateUser مع حارس آخر مدير، resetPin، recordLogout).
+   - `UserDao`: `findByUsername`, `countActiveAdmins`. `DatabaseInitializer.TEMP_ADMIN_PIN` صار public.
+   - `KonozApp`: `session`, `authService`؛ `activeUserId()` يرجع المستخدم المسجَّل (error إن لم يوجد).
+   - واجهة: `ui/auth/` (AuthGate، LoginScreen، ChangePinScreen إجباري/اختياري، ViewModels، CurrentUser/signOutAndRestart) + `strings_auth.xml` (EN/AR).
+   - تقييد بالصلاحيات: تبويبات `KonozRoot`، قائمة `MoreRoute` (+ تغيير PIN وتسجيل خروج)، اختصارات ولوحة المعلومات (الربح يظهر لـ VIEW_PROFITS فقط).
+   - اختبارات: `PermissionsTest` (4) و`AuthServiceTest` (~15) — لم تُشغَّل.
 
-## ملفات مشتركة عدّلتها
-`MoreRoute.kt` (+مسار الورديات فقط)، `ShiftService.kt` (دالة واحدة مضافة)، `ReportService.kt` (سطر واحد).
+## قرارات افتراضية (قابلة للتغيير من المالك)
+- الدخول مطلوب عند كل تشغيل بارد، بلا مهلة خمول.
+- PIN من 4 إلى 8 أرقام؛ الجديد ≠ القديم و≠ 1234.
+- البيع بدون وردية مفتوحة غير ممنوع؛ سداد الموردين النقدي لا يمس الخزينة.
 
-## قرارات معلّقة عند المالك
-- هل يُمنع البيع بدون وردية مفتوحة؟ (الآن لا يُمنع؛ تُسجّل المبيعات بلا `shiftId` ولا تدخل في أي وردية).
-- سداد الموردين النقدي لا يدخل الخزينة (فاتورة الشراء بلا وسيلة دفع/`shiftId`).
-- تمييز الوردية بالمستخدم: الوردية الآن باسم `activeUserId()` المؤقت (admin).
+## الملفات المشتركة التي عدّلتها
+`KonozApp.kt`, `MainActivity.kt`, `KonozRoot.kt`, `MoreRoute.kt`, `DashboardScreen.kt` (DashboardActions صارت nullable + `showProfit`), `OperationsDaos.kt`, `DatabaseInitializer.kt`.
+
+## مؤجل داخل 4.2 (4.2c)
+- شاشة إدارة المستخدمين (MANAGE_USERS؛ الخدمة جاهزة).
+- حماية اعتماد الجرد (APPROVE_COUNT) داخل `StockCountScreen/Service`.
+- إخفاء زر «إضافة منتج» للباركود غير المعروف في الكاشير لمن لا يملك MANAGE_PRODUCTS (الآن no-op آمن).
+- تفاصيل صلاحيات التقارير.
 
 ## الخطوة التالية بالضبط
-1. إعادة تشغيل workflow البناء على `claude/developer-b` وإصلاح أي خطأ من ملفات 11.2، ثم تشغيل الاختبارات (`./gradlew testDebugUnitTest`) وإصلاح الفاشل.
-2. المرحلة 4 التالية: **المستخدمون والصلاحيات** (شاشة دخول، إجبار تغيير PIN المدير 1234، استبدال `activeUserId` المؤقت، إخفاء الأرباح عن الكاشير، حماية المرتجعات وتعديل المخزون)، ثم مشاركة/طباعة الفواتير وتصدير التقارير، ثم النسخ الاحتياطي (يشمل `receipts` و`product_images`).
-
-## قاعدة التنسيق
-- لا تعدّل ملفات A/B الخاصة بالتتبع؛ سجّل عملك هنا.
-- `PROJECT_STATE.md` و`TASK_LOG.md` ما زالا عند 8b — يُحدَّثان عند الدمج أو بطلب المالك.
+1. تشغيل البناء/الاختبارات على `claude/developer-c` وإصلاح الأخطاء.
+2. 4.2c ثم 4.3 (مشاركة/طباعة الفواتير وتصدير التقارير) ثم 4.4 (نسخ احتياطي يشمل `receipts` و`product_images`) ثم المرحلة 5.
+3. تحديث `PROJECT_STATE.md` و`TASK_LOG.md` و`CLAUDE.md` (ما زالت عند 8b) عند الدمج.
