@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="menu_shifts">الورديات</string>
+    <string name="shift_title">الورديات والخزينة</string>
+    <string name="shift_current">الوردية الحالية</string>
+    <string name="shift_none">لا توجد وردية مفتوحة</string>
+    <string name="shift_none_hint">افتح وردية لتتبع نقدية الدرج. تُربط بها المبيعات والمرتجعات والمصروفات التي تتم أثناء فتحها.</string>
+    <string name="shift_open_btn">فتح وردية</string>
+    <string name="shift_close_btn">إغلاق الوردية</string>
+    <string name="shift_open_title">فتح وردية</string>
+    <string name="shift_close_title">إغلاق الوردية</string>
+    <string name="shift_close_hint">عُدّ النقدية في الدرج وأدخلها أدناه. لا يمكن تعديل الإغلاق بعد ذلك.</string>
+    <string name="shift_report_title">تقرير الوردية</string>
+    <string name="shift_opened_at">وقت الفتح</string>
+    <string name="shift_closed_at">وقت الإغلاق</string>
+    <string name="shift_opening_cash">الرصيد الافتتاحي</string>
+    <string name="shift_cash_sales">مبيعات نقدية</string>
+    <string name="shift_card_sales">مبيعات بالبطاقة</string>
+    <string name="shift_wallet_sales">مبيعات بالمحفظة</string>
+    <string name="shift_total_sales">إجمالي المبيعات</string>
+    <string name="shift_cash_refunds">مرتجعات نقدية</string>
+    <string name="shift_cash_expenses">مصروفات نقدية</string>
+    <string name="shift_expected">النقدية المتوقعة</string>
+    <string name="shift_expected_fmt">النقدية المتوقعة: %1$s</string>
+    <string name="shift_actual">النقدية الفعلية</string>
+    <string name="shift_difference">الفرق</string>
+    <string name="shift_diff_short_fmt">عجز %1$s</string>
+    <string name="shift_diff_over_fmt">زيادة %1$s</string>
+    <string name="shift_diff_even">مطابق</string>
+    <string name="shift_history">الورديات السابقة</string>
+    <string name="shift_history_empty">لا توجد ورديات مغلقة بعد.</string>
+    <string name="serr_amount">أدخل مبلغًا صحيحًا (صفر أو أكثر).</string>
+    <string name="serr_already_open">توجد وردية مفتوحة بالفعل.</string>
+    <string name="serr_not_open">هذه الوردية غير مفتوحة.</string>
+    <string name="serr_unknown">فشلت العملية. حاول مرة أخرى.</string>
+</resources>

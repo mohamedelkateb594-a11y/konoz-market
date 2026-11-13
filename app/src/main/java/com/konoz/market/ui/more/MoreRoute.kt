@@ -35,6 +35,8 @@ import com.konoz.market.ui.reports.ReportsScreen
 import com.konoz.market.ui.reports.ReportsViewModel
 import com.konoz.market.ui.returns.ReturnsScreen
 import com.konoz.market.ui.returns.ReturnsViewModel
+import com.konoz.market.ui.shifts.ShiftScreen
+import com.konoz.market.ui.shifts.ShiftViewModel
 import com.konoz.market.ui.stockcount.StockCountListScreen
 import com.konoz.market.ui.stockcount.StockCountListViewModel
 import com.konoz.market.ui.stockcount.StockCountScreen
@@ -51,6 +53,7 @@ object MoreTargets {
     const val EXPENSES = "expenses"
     const val COUNTS = "counts"
     const val REPORTS = "reports"
+    const val SHIFTS = "shifts"
 }
 
 private const val MENU = "menu"
@@ -62,7 +65,7 @@ private const val ALERTS = "alerts"
 
 /**
  * Routes: menu, suppliers, statement/{supplierId}, purchase/{supplierId}/{0|1 = return}, returns, stockops,
- * movements, alerts, expenses, counts, count/{countId}, reports.
+ * movements, alerts, expenses, counts, count/{countId}, reports, shifts.
  */
 private fun parentOf(route: String): String {
     val parts = route.split('/')
@@ -147,8 +150,13 @@ fun MoreRoute(modifier: Modifier = Modifier, startRoute: String? = null, onStart
             val vm: ReportsViewModel = viewModel(key = "reports_$session", factory = ReportsViewModel.Factory)
             ReportsScreen(vm, onBack = { route = MENU }, modifier = modifier)
         }
+        MoreTargets.SHIFTS -> {
+            val vm: ShiftViewModel = viewModel(key = "shifts_$session", factory = ShiftViewModel.Factory)
+            ShiftScreen(vm, onBack = { route = MENU }, modifier = modifier)
+        }
         else -> MoreMenu(
             items = listOf(
+                R.string.menu_shifts to { session++; route = MoreTargets.SHIFTS },
                 R.string.menu_reports to { session++; route = MoreTargets.REPORTS },
                 R.string.menu_suppliers to { route = SUPPLIERS },
                 R.string.menu_expenses to { session++; route = MoreTargets.EXPENSES },

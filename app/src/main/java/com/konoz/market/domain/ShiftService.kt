@@ -5,7 +5,11 @@ import com.konoz.market.data.entity.AuditLog
 import com.konoz.market.data.entity.PaymentMethod
 import com.konoz.market.data.entity.Shift
 import com.konoz.market.data.entity.ShiftStatus
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 
 sealed class ShiftException(message: String) : Exception(message) {
     class InvalidAmount : ShiftException("المبلغ لا يمكن أن يكون سالبًا")
@@ -58,6 +62,24 @@ class ShiftService(
     fun observeOpenShift(): Flow<Shift?> = shifts.observeOpenShift()
     fun observeAll(): Flow<List<Shift>> = shifts.observeAll()
     suspend fun getOpenShift(): Shift? = shifts.getOpenShift()
+
+    /**
+     * Live summary of the open shift (null = no open shift). It is recomputed whenever the open shift changes or any
+     * sale, return or expense is written: the three totals below are only change triggers, the figures themselves
+     * come from [summaryOf] so they always match what closing the shift would store.
+     */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    fun observeLiveSummary(): Flow<ShiftSummary?> = shifts.observeOpenShift().flatMapLatest { shift ->
+        if (shift == null) {
+            flowOf(null)
+        } else {
+            combine(
+                db.sales().observeSalesTotal(shift.openedAt, Long.MAX_VALUE),
+                db.sales().observeReturnsTotal(shift.openedAt, Long.MAX_VALUE),
+                db.expenses().observeTotalBetween(shift.openedAt, Long.MAX_VALUE),
+            ) { _, _, _ -> summaryOf(shift) }
+        }
+    }
 
     /** Opens a shift with the drawer's opening cash. Fails if another shift is still open. Returns the new shift id. */
     suspend fun open(openingCash: Long, userId: Long): Long = db.tx {
