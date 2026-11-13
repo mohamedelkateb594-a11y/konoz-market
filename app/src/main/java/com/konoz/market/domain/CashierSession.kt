@@ -7,7 +7,6 @@ import com.konoz.market.data.entity.AuditLog
 import com.konoz.market.data.entity.InvoiceStatus
 import com.konoz.market.data.entity.Product
 import com.konoz.market.data.entity.User
-import com.konoz.market.data.entity.UserRole
 import com.konoz.market.data.repo.ProductRepository
 import com.konoz.market.data.seed.SettingKeys
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -42,7 +41,8 @@ sealed interface CheckoutOutcome {
  *  - Every change to a non-empty cart is auto-saved as a HELD invoice (same uuid), so an abrupt app
  *    close never loses the sale. [start] restores it.
  *  - Operations are serialized with a mutex so two quick scans can never race.
- *  - Cashiers (non-admin) cannot override prices and are limited to cashier_max_discount_bp.
+ *  - Price overrides need [Permission.EDIT_PRICES]; users without [Permission.GIVE_LARGE_DISCOUNT]
+ *    are limited to cashier_max_discount_bp.
  */
 class CashierSession(
     private val db: KonozDatabase,
@@ -79,7 +79,7 @@ class CashierSession(
     suspend fun start() {
         lock.withLock {
             user = db.users().getById(userIdProvider()) ?: error("no active user")
-            _canOverridePrice.value = isAdmin()
+            _canOverridePrice.value = canEditPrices()
             val s = db.settings()
             taxBasisPoints = if (s.get(SettingKeys.TAX_ENABLED) == "true") s.get(SettingKeys.TAX_BASIS_POINTS)?.toIntOrNull() ?: 0 else 0
             maxDiscountBp = s.get(SettingKeys.CASHIER_MAX_DISCOUNT_BP)?.toIntOrNull() ?: 1000
@@ -158,11 +158,11 @@ class CashierSession(
         }
     }
 
-    /** Admin only. The change is written to the audit log. */
+    /** Needs [Permission.EDIT_PRICES]. The change is written to the audit log. */
     suspend fun setPrice(productId: Long, price: Long) {
         lock.withLock {
             val item = _cart.value.items.firstOrNull { it.productId == productId } ?: return@withLock
-            if (!isAdmin()) {
+            if (!canEditPrices()) {
                 _message.value = CashierMessage.NotAllowed
                 return@withLock
             }
@@ -189,7 +189,7 @@ class CashierSession(
                 _message.value = CashierMessage.InvalidInput
                 return@withLock
             }
-            if (!isAdmin() && discount > Money.percentOf(item.gross, maxDiscountBp)) {
+            if (!canGiveLargeDiscount() && discount > Money.percentOf(item.gross, maxDiscountBp)) {
                 _message.value = CashierMessage.NotAllowed
                 return@withLock
             }
@@ -205,7 +205,7 @@ class CashierSession(
                 return@withLock
             }
             val afterItems = _cart.value.items.sumOf { it.net }
-            if (!isAdmin() && discount > Money.percentOf(afterItems, maxDiscountBp)) {
+            if (!canGiveLargeDiscount() && discount > Money.percentOf(afterItems, maxDiscountBp)) {
                 _message.value = CashierMessage.NotAllowed
                 return@withLock
             }
@@ -287,7 +287,9 @@ class CashierSession(
     }
 
     // ---------- internals ----------
-    private fun isAdmin() = user.role == UserRole.ADMIN
+    private fun canEditPrices() = Permissions.has(user.role, Permission.EDIT_PRICES)
+
+    private fun canGiveLargeDiscount() = Permissions.has(user.role, Permission.GIVE_LARGE_DISCOUNT)
 
     private suspend fun openShiftId(): Long? = db.shifts().getOpenShift()?.id
 

@@ -1,32 +1,19 @@
 # DEVELOPER_C_HANDOFF.md
 
-_Developer C. يعمل على الفرع `claude/developer-b` بالتنسيق مع A وB (لم أعدّل `DEVELOPER_A_HANDOFF.md` ولا `DEVELOPER_B_HANDOFF.md`). `main` @ ffa2c4c لم يتغير._
+_Developer C. الفرع الحالي: `claude/developer-c-4-2b` (مبني على `claude/developer-b` @ ddf8a8b). لم أعدّل `DEVELOPER_A_HANDOFF.md` ولا `DEVELOPER_B_HANDOFF.md`._
 
-## الحالة
-- **البناء نجح** (أكده المالك بعد إصلاح `ReportService`) — أي أن كل ما حتى 11.1 يُجمّع. **لم تُشغَّل الاختبارات بعد** (لا Android SDK هنا).
-- 11.2 أُضيفت لاحقًا و**لم تُبنَ بعد** (commit ed6f812) — قد تظهر أخطاء تجميع صغيرة في ملفاتها الجديدة.
+## تنبيه تكرار (2026-11-13)
+كتبت 4.2 (دخول/صلاحيات) على `claude/developer-c` (af23c02) بينما كتب B نفس المهمة على `claude/developer-b` (f89f013). **تنفيذ B هو المعتمد** (أشمل: قفل بعد 5 محاولات، شاشة مستخدمين، حارس مسار). **لا تُدمج `claude/developer-c`** — مهمل ويتعارض مع B (نفس اسم `Permissions.kt` و`ui/auth`). العمل الجديد على `claude/developer-c-4-2b`.
 
-## ما أنجزته
-1. **إصلاح خطأ البناء** `ReportService.kt:245` (`Acc.qty` وليس `qtyMilli`) — commit 4a4da7e.
-2. **11.2 واجهة الورديات:**
-   - `domain/ShiftService`: أُضيفت `observeLiveSummary()` (ملخص حي للوردية المفتوحة، null = لا وردية؛ يُعاد حسابه عند أي بيع/مرتجع/مصروف عبر `combine` لثلاث استعلامات موجودة كمشغّلات فقط). باقي المنطق كما هو.
-   - `ui/shifts/ShiftViewModel` (+`OpenShiftState`, `ShiftError`) و`ui/shifts/ShiftScreen`: بطاقة الوردية الحالية (ملخص حي)، فتح وردية (رصيد افتتاحي، الفارغ = 0)، إغلاق بإدخال النقدية الفعلية مع معاينة الفرق، تقرير وردية يظهر بعد الإغلاق وعند اختيار وردية من السجل، سجل الورديات المغلقة.
-   - `strings_shifts.xml` (EN في `values/` وAR في `values-ar/`)، مسار `MoreTargets.SHIFTS` وعنصر «الورديات» أول القائمة في `MoreRoute`.
-   - اختبارات جديدة: `ShiftLiveSummaryTest` (3) — لم تُشغَّل.
-3. **تحقق من ربط `shiftId`:** `CashierSession.openShiftId()` يضع وردية البيع المفتوحة في المسودة والإتمام، و`ReturnService.createReturn` يضعها في `SalesReturn.shiftId`، و`ExpenseService.add` كذلك. لا حاجة لتعديل.
+## المنجز على هذا الفرع
+- إصلاح `ReportService` (4a4da7e) وورديات 11.2 (موجودة في فرع B).
+- **4.2b (جزئي):** `CashierSession` صار يفرض `Permission.EDIT_PRICES` (تعديل السعر) و`GIVE_LARGE_DISCOUNT` (تجاوز سقف الخصم) بدل فحص `isAdmin()` المشفّر، بنفس السلوك للأدوار الثلاثة (المدير فقط يملكهما في `Permissions`). ملف واحد معدّل: `domain/CashierSession.kt`. لم يُبنَ ولم تُختبر.
 
-## ملفات مشتركة عدّلتها
-`MoreRoute.kt` (+مسار الورديات فقط)، `ShiftService.kt` (دالة واحدة مضافة)، `ReportService.kt` (سطر واحد).
-
-## قرارات معلّقة عند المالك
-- هل يُمنع البيع بدون وردية مفتوحة؟ (الآن لا يُمنع؛ تُسجّل المبيعات بلا `shiftId` ولا تدخل في أي وردية).
-- سداد الموردين النقدي لا يدخل الخزينة (فاتورة الشراء بلا وسيلة دفع/`shiftId`).
-- تمييز الوردية بالمستخدم: الوردية الآن باسم `activeUserId()` المؤقت (admin).
+## ما لم يُنجز من 4.2b
+- تبويب المنتجات ما زال مفتوحًا للكاشير (`ProductsRoute` لم تُقرَأ بعد — تحتاج حارسًا بشرط صلاحية تعديل المنتجات).
+- فرض الصلاحية داخل `StockCountService`/`StockAdjustmentService`.
 
 ## الخطوة التالية بالضبط
-1. إعادة تشغيل workflow البناء على `claude/developer-b` وإصلاح أي خطأ من ملفات 11.2، ثم تشغيل الاختبارات (`./gradlew testDebugUnitTest`) وإصلاح الفاشل.
-2. المرحلة 4 التالية: **المستخدمون والصلاحيات** (شاشة دخول، إجبار تغيير PIN المدير 1234، استبدال `activeUserId` المؤقت، إخفاء الأرباح عن الكاشير، حماية المرتجعات وتعديل المخزون)، ثم مشاركة/طباعة الفواتير وتصدير التقارير، ثم النسخ الاحتياطي (يشمل `receipts` و`product_images`).
-
-## قاعدة التنسيق
-- لا تعدّل ملفات A/B الخاصة بالتتبع؛ سجّل عملك هنا.
-- `PROJECT_STATE.md` و`TASK_LOG.md` ما زالا عند 8b — يُحدَّثان عند الدمج أو بطلب المالك.
+1. بناء `claude/developer-c-4-2b` وتشغيل `./gradlew testDebugUnitTest` وإصلاح الأخطاء (11.2 و4.2 لم تُبنَ).
+2. حارس تبويب المنتجات (`ProductsRoute`) ثم 4.3 (مشاركة/طباعة الفواتير وتصدير التقارير) ثم 4.4 (نسخ احتياطي يشمل `receipts` و`product_images`).
+3. تحديث `PROJECT_STATE.md` و`TASK_LOG.md` و`CLAUDE.md` (ما زالت عند 8b).
