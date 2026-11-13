@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="export_csv">Export CSV</string>
+    <string name="export_share_title">Share report</string>
+    <string name="export_failed">Could not create the file. Please try again.</string>
+</resources>

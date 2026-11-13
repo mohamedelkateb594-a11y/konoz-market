@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -24,21 +25,35 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.konoz.market.KonozApp
 import com.konoz.market.R
 import com.konoz.market.core.Money
 import com.konoz.market.data.entity.ExpenseCategory
+import com.konoz.market.domain.Permission
+import com.konoz.market.domain.Permissions
 import com.konoz.market.domain.PeriodSummary
 import com.konoz.market.domain.ProductPerformance
 import com.konoz.market.ui.common.formatQty
+import com.konoz.market.ui.common.shareTextFile
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.launch
 import java.text.DateFormatSymbols
+import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Locale
 
 /** [onBack] = null when the screen is shown as a tab instead of inside the More menu. */
@@ -46,6 +61,13 @@ import java.util.Locale
 fun ReportsScreen(vm: ReportsViewModel, onBack: (() -> Unit)?, modifier: Modifier = Modifier) {
     val ui by vm.ui.collectAsStateWithLifecycle()
     val summary = ui.summary
+    val context = LocalContext.current
+    val app = context.applicationContext as KonozApp
+    val user by app.session.user.collectAsStateWithLifecycle()
+    val scope = rememberCoroutineScope()
+    var exporting by remember { mutableStateOf(false) }
+    var exportFailed by remember { mutableStateOf(false) }
+    val shareTitle = stringResource(R.string.export_share_title)
 
     LazyColumn(
         modifier.fillMaxSize(),
@@ -58,7 +80,36 @@ fun ReportsScreen(vm: ReportsViewModel, onBack: (() -> Unit)?, modifier: Modifie
                     IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.cancel)) }
                 }
                 Text(stringResource(R.string.reports_title), style = MaterialTheme.typography.titleLarge)
+                Spacer(Modifier.weight(1f))
+                TextButton(
+                    enabled = summary != null && !exporting,
+                    onClick = {
+                        val s = summary ?: return@TextButton
+                        exporting = true
+                        exportFailed = false
+                        scope.launch {
+                            val canProfit = user?.let { Permissions.has(it.role, Permission.VIEW_PROFIT) } == true
+                            val day = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+                            val stamp = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US)
+                            val ok = try {
+                                val text = vm.csvText(canProfit) { stamp.format(Date(it)) }
+                                text != null && shareTextFile(
+                                    context, "konoz-report-" + day.format(Date(s.range.from)) + ".csv", text, "text/csv", shareTitle,
+                                )
+                            } catch (e: CancellationException) {
+                                throw e
+                            } catch (e: Exception) {
+                                false
+                            }
+                            exportFailed = !ok
+                            exporting = false
+                        }
+                    },
+                ) { Text(stringResource(R.string.export_csv)) }
             }
+        }
+        if (exportFailed) {
+            item { Text(stringResource(R.string.export_failed), color = MaterialTheme.colorScheme.error) }
         }
         item {
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
