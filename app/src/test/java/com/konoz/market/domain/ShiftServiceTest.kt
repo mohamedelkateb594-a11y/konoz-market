@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.konoz.market.data.KonozDatabase
+import com.konoz.market.data.entity.Expense
 import com.konoz.market.data.entity.ExpenseCategory
 import com.konoz.market.data.entity.InvoiceStatus
 import com.konoz.market.data.entity.Payment
@@ -19,13 +20,11 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
-import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
-import java.util.TimeZone
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
@@ -33,135 +32,183 @@ class ShiftServiceTest {
 
     private lateinit var db: KonozDatabase
     private lateinit var service: ShiftService
-    private lateinit var expenses: ExpenseService
     private var userId = 0L
-    private var invoiceNumber = 0L
-    private val now = 1_700_000_000_000L
+    private var now = 1_700_000_000_000L
+    private var seq = 0
 
-    @Before fun setUp() = runBlocking {
+    @Before fun setUp() {
         val ctx = ApplicationProvider.getApplicationContext<Context>()
         db = Room.inMemoryDatabaseBuilder(ctx, KonozDatabase::class.java).allowMainThreadQueries().build()
         service = ShiftService(db, { now })
-        expenses = ExpenseService(db, { now }, TimeZone.getTimeZone("UTC"))
-        userId = db.users().insert(User(name = "Admin", username = "admin", pinHash = "h", salt = "s", role = UserRole.ADMIN, createdAt = now))
+        userId = runBlocking {
+            db.users().insert(User(name = "Admin", username = "admin", pinHash = "h", salt = "s", role = UserRole.ADMIN, createdAt = now))
+        }
     }
 
     @After fun tearDown() = db.close()
 
-    /** A completed sale paid with the given (net) amounts, attached to [shiftId]. */
-    private suspend fun sale(shiftId: Long?, cash: Long = 0, card: Long = 0, wallet: Long = 0) {
-        invoiceNumber++
+    /** A completed invoice of the shift with the given (already net) payments. */
+    private fun sale(shiftId: Long, vararg pays: Pair<PaymentMethod, Long>): Long = runBlocking {
+        val total = pays.sumOf { it.second }
         val id = db.sales().insertInvoice(
             SalesInvoice(
-                uuid = "inv-$invoiceNumber", number = invoiceNumber, userId = userId, shiftId = shiftId, status = InvoiceStatus.COMPLETED,
-                total = cash + card + wallet, createdAt = now, completedAt = now,
+                uuid = "inv-${seq++}", number = seq.toLong(), userId = userId, shiftId = shiftId,
+                status = InvoiceStatus.COMPLETED, total = total, paidTotal = total, createdAt = now, completedAt = now,
             )
         )
-        db.sales().insertPayments(
-            listOf(PaymentMethod.CASH to cash, PaymentMethod.CARD to card, PaymentMethod.WALLET to wallet)
-                .filter { it.second > 0 }
-                .map { (m, a) -> Payment(invoiceId = id, shiftId = shiftId, method = m, amount = a, createdAt = now) }
+        db.sales().insertPayments(pays.map { Payment(invoiceId = id, shiftId = shiftId, method = it.first, amount = it.second, createdAt = now) })
+        id
+    }
+
+    private fun refund(invoiceId: Long, shiftId: Long, amount: Long, method: PaymentMethod) = runBlocking {
+        db.sales().insertReturn(
+            SalesReturn(
+                uuid = "ret-${seq++}", salesInvoiceId = invoiceId, userId = userId, refundAmount = amount,
+                refundMethod = method, shiftId = shiftId, createdAt = now,
+            )
         )
     }
 
-    private suspend fun refund(shiftId: Long?, amount: Long, method: PaymentMethod = PaymentMethod.CASH) {
-        invoiceNumber++
-        val inv = db.sales().insertInvoice(
-            SalesInvoice(uuid = "inv-$invoiceNumber", number = invoiceNumber, userId = userId, status = InvoiceStatus.COMPLETED, createdAt = now, completedAt = now)
+    private fun expense(shiftId: Long, amount: Long, cash: Boolean) = runBlocking {
+        db.expenses().insert(
+            Expense(
+                uuid = "exp-${seq++}", amount = amount, category = ExpenseCategory.MISC, description = "x",
+                paidInCash = cash, userId = userId, shiftId = shiftId, createdAt = now,
+            )
         )
-        db.sales().insertReturn(
-            SalesReturn(uuid = "ret-$invoiceNumber", salesInvoiceId = inv, userId = userId, refundAmount = amount, refundMethod = method, shiftId = shiftId, createdAt = now)
-        )
+    }
+
+    @Test fun opening_creates_an_open_shift_with_the_opening_cash_and_an_audit_row() = runBlocking {
+        val id = service.open(10_000, userId)
+
+        val s = db.shifts().getById(id)!!
+        assertEquals(ShiftStatus.OPEN, s.status)
+        assertEquals(10_000L, s.openingCash)
+        assertEquals(now, s.openedAt)
+        assertEquals(userId, s.userId)
+        assertEquals(id, service.getOpenShift()!!.id)
+        assertEquals("SHIFT_OPENED", db.audit().observeRecent(10).first().single().action)
+    }
+
+    @Test fun a_negative_opening_cash_is_rejected_and_nothing_is_saved() {
+        assertThrows(ShiftException.InvalidAmount::class.java) { runBlocking { service.open(-1, userId) } }
+        assertNull(runBlocking { service.getOpenShift() })
+        assertEquals(0, runBlocking { db.audit().observeRecent(10).first().size })
+    }
+
+    @Test fun only_one_shift_can_be_open_at_a_time() = runBlocking {
+        val first = service.open(0, userId)
+
+        val ex = assertThrows(ShiftException.AlreadyOpen::class.java) { runBlocking { service.open(500, userId) } }
+
+        assertEquals(first, ex.shiftId)
+        assertEquals(1, db.shifts().observeAll().first().size)
     }
 
     @Test fun expected_cash_is_opening_plus_cash_sales_minus_cash_refunds_and_cash_expenses() = runBlocking {
         val shift = service.open(10_000, userId)
-        sale(shift, cash = 5_000)
-        sale(shift, card = 3_000, wallet = 1_000)
-        refund(shift, 1_500)
-        refund(shift, 900, PaymentMethod.CARD) // not cash: the drawer is untouched
-        expenses.add(ExpenseInput(2_000, ExpenseCategory.MISC, "cash expense"), userId)
-        expenses.add(ExpenseInput(700, ExpenseCategory.MISC, "card expense", paidInCash = false), userId)
+        val inv = sale(shift, PaymentMethod.CASH to 5_000)
+        sale(shift, PaymentMethod.CASH to 3_000, PaymentMethod.CARD to 2_000)
+        sale(shift, PaymentMethod.WALLET to 1_000)
+        expense(shift, 1_500, cash = true)
+        expense(shift, 700, cash = false) // paid by other means: drawer untouched
+        refund(inv, shift, 800, PaymentMethod.CASH)
+        refund(inv, shift, 400, PaymentMethod.CARD) // refunded to card: drawer untouched
 
-        val r = service.currentReport()!!
+        val s = service.summary(shift)
 
-        assertEquals(10_000L, r.shift.openingCash)
-        assertEquals(5_000L, r.cashSales)
-        assertEquals(3_000L, r.cardSales)
-        assertEquals(1_000L, r.walletSales)
-        assertEquals(4_000L, r.otherPayments)
-        assertEquals(1_500L, r.cashRefunds)
-        assertEquals(2_000L, r.cashExpenses)
-        assertEquals(11_500L, r.expectedCash) // 10000 + 5000 - 1500 - 2000
-        assertNull(r.actualCash)
+        assertEquals(10_000L, s.openingCash)
+        assertEquals(8_000L, s.cashSales)
+        assertEquals(2_000L, s.cardSales)
+        assertEquals(1_000L, s.walletSales)
+        assertEquals(3_000L, s.otherSales)
+        assertEquals(11_000L, s.totalSales)
+        assertEquals(1_500L, s.cashExpenses)
+        assertEquals(800L, s.cashRefunds)
+        assertEquals(15_700L, s.expectedCash) // 10000 + 8000 - 800 - 1500
+        assertNull(s.actualCash)
+        assertNull(s.difference)
     }
 
-    @Test fun sales_of_other_shifts_or_without_a_shift_do_not_count() = runBlocking {
-        sale(null, cash = 9_999) // before any shift was opened
-        val shift = service.open(1_000, userId)
-        sale(shift, cash = 500)
+    @Test fun other_shifts_do_not_affect_the_summary() = runBlocking {
+        val first = service.open(1_000, userId)
+        sale(first, PaymentMethod.CASH to 9_999)
+        service.close(first, 10_999, userId)
+        now += 1_000
+        val second = service.open(2_000, userId)
+        sale(second, PaymentMethod.CASH to 500)
 
-        assertEquals(1_500L, service.currentReport()!!.expectedCash)
+        val s = service.summary(second)
+
+        assertEquals(500L, s.cashSales)
+        assertEquals(2_500L, s.expectedCash)
     }
 
-    @Test fun closing_fixes_expected_actual_and_difference_and_audits() = runBlocking {
+    @Test fun closing_stores_expected_actual_and_a_negative_difference_for_a_shortage() = runBlocking {
         val shift = service.open(10_000, userId)
-        sale(shift, cash = 5_000)
+        sale(shift, PaymentMethod.CASH to 5_000)
+        now += 60_000
 
-        val report = service.close(actualCash = 14_900, userId = userId)
+        val s = service.close(shift, 14_800, userId)
 
-        assertEquals(15_000L, report.expectedCash)
-        assertEquals(14_900L, report.actualCash)
-        assertEquals(-100L, report.difference) // shortage
-        assertEquals(ShiftStatus.CLOSED, report.shift.status)
-        assertEquals(now, report.shift.closedAt)
-        assertNull(service.currentReport())
-        assertEquals(listOf("SHIFT_CLOSED", "SHIFT_OPENED"), db.audit().observeRecent(10).first().map { it.action })
+        assertEquals(15_000L, s.expectedCash)
+        assertEquals(14_800L, s.actualCash)
+        assertEquals(-200L, s.difference)
+        val saved = db.shifts().getById(shift)!!
+        assertEquals(ShiftStatus.CLOSED, saved.status)
+        assertEquals(now, saved.closedAt)
+        assertEquals(15_000L, saved.expectedCash)
+        assertEquals(14_800L, saved.actualCash)
+        assertEquals(-200L, saved.difference)
+        assertNull(service.getOpenShift())
+        assertEquals("SHIFT_CLOSED", db.audit().observeRecent(10).first().first().action)
     }
 
-    @Test fun a_closed_shift_report_does_not_change_when_later_sales_arrive() = runBlocking {
+    @Test fun a_surplus_gives_a_positive_difference_and_an_exact_count_gives_zero() = runBlocking {
+        val a = service.open(1_000, userId)
+        assertEquals(300L, service.close(a, 1_300, userId).difference)
+        val b = service.open(1_000, userId)
+        assertEquals(0L, service.close(b, 1_000, userId).difference)
+    }
+
+    @Test fun a_closed_shift_cannot_be_closed_again_and_the_first_count_is_kept() = runBlocking {
         val shift = service.open(1_000, userId)
-        sale(shift, cash = 500)
-        service.close(actualCash = 1_500, userId = userId)
+        service.close(shift, 900, userId)
 
-        sale(shift, cash = 700) // late row attached to the closed shift
+        assertThrows(ShiftException.AlreadyClosed::class.java) { runBlocking { service.close(shift, 5_000, userId) } }
 
-        val r = service.report(shift)
-        assertEquals(1_500L, r.expectedCash)
-        assertEquals(0L, r.difference)
+        assertEquals(900L, db.shifts().getById(shift)!!.actualCash)
+        assertEquals(1, db.audit().observeRecent(10).first().count { it.action == "SHIFT_CLOSED" })
     }
 
-    @Test fun overage_is_a_positive_difference() = runBlocking {
-        service.open(1_000, userId)
+    @Test fun closing_validates_amount_and_existence() = runBlocking {
+        val shift = service.open(1_000, userId)
 
-        assertEquals(250L, service.close(actualCash = 1_250, userId = userId).difference)
+        assertThrows(ShiftException.InvalidAmount::class.java) { runBlocking { service.close(shift, -1, userId) } }
+        assertThrows(ShiftException.NotFound::class.java) { runBlocking { service.close(999, 0, userId) } }
+        assertThrows(ShiftException.NotFound::class.java) { runBlocking { service.summary(999) } }
+        assertEquals(ShiftStatus.OPEN, db.shifts().getById(shift)!!.status)
     }
 
-    @Test fun only_one_shift_can_be_open_and_a_new_one_can_follow_a_closed_one() = runBlocking {
-        service.open(1_000, userId)
-        assertThrows(ShiftException.AlreadyOpen::class.java) { runBlocking { service.open(2_000, userId) } }
+    @Test fun a_new_shift_can_be_opened_after_the_previous_one_is_closed() = runBlocking {
+        val first = service.open(1_000, userId)
+        service.close(first, 1_000, userId)
 
-        service.close(actualCash = 1_000, userId = userId)
         val second = service.open(2_000, userId)
 
-        assertEquals(second, service.currentReport()!!.shift.id)
+        assertEquals(second, service.getOpenShift()!!.id)
         assertEquals(2, db.shifts().observeAll().first().size)
     }
 
-    @Test fun invalid_amounts_and_missing_shift_are_rejected() {
-        assertThrows(ShiftException.InvalidAmount::class.java) { runBlocking { service.open(-1, userId) } }
-        assertThrows(ShiftException.NoOpenShift::class.java) { runBlocking { service.close(100, userId) } }
-        runBlocking { service.open(0, userId) } // an empty drawer is a valid opening
-        assertThrows(ShiftException.InvalidAmount::class.java) { runBlocking { service.close(-5, userId) } }
-        assertTrue(runBlocking { service.currentReport() } != null) // the failed close left the shift open
-        assertThrows(ShiftException.NotFound::class.java) { runBlocking { service.report(999) } }
-    }
+    @Test fun the_summary_of_a_closed_shift_shows_the_saved_count() = runBlocking {
+        val shift = service.open(1_000, userId)
+        sale(shift, PaymentMethod.CASH to 500)
+        service.close(shift, 1_450, userId)
 
-    @Test fun expense_is_linked_to_the_open_shift() = runBlocking {
-        val shift = service.open(5_000, userId)
+        val s = service.summary(shift)
 
-        val id = expenses.add(ExpenseInput(1_000, ExpenseCategory.WATER, "water"), userId)
-
-        assertEquals(shift, db.expenses().getById(id)!!.shiftId)
+        assertEquals(1_500L, s.expectedCash)
+        assertEquals(1_450L, s.actualCash)
+        assertEquals(-50L, s.difference)
     }
 }

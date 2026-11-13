@@ -156,8 +156,8 @@ fun MoreRoute(modifier: Modifier = Modifier, startRoute: String? = null, onStart
         }
         else -> MoreMenu(
             items = listOf(
-                R.string.menu_reports to { session++; route = MoreTargets.REPORTS },
                 R.string.menu_shifts to { session++; route = MoreTargets.SHIFTS },
+                R.string.menu_reports to { session++; route = MoreTargets.REPORTS },
                 R.string.menu_suppliers to { route = SUPPLIERS },
                 R.string.menu_expenses to { session++; route = MoreTargets.EXPENSES },
                 R.string.menu_stock_count to { session++; route = MoreTargets.COUNTS },

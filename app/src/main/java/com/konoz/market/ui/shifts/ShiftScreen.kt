@@ -1,7 +1,7 @@
 package com.konoz.market.ui.shifts
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -10,13 +10,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -25,9 +26,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -37,178 +36,176 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.konoz.market.R
 import com.konoz.market.core.Money
-import com.konoz.market.data.entity.Shift
-import com.konoz.market.domain.ShiftReport
+import com.konoz.market.domain.ShiftSummary
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-private enum class ShiftDialog { OPEN, CLOSE }
-
 @Composable
 fun ShiftScreen(vm: ShiftViewModel, onBack: () -> Unit, modifier: Modifier = Modifier) {
-    val ui by vm.ui.collectAsStateWithLifecycle()
-    var dialog by remember { mutableStateOf<ShiftDialog?>(null) }
-    val timeFmt = remember { SimpleDateFormat("dd/MM HH:mm", Locale.US) }
-    val current = ui.current
+    val state by vm.openShift.collectAsStateWithLifecycle()
+    val history by vm.history.collectAsStateWithLifecycle()
+    val openForm by vm.openForm.collectAsStateWithLifecycle()
+    val closeForm by vm.closeForm.collectAsStateWithLifecycle()
+    val detail by vm.detail.collectAsStateWithLifecycle()
+    val error by vm.error.collectAsStateWithLifecycle()
+    val saving by vm.saving.collectAsStateWithLifecycle()
+    val fmt = remember { SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.US) }
 
-    LazyColumn(
-        modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        item {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.cancel)) }
-                Text(stringResource(R.string.shift_title), style = MaterialTheme.typography.titleLarge)
-            }
+    Column(modifier.fillMaxSize()) {
+        Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.cancel)) }
+            Text(stringResource(R.string.shift_title), style = MaterialTheme.typography.titleLarge)
         }
-        ui.message?.let { m ->
-            item {
-                Card(Modifier.fillMaxWidth()) {
-                    Row(Modifier.padding(start = 16.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Text(messageText(m), modifier = Modifier.weight(1f), color = if (isError(m)) MaterialTheme.colorScheme.error else Color.Unspecified)
-                        TextButton(onClick = vm::consumeMessage) { Text(stringResource(R.string.ok)) }
-                    }
+        LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            item { CurrentShiftCard(state, fmt, onOpen = vm::showOpenForm, onClose = vm::showCloseForm) }
+            item { Text(stringResource(R.string.shift_history), style = MaterialTheme.typography.titleMedium) }
+            if (history.isEmpty()) {
+                item {
+                    Text(stringResource(R.string.shift_history_empty), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-            }
-        }
-        if (!ui.loaded) {
-            item { Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() } }
-        } else {
-            item {
-                Card(Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        if (current == null) {
-                            Text(stringResource(R.string.shift_none_open), style = MaterialTheme.typography.titleMedium)
-                            Button(onClick = { dialog = ShiftDialog.OPEN }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.shift_open)) }
-                        } else {
-                            Text(stringResource(R.string.shift_current), style = MaterialTheme.typography.titleMedium)
-                            Text(stringResource(R.string.shift_opened_at_fmt, timeFmt.format(Date(current.shift.openedAt))), style = MaterialTheme.typography.bodyMedium)
-                            ReportLines(current)
-                            Button(onClick = { dialog = ShiftDialog.CLOSE }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.shift_close)) }
+            } else {
+                items(history, key = { it.id }) { s ->
+                    Card(onClick = { vm.showDetail(s.id) }, modifier = Modifier.fillMaxWidth()) {
+                        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(
+                                fmt.format(Date(s.openedAt)) + "  →  " + (s.closedAt?.let { fmt.format(Date(it)) } ?: ""),
+                                style = MaterialTheme.typography.titleMedium,
+                            )
+                            val diff = s.difference
+                            if (diff != null) {
+                                Text(differenceText(diff), color = differenceColor(diff), style = MaterialTheme.typography.bodyLarge)
+                            }
                         }
                     }
                 }
             }
-            item { Text(stringResource(R.string.shift_history), style = MaterialTheme.typography.titleMedium) }
-            if (ui.history.isEmpty()) {
-                item { Text(stringResource(R.string.shift_history_empty), color = MaterialTheme.colorScheme.onSurfaceVariant) }
-            } else {
-                items(ui.history, key = { it.id }) { s -> HistoryRow(s, timeFmt) { vm.select(s.id) } }
-            }
         }
     }
 
-    when (dialog) {
-        ShiftDialog.OPEN -> AmountDialog(
-            title = R.string.shift_open,
-            hint = stringResource(R.string.shift_opening_cash),
-            confirm = R.string.shift_open,
-            onConfirm = { vm.open(it); dialog = null },
-            onDismiss = { dialog = null },
-        )
-        ShiftDialog.CLOSE -> AmountDialog(
-            title = R.string.shift_close,
-            hint = stringResource(R.string.shift_expected_hint_fmt, Money.format(current?.expectedCash ?: 0L)),
-            confirm = R.string.shift_close,
-            onConfirm = { vm.close(it); dialog = null },
-            onDismiss = { dialog = null },
-        )
-        null -> Unit
-    }
-
-    ui.selected?.let { report ->
+    openForm?.let { text ->
         AlertDialog(
-            onDismissRequest = vm::clearSelection,
-            title = { Text(stringResource(R.string.shift_report_title)) },
+            onDismissRequest = vm::dismissOpenForm,
+            title = { Text(stringResource(R.string.shift_open_title)) },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text(
-                        stringResource(R.string.shift_opened_at_fmt, timeFmt.format(Date(report.shift.openedAt))) +
-                            (report.shift.closedAt?.let { "  -  " + stringResource(R.string.shift_closed_at_fmt, timeFmt.format(Date(it))) } ?: ""),
-                        style = MaterialTheme.typography.bodyMedium,
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = text, onValueChange = vm::editOpenForm, singleLine = true,
+                        label = { Text(stringResource(R.string.shift_opening_cash)) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.fillMaxWidth(),
                     )
-                    ReportLines(report)
+                    error?.let { Text(stringResource(errorRes(it)), color = MaterialTheme.colorScheme.error) }
                 }
             },
-            confirmButton = { TextButton(onClick = vm::clearSelection) { Text(stringResource(R.string.ok)) } },
+            confirmButton = { Button(onClick = vm::open, enabled = !saving) { Text(stringResource(R.string.shift_open_btn)) } },
+            dismissButton = { TextButton(onClick = vm::dismissOpenForm) { Text(stringResource(R.string.cancel)) } },
+        )
+    }
+
+    closeForm?.let { text ->
+        val expected = (state as? OpenShiftState.Open)?.summary?.expectedCash ?: 0L
+        val counted = Money.parseToMinor(text)
+        AlertDialog(
+            onDismissRequest = vm::dismissCloseForm,
+            title = { Text(stringResource(R.string.shift_close_title)) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(stringResource(R.string.shift_close_hint))
+                    Text(stringResource(R.string.shift_expected_fmt, Money.format(expected)), style = MaterialTheme.typography.titleMedium)
+                    OutlinedTextField(
+                        value = text, onValueChange = vm::editCloseForm, singleLine = true,
+                        label = { Text(stringResource(R.string.shift_actual)) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.fillMaxWidth(),
+                    )
+                    if (counted != null && counted >= 0L) {
+                        val diff = counted - expected
+                        Text(differenceText(diff), color = differenceColor(diff))
+                    }
+                    error?.let { Text(stringResource(errorRes(it)), color = MaterialTheme.colorScheme.error) }
+                }
+            },
+            confirmButton = { Button(onClick = vm::close, enabled = !saving) { Text(stringResource(R.string.shift_close_btn)) } },
+            dismissButton = { TextButton(onClick = vm::dismissCloseForm) { Text(stringResource(R.string.cancel)) } },
+        )
+    }
+
+    detail?.let { s ->
+        AlertDialog(
+            onDismissRequest = vm::dismissDetail,
+            title = { Text(stringResource(R.string.shift_report_title)) },
+            text = { Column(Modifier.verticalScroll(rememberScrollState())) { SummaryLines(s, fmt) } },
+            confirmButton = { Button(onClick = vm::dismissDetail) { Text(stringResource(R.string.ok)) } },
         )
     }
 }
 
 @Composable
-private fun ReportLines(r: ShiftReport) {
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Line(stringResource(R.string.shift_opening_cash), Money.format(r.shift.openingCash))
-        Line(stringResource(R.string.shift_cash_sales), Money.format(r.cashSales))
-        Line(stringResource(R.string.shift_other_payments), Money.format(r.otherPayments))
-        Line(stringResource(R.string.shift_cash_expenses), Money.format(r.cashExpenses))
-        Line(stringResource(R.string.shift_cash_refunds), Money.format(r.cashRefunds))
-        Line(stringResource(R.string.shift_expected), Money.format(r.expectedCash), strong = true)
-        r.actualCash?.let { Line(stringResource(R.string.shift_actual), Money.format(it), strong = true) }
-        r.difference?.let { Line(stringResource(R.string.shift_difference), differenceText(it), strong = true, color = differenceColor(it)) }
-    }
-}
-
-@Composable
-private fun HistoryRow(s: Shift, timeFmt: SimpleDateFormat, onClick: () -> Unit) {
-    Card(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(timeFmt.format(Date(s.openedAt)) + "  ->  " + (s.closedAt?.let { timeFmt.format(Date(it)) } ?: ""), style = MaterialTheme.typography.bodyMedium)
-            s.difference?.let {
-                Text(stringResource(R.string.shift_difference) + ": " + differenceText(it), style = MaterialTheme.typography.titleSmall, color = differenceColor(it))
+private fun CurrentShiftCard(state: OpenShiftState, fmt: SimpleDateFormat, onOpen: () -> Unit, onClose: () -> Unit) {
+    Card(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            when (state) {
+                OpenShiftState.Loading -> Unit
+                OpenShiftState.None -> {
+                    Text(stringResource(R.string.shift_none), style = MaterialTheme.typography.titleMedium)
+                    Text(stringResource(R.string.shift_none_hint), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Button(onClick = onOpen, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.shift_open_btn)) }
+                }
+                is OpenShiftState.Open -> {
+                    Text(stringResource(R.string.shift_current), style = MaterialTheme.typography.titleMedium)
+                    SummaryLines(state.summary, fmt)
+                    Button(onClick = onClose, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.shift_close_btn)) }
+                }
             }
         }
     }
 }
 
+/** The cash-drawer figures of a shift, top to bottom: opening, cash in/out, expected, counted + difference, other payment methods. */
 @Composable
-private fun Line(label: String, value: String, strong: Boolean = false, color: Color = Color.Unspecified) {
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Text(label, modifier = Modifier.weight(1f), style = if (strong) MaterialTheme.typography.titleSmall else MaterialTheme.typography.bodyMedium)
-        Text(value, style = if (strong) MaterialTheme.typography.titleSmall else MaterialTheme.typography.bodyMedium, color = color)
+private fun SummaryLines(s: ShiftSummary, fmt: SimpleDateFormat) {
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Line(R.string.shift_opened_at, fmt.format(Date(s.shift.openedAt)))
+        s.shift.closedAt?.let { Line(R.string.shift_closed_at, fmt.format(Date(it))) }
+        Line(R.string.shift_opening_cash, Money.format(s.openingCash))
+        Line(R.string.shift_cash_sales, Money.format(s.cashSales))
+        Line(R.string.shift_cash_refunds, Money.format(s.cashRefunds))
+        Line(R.string.shift_cash_expenses, Money.format(s.cashExpenses))
+        Line(R.string.shift_expected, Money.format(s.expectedCash), bold = true)
+        val actual = s.actualCash
+        val diff = s.difference
+        if (actual != null) Line(R.string.shift_actual, Money.format(actual), bold = true)
+        if (diff != null) Line(R.string.shift_difference, differenceText(diff), bold = true, color = differenceColor(diff))
+        Line(R.string.shift_card_sales, Money.format(s.cardSales))
+        Line(R.string.shift_wallet_sales, Money.format(s.walletSales))
+        Line(R.string.shift_total_sales, Money.format(s.totalSales), bold = true)
     }
 }
 
 @Composable
-private fun AmountDialog(title: Int, hint: String, confirm: Int, onConfirm: (String) -> Unit, onDismiss: () -> Unit) {
-    var text by remember { mutableStateOf("") }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(title)) },
-        text = {
-            OutlinedTextField(
-                value = text,
-                onValueChange = { text = it },
-                label = { Text(hint) },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-            )
-        },
-        confirmButton = { Button(onClick = { onConfirm(text) }) { Text(stringResource(confirm)) } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
-    )
+private fun Line(@StringRes label: Int, value: String, bold: Boolean = false, color: Color = Color.Unspecified) {
+    val style = if (bold) MaterialTheme.typography.titleMedium else MaterialTheme.typography.bodyLarge
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(stringResource(label), style = style, modifier = Modifier.weight(1f))
+        Text(value, style = style, color = color)
+    }
 }
 
-/** Shortage is shown with a minus, overage with a plus. */
-private fun differenceText(d: Long): String = (if (d > 0) "+" else "") + Money.format(d)
-
 @Composable
-private fun differenceColor(d: Long): Color = if (d < 0) MaterialTheme.colorScheme.error else Color.Unspecified
+private fun differenceText(diff: Long): String = when {
+    diff < 0L -> stringResource(R.string.shift_diff_short_fmt, Money.format(-diff))
+    diff > 0L -> stringResource(R.string.shift_diff_over_fmt, Money.format(diff))
+    else -> stringResource(R.string.shift_diff_even)
+}
 
-private fun isError(m: ShiftMessage) = m is ShiftMessage.AlreadyOpen || m is ShiftMessage.NoOpenShift || m is ShiftMessage.InvalidAmount || m is ShiftMessage.Failed
-
+/** A shortage is shown in the error color; a balanced or surplus drawer in the primary color. */
 @Composable
-private fun messageText(m: ShiftMessage): String = when (m) {
-    ShiftMessage.Opened -> stringResource(R.string.shift_msg_opened)
-    is ShiftMessage.Closed -> when {
-        m.difference == 0L -> stringResource(R.string.shift_msg_closed_exact)
-        m.difference < 0 -> stringResource(R.string.shift_msg_closed_short_fmt, Money.format(-m.difference))
-        else -> stringResource(R.string.shift_msg_closed_over_fmt, Money.format(m.difference))
-    }
-    ShiftMessage.AlreadyOpen -> stringResource(R.string.shift_err_already_open)
-    ShiftMessage.NoOpenShift -> stringResource(R.string.shift_err_none)
-    ShiftMessage.InvalidAmount -> stringResource(R.string.shift_err_amount)
-    ShiftMessage.Failed -> stringResource(R.string.shift_err_failed)
+private fun differenceColor(diff: Long): Color =
+    if (diff < 0L) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+
+@StringRes
+private fun errorRes(e: ShiftError): Int = when (e) {
+    ShiftError.AMOUNT -> R.string.serr_amount
+    ShiftError.ALREADY_OPEN -> R.string.serr_already_open
+    ShiftError.NOT_OPEN -> R.string.serr_not_open
+    ShiftError.UNKNOWN -> R.string.serr_unknown
 }
