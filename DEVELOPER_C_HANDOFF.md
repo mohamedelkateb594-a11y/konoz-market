@@ -2,22 +2,31 @@
 
 _Developer C. يعمل على الفرع `claude/developer-b` بالتنسيق مع A وB (لم أعدّل `DEVELOPER_A_HANDOFF.md` ولا `DEVELOPER_B_HANDOFF.md`). `main` @ ffa2c4c لم يتغير._
 
-## ما تم (2026-11-13)
-- أول بناء حقيقي على GitHub Actions وصل إلى `:app:compileDebugKotlin`، وفشل بخطأ واحد وصلني:
-  `ReportService.kt:245:86 Unresolved reference 'qtyMilli'`.
-- **السبب:** في `performanceIn` يُنشأ `ProductPerformance(...)` بقراءة `a.qtyMilli` بينما الكلاس الداخلي `Acc` يعرّف الحقل باسم `qty`.
-- **الإصلاح (commit 4a4da7e):** استبدال `a.qtyMilli` بـ `a.qty` في هذا السطر فقط. لا تغيير في المنطق.
-- **فحص مرافق:** تأكدت يدويًا من أن كل ما يستدعيه `ReportService` موجود بنفس الأسماء والأنواع: `ReportDao` (`ReportDaos.kt`) وصفوفه، `ProductDao.getAllActive`، `Allocation.portion`، `QtyCostRow`.
+## الحالة
+- **البناء نجح** (أكده المالك بعد إصلاح `ReportService`) — أي أن كل ما حتى 11.1 يُجمّع. **لم تُشغَّل الاختبارات بعد** (لا Android SDK هنا).
+- 11.2 أُضيفت لاحقًا و**لم تُبنَ بعد** (commit ed6f812) — قد تظهر أخطاء تجميع صغيرة في ملفاتها الجديدة.
 
-## حالة البناء
-- **البناء الكامل لم ينجح بعد.** المعروف فقط: الخطأ أعلاه أُصلح. لم أتلقَّ نتيجة بناء ما بعد الإصلاح، ولم تُشغَّل أي اختبارات (لا Android SDK هنا).
-- أخطاء Kotlin قد تظهر على دفعات؛ إن ظهر خطأ جديد أرسله (اسم الملف والسطر) وأصلحه بنفس الأسلوب (تعديل موضعي).
+## ما أنجزته
+1. **إصلاح خطأ البناء** `ReportService.kt:245` (`Acc.qty` وليس `qtyMilli`) — commit 4a4da7e.
+2. **11.2 واجهة الورديات:**
+   - `domain/ShiftService`: أُضيفت `observeLiveSummary()` (ملخص حي للوردية المفتوحة، null = لا وردية؛ يُعاد حسابه عند أي بيع/مرتجع/مصروف عبر `combine` لثلاث استعلامات موجودة كمشغّلات فقط). باقي المنطق كما هو.
+   - `ui/shifts/ShiftViewModel` (+`OpenShiftState`, `ShiftError`) و`ui/shifts/ShiftScreen`: بطاقة الوردية الحالية (ملخص حي)، فتح وردية (رصيد افتتاحي، الفارغ = 0)، إغلاق بإدخال النقدية الفعلية مع معاينة الفرق، تقرير وردية يظهر بعد الإغلاق وعند اختيار وردية من السجل، سجل الورديات المغلقة.
+   - `strings_shifts.xml` (EN في `values/` وAR في `values-ar/`)، مسار `MoreTargets.SHIFTS` وعنصر «الورديات» أول القائمة في `MoreRoute`.
+   - اختبارات جديدة: `ShiftLiveSummaryTest` (3) — لم تُشغَّل.
+3. **تحقق من ربط `shiftId`:** `CashierSession.openShiftId()` يضع وردية البيع المفتوحة في المسودة والإتمام، و`ReturnService.createReturn` يضعها في `SalesReturn.shiftId`، و`ExpenseService.add` كذلك. لا حاجة لتعديل.
+
+## ملفات مشتركة عدّلتها
+`MoreRoute.kt` (+مسار الورديات فقط)، `ShiftService.kt` (دالة واحدة مضافة)، `ReportService.kt` (سطر واحد).
+
+## قرارات معلّقة عند المالك
+- هل يُمنع البيع بدون وردية مفتوحة؟ (الآن لا يُمنع؛ تُسجّل المبيعات بلا `shiftId` ولا تدخل في أي وردية).
+- سداد الموردين النقدي لا يدخل الخزينة (فاتورة الشراء بلا وسيلة دفع/`shiftId`).
+- تمييز الوردية بالمستخدم: الوردية الآن باسم `activeUserId()` المؤقت (admin).
 
 ## الخطوة التالية بالضبط
-1. إعادة تشغيل workflow البناء على `claude/developer-b` وإرسال أي أخطاء.
-2. بعد نجاح التجميع: تشغيل الاختبارات (`./gradlew testDebugUnitTest`) وإصلاح الفاشل منها (لم يُشغَّل أي من ~170 اختبارًا).
-3. ثم المهمة 11.2 (واجهة الورديات) كما في `DEVELOPER_B_HANDOFF.md`: `ui/shifts/{ShiftViewModel,ShiftScreen}`، `strings_shifts.xml`، مسار في `MoreRoute`.
+1. إعادة تشغيل workflow البناء على `claude/developer-b` وإصلاح أي خطأ من ملفات 11.2، ثم تشغيل الاختبارات (`./gradlew testDebugUnitTest`) وإصلاح الفاشل.
+2. المرحلة 4 التالية: **المستخدمون والصلاحيات** (شاشة دخول، إجبار تغيير PIN المدير 1234، استبدال `activeUserId` المؤقت، إخفاء الأرباح عن الكاشير، حماية المرتجعات وتعديل المخزون)، ثم مشاركة/طباعة الفواتير وتصدير التقارير، ثم النسخ الاحتياطي (يشمل `receipts` و`product_images`).
 
 ## قاعدة التنسيق
 - لا تعدّل ملفات A/B الخاصة بالتتبع؛ سجّل عملك هنا.
-- `PROJECT_STATE.md` و`TASK_LOG.md` ما زالا عند 8b؛ يُحدَّثان بعد أول بناء ناجح.
+- `PROJECT_STATE.md` و`TASK_LOG.md` ما زالا عند 8b — يُحدَّثان عند الدمج أو بطلب المالك.
