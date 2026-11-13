@@ -61,13 +61,25 @@ fun KonozRoot() {
     }
 }
 
-/** Cashier is first, per the product requirement. The dashboard (profit, costs, inventory value) is only for users who may see profit. */
+/**
+ * Cashier is first, per the product requirement. The dashboard (profit, costs, inventory value) is only for users who
+ * may see profit, and the Products tab only for users who may manage products.
+ */
 @Composable
 private fun MainApp() {
     val app = LocalContext.current.applicationContext as KonozApp
     val user by app.session.user.collectAsStateWithLifecycle()
     val canSeeProfit = user?.let { Permissions.has(it.role, Permission.VIEW_PROFIT) } == true
-    val tabs = remember(canSeeProfit) { allTabs.filter { it.id != TabId.DASHBOARD || canSeeProfit } }
+    val canManageProducts = user?.let { Permissions.has(it.role, Permission.MANAGE_PRODUCTS) } == true
+    val tabs = remember(canSeeProfit, canManageProducts) {
+        allTabs.filter {
+            when (it.id) {
+                TabId.DASHBOARD -> canSeeProfit
+                TabId.PRODUCTS -> canManageProducts
+                else -> true
+            }
+        }
+    }
 
     var selectedName by rememberSaveable { mutableStateOf(TabId.CASHIER.name) }
     var pendingBarcode by rememberSaveable { mutableStateOf<String?>(null) }
@@ -93,7 +105,10 @@ private fun MainApp() {
     ) { padding ->
         when (selected) {
             TabId.CASHIER -> CashierRoute(
-                onRegisterBarcode = { code -> pendingBarcode = code; select(TabId.PRODUCTS) },
+                // Only users who manage products can register an unknown barcode; for others the scan just reports it.
+                onRegisterBarcode = { code ->
+                    if (canManageProducts) { pendingBarcode = code; select(TabId.PRODUCTS) }
+                },
                 modifier = Modifier.padding(padding),
             )
             TabId.DASHBOARD -> DashboardRoute(

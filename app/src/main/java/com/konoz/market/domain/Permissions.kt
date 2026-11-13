@@ -17,13 +17,17 @@ enum class Permission {
     MANAGE_USERS,
     EDIT_PRICES,
     GIVE_LARGE_DISCOUNT,
+    /** Products tab: create/edit products, prices, costs, barcodes, CSV import. */
+    MANAGE_PRODUCTS,
 }
 
 object Permissions {
     private val cashier = setOf(Permission.PROCESS_RETURN, Permission.OPERATE_SHIFTS, Permission.MANAGE_EXPENSES)
-    private val stockKeeper = setOf(Permission.MANAGE_PURCHASES, Permission.COUNT_STOCK, Permission.ADJUST_STOCK)
+    private val stockKeeper = setOf(
+        Permission.MANAGE_PURCHASES, Permission.COUNT_STOCK, Permission.ADJUST_STOCK, Permission.MANAGE_PRODUCTS,
+    )
 
-    /** The admin may do everything; a cashier only sells, takes returns, records petty expenses and runs the drawer; a stock keeper handles stock. */
+    /** The admin may do everything; a cashier only sells, takes returns, records petty expenses and runs the drawer; a stock keeper handles stock and products. */
     fun has(role: UserRole, permission: Permission): Boolean = when (role) {
         UserRole.ADMIN -> true
         UserRole.CASHIER -> permission in cashier
