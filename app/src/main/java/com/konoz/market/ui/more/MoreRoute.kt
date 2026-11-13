@@ -19,10 +19,15 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.konoz.market.KonozApp
 import com.konoz.market.R
+import com.konoz.market.domain.Permission
+import com.konoz.market.domain.Permissions
 import com.konoz.market.ui.alerts.StockAlertsScreen
 import com.konoz.market.ui.alerts.StockAlertsViewModel
 import com.konoz.market.ui.expenses.ExpensesScreen
@@ -47,6 +52,8 @@ import com.konoz.market.ui.suppliers.StatementScreen
 import com.konoz.market.ui.suppliers.StatementViewModel
 import com.konoz.market.ui.suppliers.SuppliersScreen
 import com.konoz.market.ui.suppliers.SuppliersViewModel
+import com.konoz.market.ui.users.UsersScreen
+import com.konoz.market.ui.users.UsersViewModel
 
 /** Routes other screens (the dashboard shortcuts) may ask the More tab to open. */
 object MoreTargets {
@@ -54,6 +61,7 @@ object MoreTargets {
     const val COUNTS = "counts"
     const val REPORTS = "reports"
     const val SHIFTS = "shifts"
+    const val USERS = "users"
 }
 
 private const val MENU = "menu"
@@ -65,7 +73,7 @@ private const val ALERTS = "alerts"
 
 /**
  * Routes: menu, suppliers, statement/{supplierId}, purchase/{supplierId}/{0|1 = return}, returns, stockops,
- * movements, alerts, expenses, counts, count/{countId}, reports, shifts.
+ * movements, alerts, expenses, counts, count/{countId}, reports, shifts, users.
  */
 private fun parentOf(route: String): String {
     val parts = route.split('/')
@@ -77,12 +85,31 @@ private fun parentOf(route: String): String {
     }
 }
 
+/** The permission a route needs; null = any signed-in user. */
+private fun requiredPermission(route: String): Permission? = when (route.split('/')[0]) {
+    SUPPLIERS, "statement", "purchase" -> Permission.MANAGE_PURCHASES
+    RETURNS -> Permission.PROCESS_RETURN
+    STOCK_OPS, MOVEMENTS -> Permission.ADJUST_STOCK
+    MoreTargets.EXPENSES -> Permission.MANAGE_EXPENSES
+    MoreTargets.COUNTS, "count" -> Permission.COUNT_STOCK
+    MoreTargets.REPORTS -> Permission.VIEW_PROFIT
+    MoreTargets.SHIFTS -> Permission.OPERATE_SHIFTS
+    MoreTargets.USERS -> Permission.MANAGE_USERS
+    else -> null
+}
+
 /** [startRoute] (one of [MoreTargets]) opens that screen once, then [onStartConsumed] is called. */
 @Composable
 fun MoreRoute(modifier: Modifier = Modifier, startRoute: String? = null, onStartConsumed: () -> Unit = {}) {
+    val app = LocalContext.current.applicationContext as KonozApp
+    val user by app.session.user.collectAsStateWithLifecycle()
+    fun allowed(permission: Permission?) = permission == null || user?.let { Permissions.has(it.role, permission) } == true
+
     var route by rememberSaveable { mutableStateOf(MENU) }
     var session by rememberSaveable { mutableIntStateOf(0) } // new key per opened form so a screen never shows old input
-    BackHandler(enabled = route != MENU) { route = parentOf(route) }
+    // A route the signed-in user may not use (restored after switching users, or asked for by a shortcut) shows the menu instead.
+    val shown = if (allowed(requiredPermission(route))) route else MENU
+    BackHandler(enabled = shown != MENU) { route = parentOf(shown) }
     LaunchedEffect(startRoute) {
         if (startRoute != null) {
             session++
@@ -91,7 +118,7 @@ fun MoreRoute(modifier: Modifier = Modifier, startRoute: String? = null, onStart
         }
     }
 
-    val parts = route.split('/')
+    val parts = shown.split('/')
     when (parts[0]) {
         SUPPLIERS -> {
             val vm: SuppliersViewModel = viewModel(factory = SuppliersViewModel.Factory)
@@ -154,28 +181,34 @@ fun MoreRoute(modifier: Modifier = Modifier, startRoute: String? = null, onStart
             val vm: ShiftViewModel = viewModel(key = "shifts_$session", factory = ShiftViewModel.Factory)
             ShiftScreen(vm, onBack = { route = MENU }, modifier = modifier)
         }
+        MoreTargets.USERS -> {
+            val vm: UsersViewModel = viewModel(key = "users_$session", factory = UsersViewModel.Factory)
+            UsersScreen(vm, onBack = { route = MENU }, modifier = modifier)
+        }
         else -> MoreMenu(
             items = listOf(
-                R.string.menu_shifts to { session++; route = MoreTargets.SHIFTS },
-                R.string.menu_reports to { session++; route = MoreTargets.REPORTS },
-                R.string.menu_suppliers to { route = SUPPLIERS },
-                R.string.menu_expenses to { session++; route = MoreTargets.EXPENSES },
-                R.string.menu_stock_count to { session++; route = MoreTargets.COUNTS },
-                R.string.menu_returns to { session++; route = RETURNS },
-                R.string.menu_stock_ops to { session++; route = STOCK_OPS },
-                R.string.menu_movements to { session++; route = MOVEMENTS },
-                R.string.menu_alerts to { session++; route = ALERTS },
-            ),
+                Triple(R.string.menu_shifts, Permission.OPERATE_SHIFTS) { session++; route = MoreTargets.SHIFTS },
+                Triple(R.string.menu_reports, Permission.VIEW_PROFIT) { session++; route = MoreTargets.REPORTS },
+                Triple(R.string.menu_suppliers, Permission.MANAGE_PURCHASES) { route = SUPPLIERS },
+                Triple(R.string.menu_expenses, Permission.MANAGE_EXPENSES) { session++; route = MoreTargets.EXPENSES },
+                Triple(R.string.menu_stock_count, Permission.COUNT_STOCK) { session++; route = MoreTargets.COUNTS },
+                Triple(R.string.menu_returns, Permission.PROCESS_RETURN) { session++; route = RETURNS },
+                Triple(R.string.menu_stock_ops, Permission.ADJUST_STOCK) { session++; route = STOCK_OPS },
+                Triple(R.string.menu_movements, Permission.ADJUST_STOCK) { session++; route = MOVEMENTS },
+                Triple<Int, Permission?, () -> Unit>(R.string.menu_alerts, null) { session++; route = ALERTS },
+                Triple(R.string.menu_users, Permission.MANAGE_USERS) { session++; route = MoreTargets.USERS },
+                Triple<Int, Permission?, () -> Unit>(R.string.auth_logout, null) { route = MENU; app.session.signOut() },
+            ).filter { allowed(it.second) },
             modifier = modifier,
         )
     }
 }
 
 @Composable
-private fun MoreMenu(items: List<Pair<Int, () -> Unit>>, modifier: Modifier = Modifier) {
+private fun MoreMenu(items: List<Triple<Int, Permission?, () -> Unit>>, modifier: Modifier = Modifier) {
     Column(modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(stringResource(R.string.more_title), style = MaterialTheme.typography.titleLarge)
-        items.forEach { (label, action) ->
+        items.forEach { (label, _, action) ->
             Card(onClick = action, modifier = Modifier.fillMaxWidth()) {
                 Text(stringResource(label), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(16.dp))
             }

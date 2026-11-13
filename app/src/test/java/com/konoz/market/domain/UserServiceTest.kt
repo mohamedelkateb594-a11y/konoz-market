@@ -162,12 +162,14 @@ class UserServiceTest {
         assertEquals(cashier, service.login("sara", "4321").id)
     }
 
-    @Test fun an_admin_cannot_deactivate_themselves_or_the_last_active_admin() = runBlocking {
+    @Test fun an_admin_cannot_deactivate_themselves_but_can_deactivate_another_admin() = runBlocking {
         assertThrows(UserException.NotAllowed::class.java) { runBlocking { service.setActive(adminId, adminId, false) } }
 
         val second = service.createUser(adminId, "Second", "admin2", "1111", UserRole.ADMIN)
-        service.setActive(second, adminId, false) // fine: another admin remains
-        assertThrows(UserException.LastAdmin::class.java) { runBlocking { service.setActive(second, adminId, false) } }
+        service.setActive(second, adminId, false)
+
+        assertFalse(db.users().getById(adminId)!!.isActive)
+        assertThrows(UserException.NotAllowed::class.java) { runBlocking { service.setActive(second, second, false) } }
     }
 
     @Test fun the_last_active_admin_cannot_be_demoted_but_can_once_another_admin_exists() = runBlocking {
