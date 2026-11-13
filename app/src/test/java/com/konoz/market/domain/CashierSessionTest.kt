@@ -31,6 +31,7 @@ class CashierSessionTest {
     private lateinit var db: KonozDatabase
     private lateinit var repo: ProductRepository
     private lateinit var sales: SaleService
+    private lateinit var shifts: ShiftService
     private val now = 1_700_000_000_000L
     private val day = 86_400_000L
     private var adminId = 0L
@@ -42,9 +43,11 @@ class CashierSessionTest {
         db = Room.inMemoryDatabaseBuilder(ctx, KonozDatabase::class.java).allowMainThreadQueries().build()
         repo = ProductRepository(db) { now }
         sales = SaleService(db) { now }
+        shifts = ShiftService(db) { now }
         runBlocking {
             adminId = db.users().insert(User(name = "a", username = "a", pinHash = "x", salt = "y", role = UserRole.ADMIN, createdAt = now))
             cashierId = db.users().insert(User(name = "c", username = "c", pinHash = "x", salt = "y", role = UserRole.CASHIER, createdAt = now))
+            shifts.open(0L, adminId) // owner rule: selling needs an open shift
         }
     }
 
@@ -120,6 +123,36 @@ class CashierSessionTest {
         assertTrue(s.cart.value.isEmpty)
         assertEquals("cart-2", s.cart.value.uuid)
         assertTrue(db.sales().observeHeld().first().isEmpty())
+    }
+
+    @Test fun a_sale_is_linked_to_the_open_shift() = runBlocking {
+        addProduct()
+        val shiftId = shifts.getOpenShift()!!.id
+        val s = started()
+        s.scan("111")
+
+        val result = (s.checkout(cash(1500)) as CheckoutOutcome.Success).result
+
+        assertEquals(shiftId, db.sales().getInvoice(result.invoiceId)!!.shiftId)
+    }
+
+    @Test fun selling_is_blocked_without_an_open_shift_and_the_cart_is_kept() = runBlocking {
+        val productId = addProduct()
+        shifts.close(shifts.getOpenShift()!!.id, 0L, adminId)
+        val s = started()
+        s.scan("111")
+
+        val outcome = s.checkout(cash(1500))
+
+        assertEquals(CheckoutOutcome.Failed, outcome)
+        assertEquals(CashierMessage.NoOpenShift, s.message.value)
+        assertEquals(1, s.cart.value.items.size)
+        assertEquals(10_000L, db.products().getById(productId)!!.currentQtyMilli) // nothing sold
+
+        // opening a shift unblocks the same cart
+        s.consumeMessage()
+        shifts.open(0L, adminId)
+        assertTrue(s.checkout(cash(1500)) is CheckoutOutcome.Success)
     }
 
     @Test fun hold_parks_the_cart_and_resume_brings_it_back() = runBlocking {

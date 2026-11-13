@@ -267,7 +267,7 @@ private fun CartRow(item: CartItem, onClick: () -> Unit, onPlus: () -> Unit, onM
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(item.name, style = MaterialTheme.typography.titleMedium)
                 Text(
-                    Money.format(item.unitPrice) + " \u00D7 " + formatQty(item.qtyMilli) + " " + stringResource(unitLabelRes(item.unit)),
+                    Money.format(item.unitPrice) + " × " + formatQty(item.qtyMilli) + " " + stringResource(unitLabelRes(item.unit)),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -470,6 +470,7 @@ private fun infoText(m: CashierMessage): String = when (m) {
     is CashierMessage.EmptyCart -> stringResource(R.string.msg_empty_cart)
     is CashierMessage.CardOverpay -> stringResource(R.string.msg_card_overpay)
     is CashierMessage.SaleFailed -> stringResource(R.string.msg_sale_failed)
+    is CashierMessage.NoOpenShift -> stringResource(R.string.msg_no_open_shift)
     is CashierMessage.UnknownBarcode, is CashierMessage.ConfirmExpiredSale -> ""
 }
 
