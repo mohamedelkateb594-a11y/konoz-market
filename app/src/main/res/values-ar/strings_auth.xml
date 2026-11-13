@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="menu_users">المستخدمون</string>
+    <string name="auth_logout">تسجيل الخروج</string>
+    <string name="auth_subtitle">تسجيل الدخول</string>
+    <string name="auth_username">اسم المستخدم</string>
+    <string name="auth_pin">الرمز السري</string>
+    <string name="auth_login">دخول</string>
+    <string name="auth_err_invalid">اسم المستخدم أو الرمز غير صحيح.</string>
+    <string name="auth_err_invalid_fmt">اسم المستخدم أو الرمز غير صحيح. متبقي %1$d محاولات.</string>
+    <string name="auth_err_locked_fmt">محاولات خاطئة كثيرة. حاول بعد %1$d دقيقة.</string>
+    <string name="auth_err_pin">الرمز يجب أن يكون من 4 إلى 8 أرقام.</string>
+    <string name="auth_err_mismatch">الرمزان غير متطابقين.</string>
+    <string name="auth_err_unknown">حدث خطأ. حاول مرة أخرى.</string>
+    <string name="auth_force_title">اختر رمزك السري</string>
+    <string name="auth_force_hint">دخلت بالرمز المؤقت. اختر رمزًا جديدًا للمتابعة.</string>
+    <string name="auth_new_pin">الرمز الجديد</string>
+    <string name="auth_confirm_pin">تأكيد الرمز الجديد</string>
+    <string name="auth_save_pin">حفظ الرمز</string>
+
+    <string name="users_title">المستخدمون</string>
+    <string name="users_add">إضافة مستخدم</string>
+    <string name="users_name">الاسم الكامل</string>
+    <string name="users_role">الصلاحية</string>
+    <string name="users_reset_pin">إعادة تعيين الرمز</string>
+    <string name="users_activate">تفعيل</string>
+    <string name="users_deactivate">إيقاف</string>
+    <string name="users_inactive">موقوف</string>
+    <string name="users_save">حفظ</string>
+    <string name="role_admin">مدير النظام</string>
+    <string name="role_cashier">كاشير</string>
+    <string name="role_stock_keeper">مسؤول مخزون</string>
+    <string name="uerr_name">أدخل الاسم.</string>
+    <string name="uerr_username">اسم المستخدم: من 3 إلى 20 حرفًا إنجليزيًا صغيرًا أو رقمًا.</string>
+    <string name="uerr_taken">اسم المستخدم مستخدم من قبل.</string>
+    <string name="uerr_pin">الرمز يجب أن يكون من 4 إلى 8 أرقام.</string>
+    <string name="uerr_last_admin">لا بد من بقاء مدير نشط واحد على الأقل.</string>
+    <string name="uerr_not_allowed">ليست لديك صلاحية لهذا الإجراء.</string>
+    <string name="uerr_unknown">فشلت العملية. حاول مرة أخرى.</string>
+</resources>
