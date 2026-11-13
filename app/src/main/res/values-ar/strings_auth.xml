@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="auth_login_title">تسجيل الدخول</string>
+    <string name="auth_username">اسم الدخول</string>
+    <string name="auth_pin">الرقم السري</string>
+    <string name="auth_login_btn">دخول</string>
+    <string name="auth_err_credentials">اسم الدخول أو الرقم السري غير صحيح.</string>
+    <string name="auth_err_unknown">تعذّر تسجيل الدخول. حاول مرة أخرى.</string>
+    <string name="auth_pin_title">تغيير الرقم السري</string>
+    <string name="auth_pin_forced_hint">لحماية بياناتك يجب تغيير الرقم السري الافتراضي قبل المتابعة.</string>
+    <string name="auth_pin_current">الرقم السري الحالي</string>
+    <string name="auth_pin_new">الرقم السري الجديد (من 4 إلى 8 أرقام)</string>
+    <string name="auth_pin_confirm">تأكيد الرقم السري الجديد</string>
+    <string name="auth_pin_save">حفظ الرقم السري</string>
+    <string name="auth_pin_err_format">الرقم السري يجب أن يكون من 4 إلى 8 أرقام.</string>
+    <string name="auth_pin_err_wrong_old">الرقم السري الحالي غير صحيح.</string>
+    <string name="auth_pin_err_unchanged">الرقم السري الجديد يجب أن يختلف عن الحالي.</string>
+    <string name="auth_pin_err_default">اختر رقمًا سريًا غير الرقم الافتراضي.</string>
+    <string name="auth_pin_err_mismatch">الرقمان السريان غير متطابقين.</string>
+    <string name="auth_pin_err_unknown">فشلت العملية. حاول مرة أخرى.</string>
+    <string name="auth_menu_change_pin">تغيير رقمي السري</string>
+    <string name="auth_menu_logout">تسجيل الخروج</string>
+    <string name="auth_signed_in_fmt">مسجّل الدخول: %1$s (%2$s)</string>
+    <string name="auth_role_admin">مدير النظام</string>
+    <string name="auth_role_cashier">كاشير</string>
+    <string name="auth_role_stock_keeper">مسؤول مخزون</string>
+</resources>

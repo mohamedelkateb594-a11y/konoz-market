@@ -37,25 +37,26 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
-/** What the shortcut buttons do; the root decides how to navigate. */
+/** What the shortcut buttons do; the root decides how to navigate. A null action hides that shortcut (the user's role may not allow it). */
 class DashboardActions(
-    val onCashier: () -> Unit,
-    val onAddProduct: () -> Unit,
-    val onStockCount: () -> Unit,
-    val onExpenses: () -> Unit,
-    val onReports: () -> Unit,
+    val onCashier: (() -> Unit)?,
+    val onAddProduct: (() -> Unit)?,
+    val onStockCount: (() -> Unit)?,
+    val onExpenses: (() -> Unit)?,
+    val onReports: (() -> Unit)?,
 )
 
+/** [showProfit] = false hides the estimated profit (only users who may view profits see it). */
 @Composable
-fun DashboardRoute(actions: DashboardActions, modifier: Modifier = Modifier) {
+fun DashboardRoute(actions: DashboardActions, showProfit: Boolean, modifier: Modifier = Modifier) {
     // New key on a new day, so a dashboard left open overnight does not keep showing yesterday as "today".
     val dayKey = remember { Calendar.getInstance().let { it.get(Calendar.YEAR) * 1000 + it.get(Calendar.DAY_OF_YEAR) } }
     val vm: DashboardViewModel = viewModel(key = "dashboard_$dayKey", factory = DashboardViewModel.Factory)
-    DashboardScreen(vm, actions, modifier)
+    DashboardScreen(vm, actions, showProfit, modifier)
 }
 
 @Composable
-fun DashboardScreen(vm: DashboardViewModel, actions: DashboardActions, modifier: Modifier = Modifier) {
+fun DashboardScreen(vm: DashboardViewModel, actions: DashboardActions, showProfit: Boolean, modifier: Modifier = Modifier) {
     val ui by vm.ui.collectAsStateWithLifecycle()
     val today = ui.today
     val timeFmt = remember { SimpleDateFormat("dd/MM HH:mm", Locale.US) }
@@ -84,10 +85,12 @@ fun DashboardScreen(vm: DashboardViewModel, actions: DashboardActions, modifier:
             val profit = today?.estimatedNetProfit ?: 0L
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Kpi(stringResource(R.string.dash_expenses), Money.format(today?.expenses ?: 0L), Modifier.weight(1f))
-                Kpi(
-                    stringResource(R.string.dash_profit), Money.format(profit), Modifier.weight(1f),
-                    valueColor = if (profit < 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
-                )
+                if (showProfit) {
+                    Kpi(
+                        stringResource(R.string.dash_profit), Money.format(profit), Modifier.weight(1f),
+                        valueColor = if (profit < 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+                    )
+                }
             }
         }
         item {
@@ -126,18 +129,20 @@ fun DashboardScreen(vm: DashboardViewModel, actions: DashboardActions, modifier:
             }
         }
 
-        item { Text(stringResource(R.string.dash_shortcuts), style = MaterialTheme.typography.titleMedium) }
-        item {
-            val shortcuts = listOf(
-                R.string.dash_cashier to actions.onCashier,
-                R.string.dash_add_product to actions.onAddProduct,
-                R.string.dash_stock_count to actions.onStockCount,
-                R.string.dash_expenses_short to actions.onExpenses,
-                R.string.dash_reports to actions.onReports,
-            )
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(shortcuts) { (label, action) ->
-                    OutlinedButton(onClick = action) { Text(stringResource(label)) }
+        val shortcuts = listOf(
+            R.string.dash_cashier to actions.onCashier,
+            R.string.dash_add_product to actions.onAddProduct,
+            R.string.dash_stock_count to actions.onStockCount,
+            R.string.dash_expenses_short to actions.onExpenses,
+            R.string.dash_reports to actions.onReports,
+        ).mapNotNull { (label, action) -> action?.let { label to it } }
+        if (shortcuts.isNotEmpty()) {
+            item { Text(stringResource(R.string.dash_shortcuts), style = MaterialTheme.typography.titleMedium) }
+            item {
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(shortcuts) { (label, action) ->
+                        OutlinedButton(onClick = action) { Text(stringResource(label)) }
+                    }
                 }
             }
         }

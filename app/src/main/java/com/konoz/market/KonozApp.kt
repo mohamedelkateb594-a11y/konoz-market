@@ -6,11 +6,13 @@ import com.konoz.market.data.repo.CatalogRepository
 import com.konoz.market.data.repo.ProductCsvService
 import com.konoz.market.data.repo.ProductRepository
 import com.konoz.market.data.seed.DatabaseInitializer
+import com.konoz.market.domain.AuthService
 import com.konoz.market.domain.ExpenseService
 import com.konoz.market.domain.PurchaseService
 import com.konoz.market.domain.ReportService
 import com.konoz.market.domain.ReturnService
 import com.konoz.market.domain.SaleService
+import com.konoz.market.domain.SessionManager
 import com.konoz.market.domain.ShiftService
 import com.konoz.market.domain.StockAdjustmentService
 import com.konoz.market.domain.StockCountService
@@ -23,6 +25,8 @@ class KonozApp : Application() {
     val appScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     val database: KonozDatabase by lazy { KonozDatabase.get(this) }
+    val session = SessionManager()
+    val authService: AuthService by lazy { AuthService(database) }
     val saleService: SaleService by lazy { SaleService(database) }
     val purchaseService: PurchaseService by lazy { PurchaseService(database) }
     val returnService: ReturnService by lazy { ReturnService(database) }
@@ -41,11 +45,8 @@ class KonozApp : Application() {
     }
 
     /**
-     * TEMPORARY until the login screen exists: operations are attributed to the seeded admin user.
-     * Replace with the logged-in user's id (see PROJECT_STATE.md, unfinished work).
+     * The signed-in user's id: every operation is attributed to the user who logged in (see [session]).
+     * Screens only exist after sign-in, so a missing user is a programming error, not a normal state.
      */
-    suspend fun activeUserId(): Long {
-        DatabaseInitializer.seedIfNeeded(database) // idempotent; guards against racing the async seed in onCreate
-        return database.users().findActiveByUsername(DatabaseInitializer.DEFAULT_ADMIN_USERNAME)!!.id
-    }
+    suspend fun activeUserId(): Long = session.user.value?.id ?: error("no signed-in user")
 }

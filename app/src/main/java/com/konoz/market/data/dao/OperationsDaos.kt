@@ -22,6 +22,11 @@ interface UserDao {
     @Update suspend fun update(u: User)
     @Query("SELECT * FROM users WHERE username = :username AND isActive = 1 LIMIT 1")
     suspend fun findActiveByUsername(username: String): User?
+    /** Active or not: the username is unique across all users. */
+    @Query("SELECT * FROM users WHERE username = :username LIMIT 1")
+    suspend fun findByUsername(username: String): User?
+    @Query("SELECT COUNT(*) FROM users WHERE role = 'ADMIN' AND isActive = 1")
+    suspend fun countActiveAdmins(): Int
     @Query("SELECT * FROM users WHERE id = :id") suspend fun getById(id: Long): User?
     @Query("SELECT * FROM users ORDER BY name") fun observeAll(): Flow<List<User>>
     @Query("SELECT COUNT(*) FROM users") suspend fun count(): Int

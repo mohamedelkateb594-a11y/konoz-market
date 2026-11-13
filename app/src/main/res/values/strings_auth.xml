@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="auth_login_title">Sign in</string>
+    <string name="auth_username">Username</string>
+    <string name="auth_pin">PIN</string>
+    <string name="auth_login_btn">Sign in</string>
+    <string name="auth_err_credentials">Wrong username or PIN.</string>
+    <string name="auth_err_unknown">Could not sign in. Please try again.</string>
+    <string name="auth_pin_title">Change PIN</string>
+    <string name="auth_pin_forced_hint">For security you must change the default PIN before you continue.</string>
+    <string name="auth_pin_current">Current PIN</string>
+    <string name="auth_pin_new">New PIN (4 to 8 digits)</string>
+    <string name="auth_pin_confirm">Confirm new PIN</string>
+    <string name="auth_pin_save">Save PIN</string>
+    <string name="auth_pin_err_format">The PIN must be 4 to 8 digits.</string>
+    <string name="auth_pin_err_wrong_old">The current PIN is wrong.</string>
+    <string name="auth_pin_err_unchanged">The new PIN must be different from the current one.</string>
+    <string name="auth_pin_err_default">Choose a PIN other than the default one.</string>
+    <string name="auth_pin_err_mismatch">The two PINs do not match.</string>
+    <string name="auth_pin_err_unknown">The operation failed. Please try again.</string>
+    <string name="auth_menu_change_pin">Change my PIN</string>
+    <string name="auth_menu_logout">Sign out</string>
+    <string name="auth_signed_in_fmt">Signed in as %1$s (%2$s)</string>
+    <string name="auth_role_admin">Administrator</string>
+    <string name="auth_role_cashier">Cashier</string>
+    <string name="auth_role_stock_keeper">Stock keeper</string>
+</resources>

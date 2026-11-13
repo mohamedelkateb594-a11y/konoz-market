@@ -19,12 +19,20 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.konoz.market.R
+import com.konoz.market.domain.Permission
+import com.konoz.market.domain.Permissions
 import com.konoz.market.ui.alerts.StockAlertsScreen
 import com.konoz.market.ui.alerts.StockAlertsViewModel
+import com.konoz.market.ui.auth.ChangePinScreen
+import com.konoz.market.ui.auth.ChangePinViewModel
+import com.konoz.market.ui.auth.currentUser
+import com.konoz.market.ui.auth.roleLabelRes
+import com.konoz.market.ui.auth.signOutAndRestart
 import com.konoz.market.ui.expenses.ExpensesScreen
 import com.konoz.market.ui.expenses.ExpensesViewModel
 import com.konoz.market.ui.movements.MovementLogScreen
@@ -62,10 +70,11 @@ private const val RETURNS = "returns"
 private const val STOCK_OPS = "stockops"
 private const val MOVEMENTS = "movements"
 private const val ALERTS = "alerts"
+private const val PIN = "pin"
 
 /**
  * Routes: menu, suppliers, statement/{supplierId}, purchase/{supplierId}/{0|1 = return}, returns, stockops,
- * movements, alerts, expenses, counts, count/{countId}, reports, shifts.
+ * movements, alerts, expenses, counts, count/{countId}, reports, shifts, pin.
  */
 private fun parentOf(route: String): String {
     val parts = route.split('/')
@@ -90,6 +99,8 @@ fun MoreRoute(modifier: Modifier = Modifier, startRoute: String? = null, onStart
             onStartConsumed()
         }
     }
+    val context = LocalContext.current
+    val user = currentUser()
 
     val parts = route.split('/')
     when (parts[0]) {
@@ -154,27 +165,40 @@ fun MoreRoute(modifier: Modifier = Modifier, startRoute: String? = null, onStart
             val vm: ShiftViewModel = viewModel(key = "shifts_$session", factory = ShiftViewModel.Factory)
             ShiftScreen(vm, onBack = { route = MENU }, modifier = modifier)
         }
-        else -> MoreMenu(
-            items = listOf(
-                R.string.menu_shifts to { session++; route = MoreTargets.SHIFTS },
-                R.string.menu_reports to { session++; route = MoreTargets.REPORTS },
-                R.string.menu_suppliers to { route = SUPPLIERS },
-                R.string.menu_expenses to { session++; route = MoreTargets.EXPENSES },
-                R.string.menu_stock_count to { session++; route = MoreTargets.COUNTS },
-                R.string.menu_returns to { session++; route = RETURNS },
-                R.string.menu_stock_ops to { session++; route = STOCK_OPS },
-                R.string.menu_movements to { session++; route = MOVEMENTS },
-                R.string.menu_alerts to { session++; route = ALERTS },
-            ),
-            modifier = modifier,
-        )
+        PIN -> {
+            val vm: ChangePinViewModel = viewModel(key = "pin_$session", factory = ChangePinViewModel.Factory)
+            ChangePinScreen(vm, forced = false, onDone = { route = MENU }, onBack = { route = MENU }, modifier = modifier)
+        }
+        else -> {
+            val role = user?.role
+            fun can(p: Permission) = role != null && Permissions.has(role, p)
+            val items = buildList<Pair<Int, () -> Unit>> {
+                if (can(Permission.MANAGE_SHIFTS)) add(R.string.menu_shifts to { session++; route = MoreTargets.SHIFTS })
+                if (can(Permission.VIEW_REPORTS)) add(R.string.menu_reports to { session++; route = MoreTargets.REPORTS })
+                if (can(Permission.MANAGE_PURCHASES)) add(R.string.menu_suppliers to { route = SUPPLIERS })
+                if (can(Permission.MANAGE_EXPENSES)) add(R.string.menu_expenses to { session++; route = MoreTargets.EXPENSES })
+                if (can(Permission.COUNT_STOCK)) add(R.string.menu_stock_count to { session++; route = MoreTargets.COUNTS })
+                if (can(Permission.SALES_RETURNS)) add(R.string.menu_returns to { session++; route = RETURNS })
+                if (can(Permission.ADJUST_STOCK)) add(R.string.menu_stock_ops to { session++; route = STOCK_OPS })
+                if (can(Permission.VIEW_INVENTORY)) add(R.string.menu_movements to { session++; route = MOVEMENTS })
+                if (can(Permission.VIEW_INVENTORY)) add(R.string.menu_alerts to { session++; route = ALERTS })
+                add(R.string.auth_menu_change_pin to { session++; route = PIN })
+                add(R.string.auth_menu_logout to { signOutAndRestart(context) })
+            }
+            MoreMenu(
+                subtitle = user?.let { stringResource(R.string.auth_signed_in_fmt, it.name, stringResource(roleLabelRes(it.role))) },
+                items = items,
+                modifier = modifier,
+            )
+        }
     }
 }
 
 @Composable
-private fun MoreMenu(items: List<Pair<Int, () -> Unit>>, modifier: Modifier = Modifier) {
+private fun MoreMenu(subtitle: String?, items: List<Pair<Int, () -> Unit>>, modifier: Modifier = Modifier) {
     Column(modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(stringResource(R.string.more_title), style = MaterialTheme.typography.titleLarge)
+        if (subtitle != null) Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         items.forEach { (label, action) ->
             Card(onClick = action, modifier = Modifier.fillMaxWidth()) {
                 Text(stringResource(label), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(16.dp))

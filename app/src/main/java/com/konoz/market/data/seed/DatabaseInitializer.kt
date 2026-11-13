@@ -24,7 +24,9 @@ object SettingKeys {
  */
 object DatabaseInitializer {
     const val DEFAULT_ADMIN_USERNAME = "admin"
-    private const val TEMP_ADMIN_PIN = "1234"
+
+    /** The temporary admin PIN. Public so AuthService can refuse it as a "new" PIN. */
+    const val TEMP_ADMIN_PIN = "1234"
 
     private val defaultCategories = listOf(
         "بقالة", "ألبان وأجبان", "مشروبات", "منظفات",

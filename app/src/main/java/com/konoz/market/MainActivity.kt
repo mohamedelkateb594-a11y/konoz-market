@@ -4,7 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import com.konoz.market.ui.KonozRoot
+import com.konoz.market.ui.auth.AuthGate
 import com.konoz.market.ui.theme.KonozTheme
 
 class MainActivity : ComponentActivity() {
@@ -13,7 +13,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             KonozTheme {
-                KonozRoot()
+                AuthGate()
             }
         }
     }
