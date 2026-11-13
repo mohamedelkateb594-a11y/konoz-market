@@ -28,6 +28,8 @@ sealed interface CashierMessage {
     data object EmptyCart : CashierMessage
     data object CardOverpay : CashierMessage
     data object SaleFailed : CashierMessage
+    /** Owner rule: a sale can only be completed while a shift is open. */
+    data object NoOpenShift : CashierMessage
 }
 
 sealed interface CheckoutOutcome {
@@ -43,6 +45,7 @@ sealed interface CheckoutOutcome {
  *  - Operations are serialized with a mutex so two quick scans can never race.
  *  - Price overrides need [Permission.EDIT_PRICES]; users without [Permission.GIVE_LARGE_DISCOUNT]
  *    are limited to cashier_max_discount_bp.
+ *  - A sale can only be completed while a shift is open (the cart can still be built and held).
  */
 class CashierSession(
     private val db: KonozDatabase,
@@ -260,9 +263,15 @@ class CashierSession(
             _message.value = CashierMessage.EmptyCart
             return CheckoutOutcome.Failed
         }
+        // Owner rule: no sale without an open shift (so every sale lands in a shift's drawer figures).
+        val shiftId = openShiftId()
+        if (shiftId == null) {
+            _message.value = CashierMessage.NoOpenShift
+            return CheckoutOutcome.Failed
+        }
         return try {
             val result = sales.completeSale(
-                cart.toDraft(user.id, openShiftId()), payments, SaleOptions(allowNegativeStock, allowExpired),
+                cart.toDraft(user.id, shiftId), payments, SaleOptions(allowNegativeStock, allowExpired),
             )
             pendingPayments = null
             startNewCart()
