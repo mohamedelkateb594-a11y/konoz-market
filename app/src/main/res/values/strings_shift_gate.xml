@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="msg_no_open_shift">Open a shift first (More → Shifts) before completing a sale.</string>
+    <string name="shift_supplier_payments">Paid to suppliers (net)</string>
 </resources>
