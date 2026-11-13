@@ -242,7 +242,7 @@ class ReportService(
             a.revenue -= r.refundAmount - taxPart(r.refundAmount, r.invoiceTax, r.invoiceTotal)
             if (r.resellable) a.cost -= Money.costOf(r.unitCost, r.qtyMilli)
         }
-        return acc.map { (id, a) -> ProductPerformance(id, a.name, a.categoryName, a.qtyMilli, a.revenue, a.cost, a.revenue - a.cost) }
+        return acc.map { (id, a) -> ProductPerformance(id, a.name, a.categoryName, a.qty, a.revenue, a.cost, a.revenue - a.cost) }
     }
 
     private fun valueOf(rows: List<QtyCostRow>): Long = rows.sumOf { Money.costOf(it.unitCost, it.qtyMilli) }
