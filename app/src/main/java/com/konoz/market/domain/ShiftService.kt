@@ -20,8 +20,9 @@ sealed class ShiftException(message: String) : Exception(message) {
 
 /**
  * Cash-drawer figures of one shift (all piastres).
- * expectedCash = openingCash + cashSales - cashRefunds - cashExpenses.
+ * expectedCash = openingCash + cashSales - cashRefunds - cashExpenses - supplierPayments.
  * Payments are stored NET of change, so cashSales is exactly the cash that stayed in the drawer.
+ * [supplierPayments] is net cash paid to suppliers (refunds collected on supplier returns count negative).
  * [actualCash] / [difference] are null until the shift is closed; difference = actual - expected (negative = shortage).
  */
 data class ShiftSummary(
@@ -35,6 +36,7 @@ data class ShiftSummary(
     val expectedCash: Long,
     val actualCash: Long?,
     val difference: Long?,
+    val supplierPayments: Long = 0L,
 ) {
     /** Sales paid by means other than cash. */
     val otherSales: Long get() = cardSales + walletSales
@@ -42,16 +44,17 @@ data class ShiftSummary(
 }
 
 object ShiftMath {
-    fun expectedCash(openingCash: Long, cashSales: Long, cashRefunds: Long, cashExpenses: Long): Long =
-        openingCash + cashSales - cashRefunds - cashExpenses
+    fun expectedCash(
+        openingCash: Long, cashSales: Long, cashRefunds: Long, cashExpenses: Long, supplierPayments: Long = 0L,
+    ): Long = openingCash + cashSales - cashRefunds - cashExpenses - supplierPayments
 
     fun difference(actualCash: Long, expectedCash: Long): Long = actualCash - expectedCash
 }
 
 /**
  * Opening and closing of cashier shifts. Every change runs in one transaction together with its audit row.
- * Only one shift can be open at a time. Sales, returns and expenses made while a shift is open are linked to it
- * through their `shiftId` (set by the callers), which is what [summary] reads.
+ * Only one shift can be open at a time. Sales, returns, expenses and supplier payments made while a shift is open
+ * are linked to it through their `shiftId` (set by the callers), which is what [summary] reads.
  */
 class ShiftService(
     private val db: KonozDatabase,
@@ -65,8 +68,8 @@ class ShiftService(
 
     /**
      * Live summary of the open shift (null = no open shift). It is recomputed whenever the open shift changes or any
-     * sale, return or expense is written: the three totals below are only change triggers, the figures themselves
-     * come from [summaryOf] so they always match what closing the shift would store.
+     * sale, return, expense or supplier payment is written: the four totals below are only change triggers, the
+     * figures themselves come from [summaryOf] so they always match what closing the shift would store.
      */
     @OptIn(ExperimentalCoroutinesApi::class)
     fun observeLiveSummary(): Flow<ShiftSummary?> = shifts.observeOpenShift().flatMapLatest { shift ->
@@ -77,7 +80,8 @@ class ShiftService(
                 db.sales().observeSalesTotal(shift.openedAt, Long.MAX_VALUE),
                 db.sales().observeReturnsTotal(shift.openedAt, Long.MAX_VALUE),
                 db.expenses().observeTotalBetween(shift.openedAt, Long.MAX_VALUE),
-            ) { _, _, _ -> summaryOf(shift) }
+                db.supplierPayments().observeNetForShift(shift.id),
+            ) { _, _, _, _ -> summaryOf(shift) }
         }
     }
 
@@ -127,6 +131,7 @@ class ShiftService(
         val walletSales = db.sales().paymentsTotalForShift(shift.id, PaymentMethod.WALLET.name)
         val cashRefunds = db.sales().cashRefundsForShift(shift.id)
         val cashExpenses = db.expenses().cashExpensesForShift(shift.id)
+        val supplierPayments = db.supplierPayments().netForShift(shift.id)
         return ShiftSummary(
             shift = shift,
             openingCash = shift.openingCash,
@@ -135,9 +140,10 @@ class ShiftService(
             walletSales = walletSales,
             cashExpenses = cashExpenses,
             cashRefunds = cashRefunds,
-            expectedCash = ShiftMath.expectedCash(shift.openingCash, cashSales, cashRefunds, cashExpenses),
+            expectedCash = ShiftMath.expectedCash(shift.openingCash, cashSales, cashRefunds, cashExpenses, supplierPayments),
             actualCash = shift.actualCash,
             difference = shift.difference,
+            supplierPayments = supplierPayments,
         )
     }
 
