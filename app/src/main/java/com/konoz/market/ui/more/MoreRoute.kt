@@ -36,6 +36,8 @@ import com.konoz.market.ui.movements.MovementLogScreen
 import com.konoz.market.ui.movements.MovementLogViewModel
 import com.konoz.market.ui.purchases.PurchaseScreen
 import com.konoz.market.ui.purchases.PurchaseViewModel
+import com.konoz.market.ui.receipt.InvoicesScreen
+import com.konoz.market.ui.receipt.InvoicesViewModel
 import com.konoz.market.ui.reports.ReportsScreen
 import com.konoz.market.ui.reports.ReportsViewModel
 import com.konoz.market.ui.returns.ReturnsScreen
@@ -62,6 +64,7 @@ object MoreTargets {
     const val REPORTS = "reports"
     const val SHIFTS = "shifts"
     const val USERS = "users"
+    const val INVOICES = "invoices"
 }
 
 private const val MENU = "menu"
@@ -73,7 +76,7 @@ private const val ALERTS = "alerts"
 
 /**
  * Routes: menu, suppliers, statement/{supplierId}, purchase/{supplierId}/{0|1 = return}, returns, stockops,
- * movements, alerts, expenses, counts, count/{countId}, reports, shifts, users.
+ * movements, alerts, expenses, counts, count/{countId}, reports, shifts, users, invoices.
  */
 private fun parentOf(route: String): String {
     val parts = route.split('/')
@@ -85,7 +88,7 @@ private fun parentOf(route: String): String {
     }
 }
 
-/** The permission a route needs; null = any signed-in user. */
+/** The permission a route needs; null = any signed-in user (alerts, invoices). */
 private fun requiredPermission(route: String): Permission? = when (route.split('/')[0]) {
     SUPPLIERS, "statement", "purchase" -> Permission.MANAGE_PURCHASES
     RETURNS -> Permission.PROCESS_RETURN
@@ -185,8 +188,13 @@ fun MoreRoute(modifier: Modifier = Modifier, startRoute: String? = null, onStart
             val vm: UsersViewModel = viewModel(key = "users_$session", factory = UsersViewModel.Factory)
             UsersScreen(vm, onBack = { route = MENU }, modifier = modifier)
         }
+        MoreTargets.INVOICES -> {
+            val vm: InvoicesViewModel = viewModel(key = "invoices_$session", factory = InvoicesViewModel.Factory)
+            InvoicesScreen(vm, onBack = { route = MENU }, modifier = modifier)
+        }
         else -> MoreMenu(
             items = listOf(
+                Triple<Int, Permission?, () -> Unit>(R.string.menu_invoices, null) { session++; route = MoreTargets.INVOICES },
                 Triple(R.string.menu_shifts, Permission.OPERATE_SHIFTS) { session++; route = MoreTargets.SHIFTS },
                 Triple(R.string.menu_reports, Permission.VIEW_PROFIT) { session++; route = MoreTargets.REPORTS },
                 Triple(R.string.menu_suppliers, Permission.MANAGE_PURCHASES) { route = SUPPLIERS },
