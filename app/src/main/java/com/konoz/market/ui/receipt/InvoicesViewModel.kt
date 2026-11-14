@@ -15,6 +15,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -53,6 +54,20 @@ class InvoicesViewModel(private val app: KonozApp) : ViewModel() {
         viewModelScope.launch {
             try {
                 loader.load(invoiceId)?.let { data -> _ui.update { it.copy(selected = data, phone = "", message = null) } }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _ui.update { it.copy(message = ShareMessage.FAILED) }
+            }
+        }
+    }
+
+    /** Opens the invoice with this number (used right after a sale, when only the number is known). Does nothing if it is not found. */
+    fun openByNumber(number: Long) {
+        viewModelScope.launch {
+            try {
+                val id = app.database.sales().observeRecent(20).first().firstOrNull { it.number == number }?.id
+                if (id != null) open(id)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {

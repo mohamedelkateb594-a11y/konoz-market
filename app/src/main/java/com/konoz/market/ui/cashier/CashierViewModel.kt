@@ -20,9 +20,12 @@ import com.konoz.market.domain.PaymentInput
 import com.konoz.market.domain.SaleResult
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
@@ -30,6 +33,9 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+
+/** A scan that put a product on the invoice: [qtyMilli] is the quantity of that product on the invoice now. */
+data class ScanAlert(val name: String, val qtyMilli: Long)
 
 class CashierViewModel(
     private val session: CashierSession,
@@ -63,6 +69,11 @@ class CashierViewModel(
     private val _lastSale = MutableStateFlow<SaleResult?>(null)
     val lastSale: StateFlow<SaleResult?> = _lastSale.asStateFlow()
 
+    private val _scanAlerts = MutableSharedFlow<ScanAlert>(extraBufferCapacity = 8)
+
+    /** One event per scan that added a product (or raised its quantity) on the invoice; the screen beeps, vibrates and shows a banner. */
+    val scanAlerts: SharedFlow<ScanAlert> = _scanAlerts.asSharedFlow()
+
     init {
         viewModelScope.launch { session.start() }
     }
@@ -75,8 +86,24 @@ class CashierViewModel(
         _scanning.value = on
     }
 
+    /**
+     * Scans a barcode. A scan the session turns into an invoice line (a new product, or one more of a product already there)
+     * is reported through [scanAlerts]; unknown barcodes, inactive products and the like raise the usual message dialog instead.
+     */
     fun onScan(code: String) {
-        viewModelScope.launch { session.scan(code) }
+        viewModelScope.launch {
+            val before = session.cart.value
+            session.scan(code)
+            addedBy(before, session.cart.value)?.let { _scanAlerts.tryEmit(it) }
+        }
+    }
+
+    private fun addedBy(before: Cart, after: Cart): ScanAlert? {
+        val changed = after.items.firstOrNull { item ->
+            val previous = before.items.firstOrNull { it.productId == item.productId }?.qtyMilli
+            previous == null || item.qtyMilli > previous
+        } ?: return null
+        return ScanAlert(changed.name, changed.qtyMilli)
     }
 
     fun addProduct(productId: Long) {

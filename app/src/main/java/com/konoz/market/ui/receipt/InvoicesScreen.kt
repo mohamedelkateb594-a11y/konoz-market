@@ -78,46 +78,51 @@ fun InvoicesScreen(vm: InvoicesViewModel, onBack: () -> Unit, modifier: Modifier
         }
     }
 
-    ui.selected?.let { data ->
-        AlertDialog(
-            onDismissRequest = vm::close,
-            title = { Text(stringResource(R.string.inv_number_fmt, data.number)) },
-            text = {
-                Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    InvoiceSummary(data)
-                    OutlinedTextField(
-                        value = ui.phone, onValueChange = vm::onPhone, singleLine = true,
-                        label = { Text(stringResource(R.string.inv_phone)) },
-                        placeholder = { Text(stringResource(R.string.inv_phone_hint)) },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                        modifier = Modifier.fillMaxWidth(),
+    InvoiceShareDialog(ui, vm)
+}
+
+/** The invoice picked in [ui] with the customer phone field and the send/share buttons. Shows nothing when no invoice is selected. */
+@Composable
+fun InvoiceShareDialog(ui: InvoicesUi, vm: InvoicesViewModel) {
+    val data = ui.selected ?: return
+    AlertDialog(
+        onDismissRequest = vm::close,
+        title = { Text(stringResource(R.string.inv_number_fmt, data.number)) },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                InvoiceSummary(data)
+                OutlinedTextField(
+                    value = ui.phone, onValueChange = vm::onPhone, singleLine = true,
+                    label = { Text(stringResource(R.string.inv_phone)) },
+                    placeholder = { Text(stringResource(R.string.inv_phone_hint)) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                ui.message?.let {
+                    Text(
+                        stringResource(
+                            when (it) {
+                                ShareMessage.INVALID_PHONE -> R.string.inv_err_phone
+                                ShareMessage.NO_WHATSAPP -> R.string.inv_err_no_whatsapp
+                                ShareMessage.FAILED -> R.string.inv_err_failed
+                            },
+                        ),
+                        color = MaterialTheme.colorScheme.error,
                     )
-                    ui.message?.let {
-                        Text(
-                            stringResource(
-                                when (it) {
-                                    ShareMessage.INVALID_PHONE -> R.string.inv_err_phone
-                                    ShareMessage.NO_WHATSAPP -> R.string.inv_err_no_whatsapp
-                                    ShareMessage.FAILED -> R.string.inv_err_failed
-                                },
-                            ),
-                            color = MaterialTheme.colorScheme.error,
-                        )
-                    }
-                    Button(onClick = vm::sendWhatsApp, enabled = !ui.busy, modifier = Modifier.fillMaxWidth()) {
-                        Text(stringResource(R.string.inv_send_whatsapp))
-                    }
-                    OutlinedButton(onClick = vm::sharePdf, enabled = !ui.busy, modifier = Modifier.fillMaxWidth()) {
-                        Text(stringResource(R.string.inv_share_pdf))
-                    }
-                    OutlinedButton(onClick = vm::shareImage, enabled = !ui.busy, modifier = Modifier.fillMaxWidth()) {
-                        Text(stringResource(R.string.inv_share_image))
-                    }
                 }
-            },
-            confirmButton = { TextButton(onClick = vm::close) { Text(stringResource(R.string.ok)) } },
-        )
-    }
+                Button(onClick = vm::sendWhatsApp, enabled = !ui.busy, modifier = Modifier.fillMaxWidth()) {
+                    Text(stringResource(R.string.inv_send_whatsapp))
+                }
+                OutlinedButton(onClick = vm::sharePdf, enabled = !ui.busy, modifier = Modifier.fillMaxWidth()) {
+                    Text(stringResource(R.string.inv_share_pdf))
+                }
+                OutlinedButton(onClick = vm::shareImage, enabled = !ui.busy, modifier = Modifier.fillMaxWidth()) {
+                    Text(stringResource(R.string.inv_share_image))
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = vm::close) { Text(stringResource(R.string.ok)) } },
+    )
 }
 
 /** The items and totals, so the cashier can check which invoice this is before sending it. */
