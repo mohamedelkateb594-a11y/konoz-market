@@ -1,5 +1,7 @@
 package com.konoz.market.ui.cashier
 
+import android.media.AudioManager
+import android.media.ToneGenerator
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -35,12 +37,16 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -55,14 +61,18 @@ import com.konoz.market.domain.SaleResult
 import com.konoz.market.ui.common.formatQty
 import com.konoz.market.ui.common.unitLabelRes
 import com.konoz.market.ui.scanner.CameraBarcodeScanner
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+/** [onShareInvoice] is called with the number of the invoice just sold when the cashier taps "Send invoice" on the receipt. */
 @Composable
 fun CashierScreen(
     vm: CashierViewModel,
     onRegisterBarcode: (String) -> Unit,
+    onShareInvoice: (Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val cart by vm.cart.collectAsStateWithLifecycle()
@@ -79,6 +89,21 @@ fun CashierScreen(
     var showHeld by remember { mutableStateOf(false) }
     var showInvoiceDiscount by remember { mutableStateOf(false) }
     var editId by remember { mutableStateOf<Long?>(null) }
+
+    // Every scan that puts a product on the invoice: short beep, vibration and a banner with the product and its new quantity.
+    var scanAlert by remember { mutableStateOf<ScanAlert?>(null) }
+    val haptic = LocalHapticFeedback.current
+    val tone = remember { runCatching { ToneGenerator(AudioManager.STREAM_NOTIFICATION, 80) }.getOrNull() }
+    DisposableEffect(tone) { onDispose { tone?.release() } }
+    LaunchedEffect(vm) {
+        vm.scanAlerts.collectLatest { alert ->
+            scanAlert = alert
+            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+            runCatching { tone?.startTone(ToneGenerator.TONE_PROP_BEEP, 120) }
+            delay(1_800)
+            scanAlert = null
+        }
+    }
 
     val totals = cart.totals()
     val anyDialog = message != null || showPay || showHeld || showInvoiceDiscount || editId != null || lastSale != null
@@ -149,6 +174,21 @@ fun CashierScreen(
                             }
                         }
                     }
+                }
+            }
+            scanAlert?.let { alert ->
+                Surface(
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    shape = MaterialTheme.shapes.medium,
+                    tonalElevation = 6.dp,
+                    modifier = Modifier.align(Alignment.TopCenter).padding(12.dp),
+                ) {
+                    Text(
+                        stringResource(R.string.scan_added_fmt, alert.name, formatQty(alert.qtyMilli)),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                    )
                 }
             }
         }
@@ -231,7 +271,13 @@ fun CashierScreen(
         )
     }
 
-    lastSale?.let { ReceiptDialog(it, onDone = { vm.dismissSale() }) }
+    lastSale?.let { sale ->
+        ReceiptDialog(
+            sale = sale,
+            onDone = { vm.dismissSale() },
+            onShare = { onShareInvoice(sale.number.toString().toLong()) },
+        )
+    }
 
     message?.let { m ->
         MessageDialog(
@@ -412,7 +458,7 @@ private fun HeldDialog(
 }
 
 @Composable
-private fun ReceiptDialog(sale: SaleResult, onDone: () -> Unit) {
+private fun ReceiptDialog(sale: SaleResult, onDone: () -> Unit, onShare: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDone,
         title = { Text(stringResource(R.string.receipt_title)) },
@@ -426,6 +472,7 @@ private fun ReceiptDialog(sale: SaleResult, onDone: () -> Unit) {
             }
         },
         confirmButton = { Button(onClick = onDone) { Text(stringResource(R.string.done)) } },
+        dismissButton = { OutlinedButton(onClick = onShare) { Text(stringResource(R.string.receipt_share_invoice)) } },
     )
 }
 
