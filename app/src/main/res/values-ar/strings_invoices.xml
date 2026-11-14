@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="menu_invoices">الفواتير والمشاركة</string>
+    <string name="inv_title">الفواتير</string>
+    <string name="inv_search">رقم الفاتورة</string>
+    <string name="inv_empty">لا توجد فواتير.</string>
+    <string name="inv_phone">رقم هاتف العميل (واتساب)</string>
+    <string name="inv_phone_hint">01012345678</string>
+    <string name="inv_send_whatsapp">إرسال على واتساب</string>
+    <string name="inv_share_pdf">مشاركة كـ PDF</string>
+    <string name="inv_share_image">مشاركة كصورة</string>
+    <string name="inv_err_phone">أدخل رقم موبايل صحيحًا، مثل 01012345678.</string>
+    <string name="inv_err_no_whatsapp">واتساب غير مثبت. اختر تطبيقًا آخر لمشاركة الفاتورة.</string>
+    <string name="inv_err_failed">تعذّر تجهيز أو مشاركة الفاتورة. حاول مرة أخرى.</string>
+
+    <string name="inv_shop_name">KONOZ MARKET – كنوز ماركت</string>
+    <string name="inv_number_fmt">فاتورة رقم %1$d</string>
+    <string name="inv_cashier">الكاشير</string>
+    <string name="inv_qty_price_fmt">%1$s × %2$s</string>
+    <string name="inv_discount_fmt">خصم %1$s</string>
+    <string name="inv_subtotal">المجموع الفرعي</string>
+    <string name="inv_invoice_discount">خصم الفاتورة</string>
+    <string name="inv_tax">الضريبة</string>
+    <string name="inv_total">الإجمالي</string>
+    <string name="inv_paid">المدفوع</string>
+    <string name="inv_change">الباقي</string>
+    <string name="inv_pay_cash">نقدي</string>
+    <string name="inv_pay_card">بطاقة</string>
+    <string name="inv_pay_wallet">محفظة إلكترونية</string>
+    <string name="inv_thanks">شكرًا لتسوقكم معنا</string>
+    <string name="inv_caption_fmt">%1$s – فاتورة رقم %2$d، الإجمالي %3$s</string>
+</resources>

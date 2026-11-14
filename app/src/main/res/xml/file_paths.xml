@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- Invoices written for sharing (PDF / PNG); replaced on every share. -->
+    <cache-path name="invoices" path="invoices/" />
+</paths>
