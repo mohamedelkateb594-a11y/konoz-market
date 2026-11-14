@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="menu_invoices">Invoices and sharing</string>
+    <string name="inv_title">Invoices</string>
+    <string name="inv_search">Invoice number</string>
+    <string name="inv_empty">No invoices found.</string>
+    <string name="inv_phone">Customer phone (WhatsApp)</string>
+    <string name="inv_phone_hint">01012345678</string>
+    <string name="inv_send_whatsapp">Send on WhatsApp</string>
+    <string name="inv_share_pdf">Share as PDF</string>
+    <string name="inv_share_image">Share as image</string>
+    <string name="inv_err_phone">Enter a valid mobile number, for example 01012345678.</string>
+    <string name="inv_err_no_whatsapp">WhatsApp is not installed. Choose another app to share the invoice.</string>
+    <string name="inv_err_failed">Could not prepare or share the invoice. Please try again.</string>
+
+    <string name="inv_shop_name">KONOZ MARKET</string>
+    <string name="inv_number_fmt">Invoice #%1$d</string>
+    <string name="inv_cashier">Cashier</string>
+    <string name="inv_qty_price_fmt">%1$s x %2$s</string>
+    <string name="inv_discount_fmt">Discount %1$s</string>
+    <string name="inv_subtotal">Subtotal</string>
+    <string name="inv_invoice_discount">Invoice discount</string>
+    <string name="inv_tax">Tax</string>
+    <string name="inv_total">Total</string>
+    <string name="inv_paid">Paid</string>
+    <string name="inv_change">Change</string>
+    <string name="inv_pay_cash">Cash</string>
+    <string name="inv_pay_card">Card</string>
+    <string name="inv_pay_wallet">Wallet</string>
+    <string name="inv_thanks">Thank you for shopping with us</string>
+    <string name="inv_caption_fmt">%1$s - invoice #%2$d, total %3$s</string>
+</resources>

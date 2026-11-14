@@ -11,6 +11,7 @@ import com.konoz.market.data.dao.CategoryDao
 import com.konoz.market.data.dao.ExpenseDao
 import com.konoz.market.data.dao.ProductDao
 import com.konoz.market.data.dao.PurchaseDao
+import com.konoz.market.data.dao.ReportDao
 import com.konoz.market.data.dao.SalesDao
 import com.konoz.market.data.dao.SettingsDao
 import com.konoz.market.data.dao.ShiftDao
@@ -66,6 +67,7 @@ abstract class KonozDatabase : RoomDatabase() {
     abstract fun shifts(): ShiftDao
     abstract fun audit(): AuditDao
     abstract fun settings(): SettingsDao
+    abstract fun reports(): ReportDao
 
     /** Run [block] atomically; any exception rolls everything back. */
     suspend fun <R> tx(block: suspend () -> R): R = withTransaction(block)
