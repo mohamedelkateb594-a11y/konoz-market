@@ -17,6 +17,8 @@ enum class Permission {
     MANAGE_USERS,
     EDIT_PRICES,
     GIVE_LARGE_DISCOUNT,
+    /** Creates, exports and restores backups (a restore replaces all data on the phone). */
+    MANAGE_BACKUP,
 }
 
 object Permissions {
