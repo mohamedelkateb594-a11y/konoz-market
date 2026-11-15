@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="menu_backup">النسخ الاحتياطي والاستعادة</string>
+    <string name="backup_title">النسخ الاحتياطي والاستعادة</string>
+    <string name="backup_working">جارٍ التنفيذ…</string>
+    <string name="backup_export_title">حفظ نسخة احتياطية في ملف</string>
+    <string name="backup_export_desc">ينشئ ملفًا واحدًا يضم كل المبيعات والمخزون والمصروفات والمستخدمين وصور المنتجات والإيصالات. احتفظ بنسخة خارج هذا الهاتف (درايف، كمبيوتر، هاتف آخر).</string>
+    <string name="backup_export_btn">حفظ النسخة في ملف</string>
+    <string name="backup_local_btn">حفظ نسخة داخل التطبيق</string>
+    <string name="backup_restore_title">الاستعادة من ملف</string>
+    <string name="backup_restore_desc">ينقل كل البيانات من ملف نسخة احتياطية إلى هذا الهاتف. يستبدل كل ما هنا فلا تتكرر الفواتير. تُحفظ نسخة أمان من البيانات الحالية قبل الاستعادة.</string>
+    <string name="backup_restore_btn">اختيار ملف نسخة احتياطية</string>
+    <string name="backup_auto_title">نسخ احتياطي يومي تلقائي</string>
+    <string name="backup_auto_desc">يحتفظ بآخر 7 نسخ يومية داخل التطبيق. احفظ أيضًا ملفًا خارج الهاتف من وقت لآخر.</string>
+    <string name="backup_local_title">النسخ المحفوظة داخل التطبيق</string>
+    <string name="backup_local_empty">لا توجد نسخ احتياطية بعد.</string>
+    <string name="backup_item_fmt">%1$s - %2$s</string>
+    <string name="backup_kind_auto">تلقائية</string>
+    <string name="backup_kind_manual">يدوية</string>
+    <string name="backup_kind_pre_restore">قبل استعادة</string>
+    <string name="backup_restore_item">استعادة</string>
+    <string name="backup_confirm_title">استبدال كل البيانات؟</string>
+    <string name="backup_confirm_body_fmt">هذه النسخة أُنشئت في %1$s وتحتوي على %2$d فاتورة. الاستعادة تستبدل كل البيانات الحالية في هذا الهاتف وتعيد تشغيل التطبيق.</string>
+    <string name="backup_confirm_ok">استعادة وإعادة التشغيل</string>
+    <string name="backup_done_export">تم حفظ النسخة الاحتياطية.</string>
+    <string name="backup_done_local">تم حفظ نسخة داخل التطبيق.</string>
+    <string name="backup_err_not_backup">هذا ليس ملف نسخة احتياطية من كنوز ماركت.</string>
+    <string name="backup_err_corrupt">ملف النسخة تالف أو تم تعديله. لم تتم أي استعادة.</string>
+    <string name="backup_err_newer">هذه النسخة من إصدار أحدث للتطبيق. حدّث التطبيق أولًا.</string>
+    <string name="backup_err_io">تعذّرت قراءة الملف أو كتابته. لم يتغير شيء.</string>
+    <string name="backup_err_not_allowed">هذه العملية للمدير فقط.</string>
+</resources>

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="menu_backup">Backup and restore</string>
+    <string name="backup_title">Backup and restore</string>
+    <string name="backup_working">Working…</string>
+    <string name="backup_export_title">Save a backup file</string>
+    <string name="backup_export_desc">Creates one file with all sales, stock, expenses, users, product pictures and receipts. Keep a copy outside this phone (Drive, computer, another phone).</string>
+    <string name="backup_export_btn">Save backup to a file</string>
+    <string name="backup_local_btn">Keep a copy inside the app</string>
+    <string name="backup_restore_title">Restore from a file</string>
+    <string name="backup_restore_desc">Moves all data from a backup file to this phone. It replaces everything here, so nothing is duplicated. A safety copy of the current data is kept first.</string>
+    <string name="backup_restore_btn">Choose a backup file</string>
+    <string name="backup_auto_title">Daily automatic backup</string>
+    <string name="backup_auto_desc">Keeps the last 7 daily copies inside the app. Also save a file outside the phone from time to time.</string>
+    <string name="backup_local_title">Backups kept in the app</string>
+    <string name="backup_local_empty">No backups yet.</string>
+    <string name="backup_item_fmt">%1$s - %2$s</string>
+    <string name="backup_kind_auto">Automatic</string>
+    <string name="backup_kind_manual">Manual</string>
+    <string name="backup_kind_pre_restore">Before a restore</string>
+    <string name="backup_restore_item">Restore</string>
+    <string name="backup_confirm_title">Replace all data?</string>
+    <string name="backup_confirm_body_fmt">This backup was made on %1$s and holds %2$d invoices. Restoring replaces ALL current data on this phone and restarts the app.</string>
+    <string name="backup_confirm_ok">Restore and restart</string>
+    <string name="backup_done_export">Backup saved.</string>
+    <string name="backup_done_local">A copy was kept inside the app.</string>
+    <string name="backup_err_not_backup">This is not a Konoz Market backup file.</string>
+    <string name="backup_err_corrupt">The backup file is damaged or was changed. Nothing was restored.</string>
+    <string name="backup_err_newer">This backup comes from a newer version of the app. Update the app first.</string>
+    <string name="backup_err_io">The file could not be read or written. Nothing was changed.</string>
+    <string name="backup_err_not_allowed">Only the manager can do this.</string>
+</resources>
