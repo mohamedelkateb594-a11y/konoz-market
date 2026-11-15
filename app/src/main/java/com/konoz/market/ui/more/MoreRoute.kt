@@ -30,6 +30,8 @@ import com.konoz.market.domain.Permission
 import com.konoz.market.domain.Permissions
 import com.konoz.market.ui.alerts.StockAlertsScreen
 import com.konoz.market.ui.alerts.StockAlertsViewModel
+import com.konoz.market.ui.backup.BackupScreen
+import com.konoz.market.ui.backup.BackupViewModel
 import com.konoz.market.ui.expenses.ExpensesScreen
 import com.konoz.market.ui.expenses.ExpensesViewModel
 import com.konoz.market.ui.movements.MovementLogScreen
@@ -65,6 +67,7 @@ object MoreTargets {
     const val SHIFTS = "shifts"
     const val USERS = "users"
     const val INVOICES = "invoices"
+    const val BACKUP = "backup"
 }
 
 private const val MENU = "menu"
@@ -76,7 +79,7 @@ private const val ALERTS = "alerts"
 
 /**
  * Routes: menu, suppliers, statement/{supplierId}, purchase/{supplierId}/{0|1 = return}, returns, stockops,
- * movements, alerts, expenses, counts, count/{countId}, reports, shifts, users, invoices.
+ * movements, alerts, expenses, counts, count/{countId}, reports, shifts, users, invoices, backup.
  */
 private fun parentOf(route: String): String {
     val parts = route.split('/')
@@ -98,6 +101,7 @@ private fun requiredPermission(route: String): Permission? = when (route.split('
     MoreTargets.REPORTS -> Permission.VIEW_PROFIT
     MoreTargets.SHIFTS -> Permission.OPERATE_SHIFTS
     MoreTargets.USERS -> Permission.MANAGE_USERS
+    MoreTargets.BACKUP -> Permission.MANAGE_BACKUP
     else -> null
 }
 
@@ -192,6 +196,10 @@ fun MoreRoute(modifier: Modifier = Modifier, startRoute: String? = null, onStart
             val vm: InvoicesViewModel = viewModel(key = "invoices_$session", factory = InvoicesViewModel.Factory)
             InvoicesScreen(vm, onBack = { route = MENU }, modifier = modifier)
         }
+        MoreTargets.BACKUP -> {
+            val vm: BackupViewModel = viewModel(key = "backup_$session", factory = BackupViewModel.Factory)
+            BackupScreen(vm, onBack = { route = MENU }, modifier = modifier)
+        }
         else -> MoreMenu(
             items = listOf(
                 Triple<Int, Permission?, () -> Unit>(R.string.menu_invoices, null) { session++; route = MoreTargets.INVOICES },
@@ -205,6 +213,7 @@ fun MoreRoute(modifier: Modifier = Modifier, startRoute: String? = null, onStart
                 Triple(R.string.menu_movements, Permission.ADJUST_STOCK) { session++; route = MOVEMENTS },
                 Triple<Int, Permission?, () -> Unit>(R.string.menu_alerts, null) { session++; route = ALERTS },
                 Triple(R.string.menu_users, Permission.MANAGE_USERS) { session++; route = MoreTargets.USERS },
+                Triple(R.string.menu_backup, Permission.MANAGE_BACKUP) { session++; route = MoreTargets.BACKUP },
                 Triple<Int, Permission?, () -> Unit>(R.string.auth_logout, null) { route = MENU; app.session.signOut() },
             ).filter { allowed(it.second) },
             modifier = modifier,
