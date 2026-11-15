@@ -15,6 +15,8 @@ enum class Permission {
     PROCESS_RETURN,
     OPERATE_SHIFTS,
     MANAGE_USERS,
+    /** Exports and restores backups (admin only: a restore replaces all data). */
+    MANAGE_BACKUP,
     EDIT_PRICES,
     GIVE_LARGE_DISCOUNT,
 }

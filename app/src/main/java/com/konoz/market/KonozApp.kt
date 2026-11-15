@@ -7,6 +7,7 @@ import com.konoz.market.data.repo.ProductCsvService
 import com.konoz.market.data.repo.ProductRepository
 import com.konoz.market.data.seed.DatabaseInitializer
 import com.konoz.market.domain.AuthSession
+import com.konoz.market.domain.BackupService
 import com.konoz.market.domain.ExpenseService
 import com.konoz.market.domain.PurchaseService
 import com.konoz.market.domain.ReportService
@@ -37,6 +38,7 @@ class KonozApp : Application() {
     val reportService: ReportService by lazy { ReportService(database) }
     val shiftService: ShiftService by lazy { ShiftService(database) }
     val userService: UserService by lazy { UserService(database) }
+    val backupService: BackupService by lazy { BackupService(this, database) }
     val productRepository: ProductRepository by lazy { ProductRepository(database) }
     val catalogRepository: CatalogRepository by lazy { CatalogRepository(database) }
     val productCsvService: ProductCsvService by lazy { ProductCsvService(database, productRepository) }
