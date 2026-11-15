@@ -87,7 +87,7 @@ fun InvoicesScreen(vm: InvoicesViewModel, onBack: () -> Unit, modifier: Modifier
 }
 
 /**
- * The invoice picked in [ui] with the customer phone field and the send/share buttons. Shows nothing when no invoice is selected.
+ * The invoice picked in [ui] with the customer phone field and the send/share/print buttons. Shows nothing when no invoice is selected.
  * [header] is extra content above the invoice (the cashier shows the payment result and change there); [focusPhone] puts the
  * cursor in the phone field with the keyboard open; the keyboard Send key sends on WhatsApp; [closeLabelRes] labels the close button.
  */
@@ -126,6 +126,8 @@ fun InvoiceShareDialog(
                                 ShareMessage.INVALID_PHONE -> R.string.inv_err_phone
                                 ShareMessage.NO_WHATSAPP -> R.string.inv_err_no_whatsapp
                                 ShareMessage.FAILED -> R.string.inv_err_failed
+                                ShareMessage.NO_PRINTER -> R.string.inv_err_no_printer
+                                ShareMessage.PRINT_FAILED -> R.string.inv_err_print
                             },
                         ),
                         color = MaterialTheme.colorScheme.error,
@@ -133,6 +135,9 @@ fun InvoiceShareDialog(
                 }
                 Button(onClick = vm::sendWhatsApp, enabled = !ui.busy, modifier = Modifier.fillMaxWidth()) {
                     Text(stringResource(R.string.inv_send_whatsapp))
+                }
+                OutlinedButton(onClick = vm::print, enabled = !ui.busy, modifier = Modifier.fillMaxWidth()) {
+                    Text(stringResource(R.string.inv_print))
                 }
                 OutlinedButton(onClick = vm::sharePdf, enabled = !ui.busy, modifier = Modifier.fillMaxWidth()) {
                     Text(stringResource(R.string.inv_share_pdf))
