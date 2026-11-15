@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="menu_shifts">Shifts</string>
+    <string name="shift_title">Shifts and cash drawer</string>
+    <string name="shift_current">Current shift</string>
+    <string name="shift_none">No open shift</string>
+    <string name="shift_none_hint">Open a shift to track the cash drawer. Sales, returns and expenses made while a shift is open are linked to it.</string>
+    <string name="shift_open_btn">Open shift</string>
+    <string name="shift_close_btn">Close shift</string>
+    <string name="shift_open_title">Open shift</string>
+    <string name="shift_close_title">Close shift</string>
+    <string name="shift_close_hint">Count the cash in the drawer and enter it below. The closing cannot be changed afterwards.</string>
+    <string name="shift_report_title">Shift report</string>
+    <string name="shift_opened_at">Opened</string>
+    <string name="shift_closed_at">Closed</string>
+    <string name="shift_opening_cash">Opening cash</string>
+    <string name="shift_cash_sales">Cash sales</string>
+    <string name="shift_card_sales">Card sales</string>
+    <string name="shift_wallet_sales">Wallet sales</string>
+    <string name="shift_total_sales">Total sales</string>
+    <string name="shift_cash_refunds">Cash refunds</string>
+    <string name="shift_cash_expenses">Cash expenses</string>
+    <string name="shift_expected">Expected cash</string>
+    <string name="shift_expected_fmt">Expected cash: %1$s</string>
+    <string name="shift_actual">Counted cash</string>
+    <string name="shift_difference">Difference</string>
+    <string name="shift_diff_short_fmt">Shortage %1$s</string>
+    <string name="shift_diff_over_fmt">Surplus %1$s</string>
+    <string name="shift_diff_even">Balanced</string>
+    <string name="shift_history">Previous shifts</string>
+    <string name="shift_history_empty">No closed shifts yet.</string>
+    <string name="serr_amount">Enter a valid amount (zero or more).</string>
+    <string name="serr_already_open">A shift is already open.</string>
+    <string name="serr_not_open">This shift is not open.</string>
+    <string name="serr_unknown">The operation failed. Please try again.</string>
+</resources>

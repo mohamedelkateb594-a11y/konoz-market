@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="menu_users">Users</string>
+    <string name="auth_logout">Sign out</string>
+    <string name="auth_subtitle">Sign in</string>
+    <string name="auth_username">Username</string>
+    <string name="auth_pin">PIN</string>
+    <string name="auth_login">Sign in</string>
+    <string name="auth_err_invalid">Wrong username or PIN.</string>
+    <string name="auth_err_invalid_fmt">Wrong username or PIN. %1$d attempts left.</string>
+    <string name="auth_err_locked_fmt">Too many wrong attempts. Try again in %1$d min.</string>
+    <string name="auth_err_pin">The PIN must be 4 to 8 digits.</string>
+    <string name="auth_err_mismatch">The two PINs do not match.</string>
+    <string name="auth_err_unknown">Something went wrong. Please try again.</string>
+    <string name="auth_force_title">Choose your own PIN</string>
+    <string name="auth_force_hint">You signed in with the temporary PIN. Choose a new PIN to continue.</string>
+    <string name="auth_new_pin">New PIN</string>
+    <string name="auth_confirm_pin">Confirm the new PIN</string>
+    <string name="auth_save_pin">Save PIN</string>
+
+    <string name="users_title">Users</string>
+    <string name="users_add">Add user</string>
+    <string name="users_name">Full name</string>
+    <string name="users_role">Role</string>
+    <string name="users_reset_pin">Reset PIN</string>
+    <string name="users_activate">Activate</string>
+    <string name="users_deactivate">Deactivate</string>
+    <string name="users_inactive">inactive</string>
+    <string name="users_save">Save</string>
+    <string name="role_admin">Admin</string>
+    <string name="role_cashier">Cashier</string>
+    <string name="role_stock_keeper">Stock keeper</string>
+    <string name="uerr_name">Enter the name.</string>
+    <string name="uerr_username">Username: 3 to 20 lowercase English letters or digits.</string>
+    <string name="uerr_taken">This username is already used.</string>
+    <string name="uerr_pin">The PIN must be 4 to 8 digits.</string>
+    <string name="uerr_last_admin">At least one active admin must remain.</string>
+    <string name="uerr_not_allowed">You are not allowed to do this.</string>
+    <string name="uerr_unknown">The operation failed. Please try again.</string>
+</resources>

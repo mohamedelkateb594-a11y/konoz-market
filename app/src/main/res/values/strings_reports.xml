@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="menu_reports">Reports</string>
+    <string name="reports_title">Reports</string>
+    <string name="rep_period_last30">Last 30 days</string>
+    <string name="rep_error">Could not load the reports.</string>
+    <string name="rep_retry">Retry</string>
+    <string name="rep_none">No data in this period.</string>
+    <string name="rep_net_profit">Estimated net profit</string>
+    <string name="rep_previous_fmt">Previous period: %1$s</string>
+    <string name="rep_sales_gross">Total sales (tax included)</string>
+    <string name="rep_tax">Tax collected</string>
+    <string name="rep_returns">Returns</string>
+    <string name="rep_net_sales">Net sales (tax excluded)</string>
+    <string name="rep_cogs">Cost of goods sold</string>
+    <string name="rep_gross_profit">Gross profit</string>
+    <string name="rep_expenses">Operating expenses</string>
+    <string name="rep_losses">Inventory losses</string>
+    <string name="rep_invoices">Invoices</string>
+    <string name="rep_avg_invoice">Average invoice</string>
+    <string name="rep_discounts">Discounts given</string>
+    <string name="rep_top_qty">Best sellers (quantity)</string>
+    <string name="rep_top_profit">Most profitable</string>
+    <string name="rep_least_sold">Least sold</string>
+    <string name="rep_non_moving">Not moving (in stock, no sales)</string>
+    <string name="rep_categories">Sales by category (profit)</string>
+    <string name="rep_expenses_by">Expenses by type</string>
+    <string name="rep_peak_hours">Peak hours</string>
+    <string name="rep_weekdays">Average sales per weekday</string>
+    <string name="rep_uncategorized">Uncategorized</string>
+    <string name="rep_qty_fmt">qty %1$s</string>
+    <string name="rep_invoices_fmt">%1$d invoices</string>
+
+    <string name="dash_title">Dashboard</string>
+    <string name="dash_today_sales">Today\'s sales</string>
+    <string name="dash_invoices">Invoices today</string>
+    <string name="dash_net_sales">Net sales</string>
+    <string name="dash_expenses">Today\'s expenses</string>
+    <string name="dash_profit">Estimated profit</string>
+    <string name="dash_inventory_value">Inventory value (cost)</string>
+    <string name="dash_low_stock">Low stock items</string>
+    <string name="dash_expiring">Batches nearing expiry</string>
+    <string name="dash_last7">Net sales, last 7 days</string>
+    <string name="dash_recent">Recent sales</string>
+    <string name="dash_no_sales">No sales yet.</string>
+    <string name="dash_invoice_fmt">Invoice #%1$d</string>
+    <string name="dash_shortcuts">Shortcuts</string>
+    <string name="dash_cashier">Cashier</string>
+    <string name="dash_add_product">Add product</string>
+    <string name="dash_stock_count">Stock count</string>
+    <string name="dash_expenses_short">Expenses</string>
+    <string name="dash_reports">Reports</string>
+</resources>

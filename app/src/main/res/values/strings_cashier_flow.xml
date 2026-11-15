@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="cashier_remove_item">Remove item</string>
+    <string name="cashier_items_count_fmt">Items on the invoice: %1$d</string>
+    <string name="cashier_paid_ok">Payment completed</string>
+</resources>

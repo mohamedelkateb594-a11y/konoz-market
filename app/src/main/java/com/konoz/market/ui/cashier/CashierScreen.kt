@@ -1,5 +1,7 @@
 package com.konoz.market.ui.cashier
 
+import android.media.AudioManager
+import android.media.ToneGenerator
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,10 +17,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Search
@@ -35,12 +39,16 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -51,14 +59,16 @@ import com.konoz.market.data.entity.Product
 import com.konoz.market.data.entity.SalesInvoice
 import com.konoz.market.domain.CartItem
 import com.konoz.market.domain.CashierMessage
-import com.konoz.market.domain.SaleResult
 import com.konoz.market.ui.common.formatQty
 import com.konoz.market.ui.common.unitLabelRes
 import com.konoz.market.ui.scanner.CameraBarcodeScanner
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+/** The receipt after payment (change due, send to the customer) is shown by [CashierRoute] through the invoice send dialog. */
 @Composable
 fun CashierScreen(
     vm: CashierViewModel,
@@ -79,6 +89,21 @@ fun CashierScreen(
     var showHeld by remember { mutableStateOf(false) }
     var showInvoiceDiscount by remember { mutableStateOf(false) }
     var editId by remember { mutableStateOf<Long?>(null) }
+
+    // Every scan that puts a product on the invoice: short beep, vibration and a banner with the product and its new quantity.
+    var scanAlert by remember { mutableStateOf<ScanAlert?>(null) }
+    val haptic = LocalHapticFeedback.current
+    val tone = remember { runCatching { ToneGenerator(AudioManager.STREAM_NOTIFICATION, 80) }.getOrNull() }
+    DisposableEffect(tone) { onDispose { tone?.release() } }
+    LaunchedEffect(vm) {
+        vm.scanAlerts.collectLatest { alert ->
+            scanAlert = alert
+            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+            runCatching { tone?.startTone(ToneGenerator.TONE_PROP_BEEP, 120) }
+            delay(1_800)
+            scanAlert = null
+        }
+    }
 
     val totals = cart.totals()
     val anyDialog = message != null || showPay || showHeld || showInvoiceDiscount || editId != null || lastSale != null
@@ -139,16 +164,40 @@ fun CashierScreen(
                             contentPadding = PaddingValues(16.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
-                            items(cart.items, key = { it.productId }) { item ->
+                            item(key = "cart_header") {
+                                Text(
+                                    stringResource(R.string.cashier_items_count_fmt, cart.items.size),
+                                    style = MaterialTheme.typography.titleSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                            itemsIndexed(cart.items, key = { _, it -> it.productId }) { index, item ->
                                 CartRow(
+                                    index = index + 1,
                                     item = item,
                                     onClick = { editId = item.productId },
                                     onPlus = { vm.changeQty(item.productId, 1) },
                                     onMinus = { vm.changeQty(item.productId, -1) },
+                                    onRemove = { vm.remove(item.productId) },
                                 )
                             }
                         }
                     }
+                }
+            }
+            scanAlert?.let { alert ->
+                Surface(
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    shape = MaterialTheme.shapes.medium,
+                    tonalElevation = 6.dp,
+                    modifier = Modifier.align(Alignment.TopCenter).padding(12.dp),
+                ) {
+                    Text(
+                        stringResource(R.string.scan_added_fmt, alert.name, formatQty(alert.qtyMilli)),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                    )
                 }
             }
         }
@@ -231,8 +280,6 @@ fun CashierScreen(
         )
     }
 
-    lastSale?.let { ReceiptDialog(it, onDone = { vm.dismissSale() }) }
-
     message?.let { m ->
         MessageDialog(
             message = m,
@@ -260,28 +307,53 @@ private fun SearchResults(results: List<Product>, onPick: (Product) -> Unit) {
     }
 }
 
+/** One invoice line: number, name and a delete button on top; unit price x quantity, minus/plus and the line total below. */
 @Composable
-private fun CartRow(item: CartItem, onClick: () -> Unit, onPlus: () -> Unit, onMinus: () -> Unit) {
+private fun CartRow(
+    index: Int,
+    item: CartItem,
+    onClick: () -> Unit,
+    onPlus: () -> Unit,
+    onMinus: () -> Unit,
+    onRemove: () -> Unit,
+) {
     Card(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
-        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(item.name, style = MaterialTheme.typography.titleMedium)
+        Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    Money.format(item.unitPrice) + " \u00D7 " + formatQty(item.qtyMilli) + " " + stringResource(unitLabelRes(item.unit)),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    index.toString(),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.width(28.dp),
                 )
-                if (item.discount > 0L) {
-                    Text(
-                        stringResource(R.string.line_discount_label) + ": " + Money.format(item.discount),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.error,
+                Text(item.name, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+                IconButton(onClick = onRemove) {
+                    Icon(
+                        Icons.Filled.Delete,
+                        contentDescription = stringResource(R.string.cashier_remove_item),
+                        tint = MaterialTheme.colorScheme.error,
                     )
                 }
             }
-            Text(Money.format(item.net), style = MaterialTheme.typography.titleMedium)
-            IconButton(onClick = onMinus) { Icon(Icons.Filled.Remove, contentDescription = null) }
-            IconButton(onClick = onPlus) { Icon(Icons.Filled.Add, contentDescription = null) }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(
+                        Money.format(item.unitPrice) + " \u00d7 " + formatQty(item.qtyMilli) + " " + stringResource(unitLabelRes(item.unit)),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    if (item.discount > 0L) {
+                        Text(
+                            stringResource(R.string.line_discount_label) + ": " + Money.format(item.discount),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    }
+                }
+                IconButton(onClick = onMinus) { Icon(Icons.Filled.Remove, contentDescription = null) }
+                IconButton(onClick = onPlus) { Icon(Icons.Filled.Add, contentDescription = null) }
+                Text(Money.format(item.net), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(start = 4.dp))
+            }
         }
     }
 }
@@ -412,24 +484,6 @@ private fun HeldDialog(
 }
 
 @Composable
-private fun ReceiptDialog(sale: SaleResult, onDone: () -> Unit) {
-    AlertDialog(
-        onDismissRequest = onDone,
-        title = { Text(stringResource(R.string.receipt_title)) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(stringResource(R.string.invoice_no_fmt, sale.number.toString()), style = MaterialTheme.typography.titleMedium)
-                Text(stringResource(R.string.receipt_total_fmt, Money.format(sale.total)), style = MaterialTheme.typography.bodyLarge)
-                if (sale.changeDue > 0L) {
-                    Text(stringResource(R.string.receipt_change_fmt, Money.format(sale.changeDue)), style = MaterialTheme.typography.headlineMedium)
-                }
-            }
-        },
-        confirmButton = { Button(onClick = onDone) { Text(stringResource(R.string.done)) } },
-    )
-}
-
-@Composable
 private fun MessageDialog(
     message: CashierMessage,
     onRegister: (String) -> Unit,
@@ -470,6 +524,7 @@ private fun infoText(m: CashierMessage): String = when (m) {
     is CashierMessage.EmptyCart -> stringResource(R.string.msg_empty_cart)
     is CashierMessage.CardOverpay -> stringResource(R.string.msg_card_overpay)
     is CashierMessage.SaleFailed -> stringResource(R.string.msg_sale_failed)
+    is CashierMessage.NoOpenShift -> stringResource(R.string.msg_no_open_shift)
     is CashierMessage.UnknownBarcode, is CashierMessage.ConfirmExpiredSale -> ""
 }
 
