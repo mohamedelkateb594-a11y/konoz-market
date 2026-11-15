@@ -46,6 +46,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
@@ -110,7 +111,9 @@ fun CashierScreen(
 
     Column(modifier.fillMaxSize()) {
         if (scanning) {
-            Box(Modifier.fillMaxWidth().height(170.dp)) {
+            // The camera sits at the very top and takes a quarter of the screen height.
+            val cameraHeight = (LocalConfiguration.current.screenHeightDp / 4).dp
+            Box(Modifier.fillMaxWidth().height(cameraHeight)) {
                 CameraBarcodeScanner(enabled = !anyDialog, onBarcode = { vm.onScan(it) }, modifier = Modifier.fillMaxSize())
                 IconButton(onClick = { vm.setScanning(false) }, modifier = Modifier.align(Alignment.TopEnd)) {
                     Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.close_camera))
