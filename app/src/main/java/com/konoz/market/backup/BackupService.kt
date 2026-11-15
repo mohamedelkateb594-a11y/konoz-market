@@ -50,15 +50,19 @@ object BackupSettings {
     const val LAST_AT = "last_backup_at"
 }
 
+// NOTE for editors: never write a slash followed by a star inside a comment (for example when naming a folder with a wildcard).
+// Kotlin block comments nest, so it opens a new comment that is never closed and the whole file fails to compile.
+
 /**
  * Backup and restore of everything the shop owns: the Room database plus the receipt and product pictures that live next to it.
  *
- * A backup is one zip: `manifest.json` (app id, format, database version, time, counts, SHA-256 of the database), `konoz_market.db`
- * (a consistent snapshot taken with VACUUM INTO, or a checkpoint-and-copy on Android below 11), `receipts/*`, `product_images/*`.
+ * A backup is one zip: manifest.json (app id, format, database version, time, counts, SHA-256 of the database), konoz_market.db
+ * (a consistent snapshot taken with VACUUM INTO, or a checkpoint-and-copy on Android below 11), and the files of the
+ * receipts and product_images folders.
  *
  * A restore REPLACES all data on the phone with the backup (it never merges), so no invoice can appear twice. Before anything is replaced the
  * file is verified (zip, manifest, same database version, SHA-256, SQLite integrity check, required tables, at least one active admin) and
- * the current data is saved as `before-restore-*.zip`. The database is closed during a restore: the app must be restarted afterwards.
+ * the current data is saved as a before-restore zip. The database is closed during a restore: the app must be restarted afterwards.
  */
 class BackupService(
     private val context: Context,
@@ -71,7 +75,7 @@ class BackupService(
     /** Writes a backup zip to [out] (closed afterwards). */
     suspend fun createBackup(out: OutputStream): BackupInfo = withContext(Dispatchers.IO) { writeBackup(out) }
 
-    /** A scheduled backup: saved in the app's private `backups` folder; only the newest [KEEP_AUTO] are kept. */
+    /** A scheduled backup: saved in the app's private backups folder; only the newest [KEEP_AUTO] are kept. */
     suspend fun createAutoBackup(): File = withContext(Dispatchers.IO) {
         val file = File(backupDir(), "auto-${stamp()}.zip")
         try {
@@ -175,7 +179,7 @@ class BackupService(
         } catch (e: Exception) {
             throw BackupException.NotZip()
         }
-        zip.use {
+        return zip.use {
             val manifestEntry = zip.getEntry(MANIFEST) ?: throw BackupException.NotKonozBackup()
             val manifest = try {
                 JSONObject(zip.getInputStream(manifestEntry).use { it.readBytes() }.toString(Charsets.UTF_8))
@@ -207,7 +211,7 @@ class BackupService(
                 receiptFiles = zip.entries().asSequence().count { !it.isDirectory && it.name.startsWith("receipts/") },
                 imageFiles = zip.entries().asSequence().count { !it.isDirectory && it.name.startsWith("product_images/") },
             )
-            return info to dbFile
+            info to dbFile
         }
     }
 
@@ -240,7 +244,7 @@ class BackupService(
     // ---------- restore ----------
 
     /**
-     * Replaces ALL data on this phone with [source] (verified first). The current data is saved as `before-restore-*.zip`.
+     * Replaces ALL data on this phone with [source] (verified first). The current data is saved as a before-restore zip.
      * The database is closed afterwards, so the caller must restart the app. [actorUserId] is written to the restored audit log.
      */
     suspend fun restore(source: File, actorUserId: Long?): RestoreResult = withContext(Dispatchers.IO) {
@@ -271,7 +275,7 @@ class BackupService(
 
     /**
      * Points picture paths at this phone's folders (they are stored as absolute paths and the folder can differ on another phone or user),
-     * writes the restore into the audit log, and returns the "daily backup" setting stored in the backup.
+     * writes the restore into the audit log, and returns the daily-backup setting stored in the backup.
      */
     private fun fixRestoredDatabase(file: File, actorUserId: Long?, info: BackupInfo): Boolean {
         val sq = SQLiteDatabase.openDatabase(file.path, null, SQLiteDatabase.OPEN_READWRITE)
@@ -282,11 +286,11 @@ class BackupService(
                 "INSERT INTO audit_logs (userId, action, entity, entityId, details, createdAt) VALUES (?, 'BACKUP_RESTORED', 'backup', NULL, ?, ?)",
                 arrayOf<Any?>(actorUserId, "backupCreatedAt=${info.createdAt} invoices=${info.invoices} products=${info.products}", clock()),
             )
-            return DatabaseUtils.stringForQuery(
-                sq, "SELECT value FROM app_settings WHERE `key` = ?", arrayOf(BackupSettings.AUTO_ENABLED),
-            ) == "true"
-        } catch (e: android.database.sqlite.SQLiteDoneException) {
-            return false // stringForQuery throws when the setting does not exist
+            return try {
+                DatabaseUtils.stringForQuery(sq, "SELECT value FROM app_settings WHERE `key` = ?", arrayOf(BackupSettings.AUTO_ENABLED)) == "true"
+            } catch (e: android.database.sqlite.SQLiteDoneException) {
+                false // stringForQuery throws when the setting does not exist
+            }
         } finally {
             sq.close()
         }
