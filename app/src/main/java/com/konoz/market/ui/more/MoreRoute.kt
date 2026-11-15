@@ -224,14 +224,8 @@ fun MoreRoute(modifier: Modifier = Modifier, startRoute: String? = null, onStart
     }
 }
 
+/** The menu is a tile grid (see MoreTileGrid.kt); this only adapts the permission-filtered list. */
 @Composable
 private fun MoreMenu(items: List<Triple<Int, Permission?, () -> Unit>>, modifier: Modifier = Modifier) {
-    Column(modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text(stringResource(R.string.more_title), style = MaterialTheme.typography.titleLarge)
-        items.forEach { (label, _, action) ->
-            Card(onClick = action, modifier = Modifier.fillMaxWidth()) {
-                Text(stringResource(label), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(16.dp))
-            }
-        }
-    }
+    MoreTileGrid(items.map { (label, _, action) -> MoreTile(label, action) }, modifier)
 }

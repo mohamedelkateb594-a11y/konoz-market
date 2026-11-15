@@ -1,8 +1,10 @@
 package com.konoz.market.ui.receipt
 
 import android.content.ClipData
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import androidx.core.content.FileProvider
 import com.konoz.market.R
 import com.konoz.market.core.Money
@@ -50,6 +52,10 @@ class InvoiceSharer(private val context: Context, private val renderer: InvoiceR
     /**
      * [whatsappNumber] = digits with country code (see PhoneNumbers.toWhatsApp). With it, WhatsApp (or WhatsApp Business)
      * opens on that customer's chat with the file attached; without it, or when WhatsApp is missing, the share sheet opens.
+     *
+     * Android has no documented way to attach a file to a given WhatsApp number. The "jid" extra is an undocumented key that
+     * only some WhatsApp screens honor, so two targets are tried in order: the contact-picker screen (the one known to read
+     * "jid"), then WhatsApp's generic share screen. Which one works depends on the installed WhatsApp version.
      */
     fun share(file: File, format: InvoiceFormat, caption: String, whatsappNumber: String?): ShareResult {
         val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
@@ -62,22 +68,36 @@ class InvoiceSharer(private val context: Context, private val renderer: InvoiceR
         }
 
         if (whatsappNumber != null) {
+            val jid = "$whatsappNumber@s.whatsapp.net"
             for (pkg in WHATSAPP_PACKAGES) {
-                val intent = send().apply {
-                    setPackage(pkg)
-                    putExtra("jid", "$whatsappNumber@s.whatsapp.net") // opens the chat of that number
+                val viaPicker = send().apply {
+                    component = ComponentName(pkg, "com.whatsapp.ContactPicker")
+                    putExtra("jid", jid)
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 }
-                if (intent.resolveActivity(context.packageManager) != null) {
-                    context.grantUriPermission(pkg, uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                    context.startActivity(intent)
-                    return ShareResult.WHATSAPP
+                if (tryStart(viaPicker, pkg, uri)) return ShareResult.WHATSAPP
+                val viaPackage = send().apply {
+                    setPackage(pkg)
+                    putExtra("jid", jid)
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 }
+                if (tryStart(viaPackage, pkg, uri)) return ShareResult.WHATSAPP
             }
         }
         val chooser = Intent.createChooser(send(), null).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         context.startActivity(chooser)
         return if (whatsappNumber != null) ShareResult.CHOOSER_NO_WHATSAPP else ShareResult.CHOOSER
+    }
+
+    private fun tryStart(intent: Intent, pkg: String, uri: Uri): Boolean {
+        if (intent.resolveActivity(context.packageManager) == null) return false
+        return try {
+            context.grantUriPermission(pkg, uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            context.startActivity(intent)
+            true
+        } catch (e: Exception) {
+            false // not exported on this WhatsApp version: the next target is tried
+        }
     }
 
     companion object {
