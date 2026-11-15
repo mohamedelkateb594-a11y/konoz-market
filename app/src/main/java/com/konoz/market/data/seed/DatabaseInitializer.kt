@@ -26,10 +26,8 @@ object DatabaseInitializer {
     const val DEFAULT_ADMIN_USERNAME = "admin"
     private const val TEMP_ADMIN_PIN = "1234"
 
-    private val defaultCategories = listOf(
-        "بقالة", "ألبان وأجبان", "مشروبات", "منظفات",
-        "لحوم ودواجن", "خضروات وفاكهة", "حلويات وسناكس", "متنوعة",
-    )
+    // One neutral category only: the shop is not necessarily a grocery. The owner adds, renames and removes categories in Shop settings.
+    private val defaultCategories = listOf("عام")
 
     private val defaultSettings = mapOf(
         SettingKeys.CURRENCY to "EGP",

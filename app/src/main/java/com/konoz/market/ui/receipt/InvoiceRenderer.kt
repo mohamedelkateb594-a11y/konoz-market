@@ -13,6 +13,7 @@ import android.text.TextDirectionHeuristics
 import android.text.TextPaint
 import android.view.View
 import com.konoz.market.R
+import com.konoz.market.ui.shop.ShopProfile
 import com.konoz.market.core.Money
 import com.konoz.market.core.Quantities
 import com.konoz.market.data.entity.PaymentMethod
@@ -115,7 +116,7 @@ class InvoiceRenderer(private val context: Context, private val money: (Long) ->
 
         val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.US)
 
-        block(context.getString(R.string.inv_shop_name), title, Layout.Alignment.ALIGN_CENTER)
+        block(ShopProfile.displayName(context), title, Layout.Alignment.ALIGN_CENTER)
         y += 4f
         row(context.getString(R.string.inv_number_fmt, d.number), dateFormat.format(Date(d.dateMillis)), bold)
         d.cashier?.let { row(context.getString(R.string.inv_cashier), it) }

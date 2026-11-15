@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import androidx.core.content.FileProvider
 import com.konoz.market.R
+import com.konoz.market.ui.shop.ShopProfile
 import com.konoz.market.core.Money
 import com.konoz.market.domain.InvoiceData
 import java.io.File
@@ -45,7 +46,7 @@ class InvoiceSharer(private val context: Context, private val renderer: InvoiceR
 
     /** Short text sent with the file. */
     fun caption(data: InvoiceData): String =
-        context.getString(R.string.inv_caption_fmt, context.getString(R.string.inv_shop_name), data.number, Money.format(data.total))
+        context.getString(R.string.inv_caption_fmt, ShopProfile.displayName(context), data.number, Money.format(data.total))
 
     /**
      * [whatsappNumber] = digits with country code (see PhoneNumbers.toWhatsApp). With it, WhatsApp (or WhatsApp Business)
