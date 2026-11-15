@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Konoz Market</string>
-    <string name="brand_name">KONOZ MARKET</string>
+    <string name="app_name">تاجر</string>
+    <string name="brand_name">تاجر</string>
     <string name="nav_dashboard">Dashboard</string>
     <string name="nav_cashier">Cashier</string>
     <string name="nav_products">Products</string>
