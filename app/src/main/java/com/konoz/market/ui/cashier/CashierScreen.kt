@@ -17,10 +17,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Search
@@ -57,7 +59,6 @@ import com.konoz.market.data.entity.Product
 import com.konoz.market.data.entity.SalesInvoice
 import com.konoz.market.domain.CartItem
 import com.konoz.market.domain.CashierMessage
-import com.konoz.market.domain.SaleResult
 import com.konoz.market.ui.common.formatQty
 import com.konoz.market.ui.common.unitLabelRes
 import com.konoz.market.ui.scanner.CameraBarcodeScanner
@@ -67,12 +68,11 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-/** [onShareInvoice] is called with the number of the invoice just sold when the cashier taps "Send invoice" on the receipt. */
+/** The receipt after payment (change due, send to the customer) is shown by [CashierRoute] through the invoice send dialog. */
 @Composable
 fun CashierScreen(
     vm: CashierViewModel,
     onRegisterBarcode: (String) -> Unit,
-    onShareInvoice: (Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val cart by vm.cart.collectAsStateWithLifecycle()
@@ -164,12 +164,21 @@ fun CashierScreen(
                             contentPadding = PaddingValues(16.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
-                            items(cart.items, key = { it.productId }) { item ->
+                            item(key = "cart_header") {
+                                Text(
+                                    stringResource(R.string.cashier_items_count_fmt, cart.items.size),
+                                    style = MaterialTheme.typography.titleSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                            itemsIndexed(cart.items, key = { _, it -> it.productId }) { index, item ->
                                 CartRow(
+                                    index = index + 1,
                                     item = item,
                                     onClick = { editId = item.productId },
                                     onPlus = { vm.changeQty(item.productId, 1) },
                                     onMinus = { vm.changeQty(item.productId, -1) },
+                                    onRemove = { vm.remove(item.productId) },
                                 )
                             }
                         }
@@ -271,14 +280,6 @@ fun CashierScreen(
         )
     }
 
-    lastSale?.let { sale ->
-        ReceiptDialog(
-            sale = sale,
-            onDone = { vm.dismissSale() },
-            onShare = { onShareInvoice(sale.number.toString().toLong()) },
-        )
-    }
-
     message?.let { m ->
         MessageDialog(
             message = m,
@@ -306,28 +307,53 @@ private fun SearchResults(results: List<Product>, onPick: (Product) -> Unit) {
     }
 }
 
+/** One invoice line: number, name and a delete button on top; unit price x quantity, minus/plus and the line total below. */
 @Composable
-private fun CartRow(item: CartItem, onClick: () -> Unit, onPlus: () -> Unit, onMinus: () -> Unit) {
+private fun CartRow(
+    index: Int,
+    item: CartItem,
+    onClick: () -> Unit,
+    onPlus: () -> Unit,
+    onMinus: () -> Unit,
+    onRemove: () -> Unit,
+) {
     Card(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
-        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(item.name, style = MaterialTheme.typography.titleMedium)
+        Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    Money.format(item.unitPrice) + " × " + formatQty(item.qtyMilli) + " " + stringResource(unitLabelRes(item.unit)),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    index.toString(),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.width(28.dp),
                 )
-                if (item.discount > 0L) {
-                    Text(
-                        stringResource(R.string.line_discount_label) + ": " + Money.format(item.discount),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.error,
+                Text(item.name, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+                IconButton(onClick = onRemove) {
+                    Icon(
+                        Icons.Filled.Delete,
+                        contentDescription = stringResource(R.string.cashier_remove_item),
+                        tint = MaterialTheme.colorScheme.error,
                     )
                 }
             }
-            Text(Money.format(item.net), style = MaterialTheme.typography.titleMedium)
-            IconButton(onClick = onMinus) { Icon(Icons.Filled.Remove, contentDescription = null) }
-            IconButton(onClick = onPlus) { Icon(Icons.Filled.Add, contentDescription = null) }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(
+                        Money.format(item.unitPrice) + " \u00d7 " + formatQty(item.qtyMilli) + " " + stringResource(unitLabelRes(item.unit)),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    if (item.discount > 0L) {
+                        Text(
+                            stringResource(R.string.line_discount_label) + ": " + Money.format(item.discount),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    }
+                }
+                IconButton(onClick = onMinus) { Icon(Icons.Filled.Remove, contentDescription = null) }
+                IconButton(onClick = onPlus) { Icon(Icons.Filled.Add, contentDescription = null) }
+                Text(Money.format(item.net), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(start = 4.dp))
+            }
         }
     }
 }
@@ -454,25 +480,6 @@ private fun HeldDialog(
             }
         },
         confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.ok)) } },
-    )
-}
-
-@Composable
-private fun ReceiptDialog(sale: SaleResult, onDone: () -> Unit, onShare: () -> Unit) {
-    AlertDialog(
-        onDismissRequest = onDone,
-        title = { Text(stringResource(R.string.receipt_title)) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(stringResource(R.string.invoice_no_fmt, sale.number.toString()), style = MaterialTheme.typography.titleMedium)
-                Text(stringResource(R.string.receipt_total_fmt, Money.format(sale.total)), style = MaterialTheme.typography.bodyLarge)
-                if (sale.changeDue > 0L) {
-                    Text(stringResource(R.string.receipt_change_fmt, Money.format(sale.changeDue)), style = MaterialTheme.typography.headlineMedium)
-                }
-            }
-        },
-        confirmButton = { Button(onClick = onDone) { Text(stringResource(R.string.done)) } },
-        dismissButton = { OutlinedButton(onClick = onShare) { Text(stringResource(R.string.receipt_share_invoice)) } },
     )
 }
 
