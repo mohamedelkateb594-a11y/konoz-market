@@ -34,6 +34,7 @@ import com.konoz.market.ui.backup.BackupScreen
 import com.konoz.market.ui.backup.BackupViewModel
 import com.konoz.market.ui.expenses.ExpensesScreen
 import com.konoz.market.ui.expenses.ExpensesViewModel
+import com.konoz.market.ui.language.AppLanguage
 import com.konoz.market.ui.movements.MovementLogScreen
 import com.konoz.market.ui.movements.MovementLogViewModel
 import com.konoz.market.ui.purchases.PurchaseScreen
@@ -108,7 +109,8 @@ private fun requiredPermission(route: String): Permission? = when (route.split('
 /** [startRoute] (one of [MoreTargets]) opens that screen once, then [onStartConsumed] is called. */
 @Composable
 fun MoreRoute(modifier: Modifier = Modifier, startRoute: String? = null, onStartConsumed: () -> Unit = {}) {
-    val app = LocalContext.current.applicationContext as KonozApp
+    val context = LocalContext.current
+    val app = context.applicationContext as KonozApp
     val user by app.session.user.collectAsStateWithLifecycle()
     fun allowed(permission: Permission?) = permission == null || user?.let { Permissions.has(it.role, permission) } == true
 
@@ -214,6 +216,7 @@ fun MoreRoute(modifier: Modifier = Modifier, startRoute: String? = null, onStart
                 Triple<Int, Permission?, () -> Unit>(R.string.menu_alerts, null) { session++; route = ALERTS },
                 Triple(R.string.menu_users, Permission.MANAGE_USERS) { session++; route = MoreTargets.USERS },
                 Triple(R.string.menu_backup, Permission.MANAGE_BACKUP) { session++; route = MoreTargets.BACKUP },
+                Triple<Int, Permission?, () -> Unit>(R.string.menu_language, null) { AppLanguage.switch(context) },
                 Triple<Int, Permission?, () -> Unit>(R.string.auth_logout, null) { route = MENU; app.session.signOut() },
             ).filter { allowed(it.second) },
             modifier = modifier,
