@@ -16,6 +16,7 @@ import com.konoz.market.domain.ShiftService
 import com.konoz.market.domain.StockAdjustmentService
 import com.konoz.market.domain.StockCountService
 import com.konoz.market.domain.UserService
+import com.konoz.market.ui.printer.PrintService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -37,6 +38,7 @@ class KonozApp : Application() {
     val reportService: ReportService by lazy { ReportService(database) }
     val shiftService: ShiftService by lazy { ShiftService(database) }
     val userService: UserService by lazy { UserService(database) }
+    val printService: PrintService by lazy { PrintService(this, database) }
     val productRepository: ProductRepository by lazy { ProductRepository(database) }
     val catalogRepository: CatalogRepository by lazy { CatalogRepository(database) }
     val productCsvService: ProductCsvService by lazy { ProductCsvService(database, productRepository) }

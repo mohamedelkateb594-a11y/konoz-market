@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="menu_printer">طابعة الإيصالات</string>
+    <string name="printer_title">طابعة الإيصالات</string>
+    <string name="printer_help">اقرن الطابعة أولًا من إعدادات البلوتوث في أندرويد ثم اخترها هنا. تُطبع الفواتير كصورة، فتظهر العربية صحيحة على أي طابعة ESC/POS.</string>
+    <string name="printer_grant">السماح بالوصول إلى البلوتوث</string>
+    <string name="printer_devices">الأجهزة المقترنة</string>
+    <string name="printer_no_devices">لا توجد أجهزة مقترنة. اقرن الطابعة من إعدادات البلوتوث ثم اضغط تحديث.</string>
+    <string name="printer_open_settings">فتح إعدادات البلوتوث</string>
+    <string name="printer_refresh">تحديث</string>
+    <string name="printer_paper">عرض الورق</string>
+    <string name="printer_test">طباعة صفحة تجريبية</string>
+    <string name="printer_printing">جارٍ الطباعة…</string>
+    <string name="printer_test_title">كنوز ماركت</string>
+    <string name="printer_test_line">صفحة تجريبية - ورق %1$d مم</string>
+    <string name="printer_done_test">تم إرسال الصفحة التجريبية إلى الطابعة.</string>
+    <string name="printer_err_none">اختر طابعة أولًا.</string>
+    <string name="printer_err_permission">الوصول إلى البلوتوث غير مسموح. اضغط السماح بالوصول إلى البلوتوث.</string>
+    <string name="printer_err_off">البلوتوث مغلق. شغّله وحاول مرة أخرى.</string>
+    <string name="printer_err_failed">تعذّر الوصول إلى الطابعة. تأكد أنها تعمل وقريبة من الهاتف ومقترنة.</string>
+    <string name="inv_print">طباعة الإيصال</string>
+    <string name="inv_err_no_printer">لم تُختر طابعة. افتح المزيد ← طابعة الإيصالات أولًا.</string>
+    <string name="inv_err_print">فشلت الطباعة. تحقق من الطابعة والبلوتوث.</string>
+</resources>

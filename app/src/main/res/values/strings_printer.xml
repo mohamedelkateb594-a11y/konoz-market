@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="menu_printer">Receipt printer</string>
+    <string name="printer_title">Receipt printer</string>
+    <string name="printer_help">Pair the printer first in Android Bluetooth settings, then choose it here. Receipts are printed as a picture, so Arabic prints correctly on any ESC/POS printer.</string>
+    <string name="printer_grant">Allow Bluetooth access</string>
+    <string name="printer_devices">Paired devices</string>
+    <string name="printer_no_devices">No paired devices. Pair the printer in Bluetooth settings, then tap Refresh.</string>
+    <string name="printer_open_settings">Open Bluetooth settings</string>
+    <string name="printer_refresh">Refresh</string>
+    <string name="printer_paper">Paper width</string>
+    <string name="printer_test">Print a test page</string>
+    <string name="printer_printing">Printing…</string>
+    <string name="printer_test_title">Konoz Market</string>
+    <string name="printer_test_line">Test page - %1$d mm paper</string>
+    <string name="printer_done_test">The test page was sent to the printer.</string>
+    <string name="printer_err_none">Choose a printer first.</string>
+    <string name="printer_err_permission">Bluetooth access is not allowed. Tap Allow Bluetooth access.</string>
+    <string name="printer_err_off">Bluetooth is off. Turn it on and try again.</string>
+    <string name="printer_err_failed">Could not reach the printer. Check that it is on, close to the phone and paired.</string>
+    <string name="inv_print">Print receipt</string>
+    <string name="inv_err_no_printer">No printer chosen. Open More → Receipt printer first.</string>
+    <string name="inv_err_print">Printing failed. Check the printer and Bluetooth.</string>
+</resources>
