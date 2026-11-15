@@ -17,65 +17,90 @@ data class KonozColors(
     val onSuccess: Color,
     val warning: Color,
     val onWarning: Color,
-    val accentLime: Color,
-)
+    val accent: Color,
+    val warningContainer: Color,
+    val onWarningContainer: Color,
+) {
+    /** Old name of [accent], kept so existing screens keep compiling. */
+    val accentLime: Color get() = accent
+}
 
 private val LightKonozColors = KonozColors(
-    success = Brand.SuccessGreen,
+    success = Brand.Success,
     onSuccess = Color.White,
-    warning = Brand.WarmYellow,
+    warning = Brand.Warning,
     onWarning = Brand.TextMain,
-    accentLime = Brand.FreshLime,
+    accent = Brand.Accent,
+    warningContainer = Brand.WarningContainerLight,
+    onWarningContainer = Brand.OnWarningContainerLight,
 )
 
 private val DarkKonozColors = KonozColors(
-    success = Brand.PrimaryDarkMode,
+    success = Brand.SuccessDarkMode,
     onSuccess = Brand.BackgroundDark,
-    warning = Brand.WarmYellow,
+    warning = Brand.WarningDarkMode,
     onWarning = Brand.BackgroundDark,
-    accentLime = Brand.FreshLime,
+    accent = Brand.SecondaryContainerDark,
+    warningContainer = Brand.WarningContainerDark,
+    onWarningContainer = Brand.OnWarningContainerDark,
 )
 
 val LocalKonozColors = staticCompositionLocalOf { LightKonozColors }
 
 private val LightScheme = lightColorScheme(
-    primary = Brand.PrimaryGreen,
+    primary = Brand.Primary,
     onPrimary = Color.White,
-    primaryContainer = Brand.FreshLime,
-    onPrimaryContainer = Brand.TextMain,
-    secondary = Brand.DarkGreen,
+    primaryContainer = Brand.Accent,
+    onPrimaryContainer = Brand.PrimaryDeep,
+    secondary = Brand.Secondary,
     onSecondary = Color.White,
-    tertiary = Brand.WarmYellow,
+    secondaryContainer = Brand.Accent,
+    onSecondaryContainer = Brand.PrimaryDeep,
+    tertiary = Brand.Warning,
     onTertiary = Brand.TextMain,
+    tertiaryContainer = Brand.WarningContainerLight,
+    onTertiaryContainer = Brand.OnWarningContainerLight,
     background = Brand.BackgroundLight,
     onBackground = Brand.TextMain,
     surface = Brand.SurfaceLight,
     onSurface = Brand.TextMain,
     surfaceVariant = Brand.BackgroundLight,
     onSurfaceVariant = Brand.TextSecondary,
-    error = Brand.DangerRed,
+    surfaceTint = Brand.Primary,
+    error = Brand.Error,
     onError = Color.White,
+    errorContainer = Brand.ErrorContainerLight,
+    onErrorContainer = Brand.OnErrorContainerLight,
     outline = Brand.OutlineLight,
+    outlineVariant = Brand.OutlineVariantLight,
 )
 
 private val DarkScheme = darkColorScheme(
     primary = Brand.PrimaryDarkMode,
-    onPrimary = Brand.BackgroundDark,
-    primaryContainer = Brand.DarkGreen,
-    onPrimaryContainer = Brand.TextMainDark,
-    secondary = Brand.FreshLime,
-    onSecondary = Brand.BackgroundDark,
-    tertiary = Brand.WarmYellow,
+    onPrimary = Brand.OnPrimaryDark,
+    primaryContainer = Brand.PrimaryContainerDark,
+    onPrimaryContainer = Brand.Accent,
+    secondary = Brand.SecondaryDarkMode,
+    onSecondary = Brand.OnSecondaryDark,
+    secondaryContainer = Brand.SecondaryContainerDark,
+    onSecondaryContainer = Brand.Accent,
+    tertiary = Brand.WarningDarkMode,
     onTertiary = Brand.BackgroundDark,
+    tertiaryContainer = Brand.WarningContainerDark,
+    onTertiaryContainer = Brand.OnWarningContainerDark,
     background = Brand.BackgroundDark,
     onBackground = Brand.TextMainDark,
     surface = Brand.SurfaceDark,
     onSurface = Brand.TextMainDark,
     surfaceVariant = Brand.SurfaceVariantDark,
     onSurfaceVariant = Brand.TextSecondaryDark,
+    surfaceTint = Brand.PrimaryDarkMode,
     error = Brand.DangerDarkMode,
     onError = Brand.BackgroundDark,
+    errorContainer = Brand.ErrorContainerDark,
+    onErrorContainer = Brand.OnErrorContainerDark,
     outline = Brand.OutlineDark,
+    outlineVariant = Brand.OutlineVariantDark,
 )
 
 @Composable
