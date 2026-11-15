@@ -36,6 +36,8 @@ import com.konoz.market.ui.expenses.ExpensesScreen
 import com.konoz.market.ui.expenses.ExpensesViewModel
 import com.konoz.market.ui.movements.MovementLogScreen
 import com.konoz.market.ui.movements.MovementLogViewModel
+import com.konoz.market.ui.printer.PrinterScreen
+import com.konoz.market.ui.printer.PrinterViewModel
 import com.konoz.market.ui.purchases.PurchaseScreen
 import com.konoz.market.ui.purchases.PurchaseViewModel
 import com.konoz.market.ui.receipt.InvoicesScreen
@@ -68,6 +70,7 @@ object MoreTargets {
     const val USERS = "users"
     const val INVOICES = "invoices"
     const val BACKUP = "backup"
+    const val PRINTER = "printer"
 }
 
 private const val MENU = "menu"
@@ -79,7 +82,7 @@ private const val ALERTS = "alerts"
 
 /**
  * Routes: menu, suppliers, statement/{supplierId}, purchase/{supplierId}/{0|1 = return}, returns, stockops,
- * movements, alerts, expenses, counts, count/{countId}, reports, shifts, users, invoices, backup.
+ * movements, alerts, expenses, counts, count/{countId}, reports, shifts, users, invoices, backup, printer.
  */
 private fun parentOf(route: String): String {
     val parts = route.split('/')
@@ -91,7 +94,7 @@ private fun parentOf(route: String): String {
     }
 }
 
-/** The permission a route needs; null = any signed-in user (alerts, invoices). */
+/** The permission a route needs; null = any signed-in user (alerts, invoices, printer). */
 private fun requiredPermission(route: String): Permission? = when (route.split('/')[0]) {
     SUPPLIERS, "statement", "purchase" -> Permission.MANAGE_PURCHASES
     RETURNS -> Permission.PROCESS_RETURN
@@ -196,6 +199,10 @@ fun MoreRoute(modifier: Modifier = Modifier, startRoute: String? = null, onStart
             val vm: BackupViewModel = viewModel(key = "backup_$session", factory = BackupViewModel.Factory)
             BackupScreen(vm, onBack = { route = MENU }, modifier = modifier)
         }
+        MoreTargets.PRINTER -> {
+            val vm: PrinterViewModel = viewModel(key = "printer_$session", factory = PrinterViewModel.Factory)
+            PrinterScreen(vm, onBack = { route = MENU }, modifier = modifier)
+        }
         MoreTargets.INVOICES -> {
             val vm: InvoicesViewModel = viewModel(key = "invoices_$session", factory = InvoicesViewModel.Factory)
             InvoicesScreen(vm, onBack = { route = MENU }, modifier = modifier)
@@ -212,6 +219,7 @@ fun MoreRoute(modifier: Modifier = Modifier, startRoute: String? = null, onStart
                 Triple(R.string.menu_stock_ops, Permission.ADJUST_STOCK) { session++; route = STOCK_OPS },
                 Triple(R.string.menu_movements, Permission.ADJUST_STOCK) { session++; route = MOVEMENTS },
                 Triple<Int, Permission?, () -> Unit>(R.string.menu_alerts, null) { session++; route = ALERTS },
+                Triple<Int, Permission?, () -> Unit>(R.string.menu_printer, null) { session++; route = MoreTargets.PRINTER },
                 Triple(R.string.menu_users, Permission.MANAGE_USERS) { session++; route = MoreTargets.USERS },
                 Triple(R.string.menu_backup, Permission.MANAGE_BACKUP) { session++; route = MoreTargets.BACKUP },
                 Triple<Int, Permission?, () -> Unit>(R.string.auth_logout, null) { route = MENU; app.session.signOut() },
