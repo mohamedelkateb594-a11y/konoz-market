@@ -6,8 +6,10 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 
@@ -83,6 +85,8 @@ fun KonozTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit,
 ) {
+    val context = LocalContext.current
+    val typography = remember(context) { konozTypography(cairoFontFamily(context)) }
     CompositionLocalProvider(
         LocalKonozColors provides if (darkTheme) DarkKonozColors else LightKonozColors,
         // Layout direction follows the app locale automatically (Arabic = RTL).
@@ -90,7 +94,7 @@ fun KonozTheme(
     ) {
         MaterialTheme(
             colorScheme = if (darkTheme) DarkScheme else LightScheme,
-            typography = KonozTypography,
+            typography = typography,
             content = content,
         )
     }

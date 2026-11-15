@@ -8,7 +8,7 @@ import java.util.Locale
 
 /**
  * In-app language choice (Arabic or English), independent of the phone language.
- * Nothing saved yet = follow the phone, exactly as before. The choice is kept in a small SharedPreferences file.
+ * Arabic is the default until the user switches; the choice is kept in a small SharedPreferences file.
  */
 object AppLanguage {
     const val AR = "ar"
@@ -19,14 +19,12 @@ object AppLanguage {
     private fun saved(context: Context): String? =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(KEY, null)?.takeIf { it == AR || it == EN }
 
-    /** The language actually shown: the saved one, else the phone language (Arabic or otherwise English). */
-    fun effective(context: Context): String =
-        saved(context) ?: if (Locale.getDefault().language == AR) AR else EN
+    /** The language actually shown: the one the user chose, otherwise Arabic. */
+    fun effective(context: Context): String = saved(context) ?: AR
 
-    /** Returns [base] using the saved language (and its layout direction); unchanged when nothing is saved. */
+    /** Returns [base] using the effective language (and its layout direction). */
     fun wrap(base: Context): Context {
-        val tag = saved(base) ?: return base
-        val locale = Locale(tag)
+        val locale = Locale(effective(base))
         Locale.setDefault(locale)
         val config = Configuration(base.resources.configuration)
         config.setLocale(locale)
@@ -34,11 +32,10 @@ object AppLanguage {
         return base.createConfigurationContext(config)
     }
 
-    /** Makes the application context (used by services that build texts) follow the saved language too. */
+    /** Makes the application context (used by services that build texts) follow the effective language too. */
     @Suppress("DEPRECATION")
     fun applyToApplication(app: Context) {
-        val tag = saved(app) ?: return
-        val locale = Locale(tag)
+        val locale = Locale(effective(app))
         Locale.setDefault(locale)
         val res = app.resources
         val config = Configuration(res.configuration)

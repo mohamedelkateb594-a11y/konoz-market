@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="cashier_remove_item">حذف المنتج</string>
+    <string name="cashier_items_count_fmt">عدد المنتجات في الفاتورة: %1$d</string>
+    <string name="cashier_paid_ok">تم الدفع بنجاح</string>
+</resources>
