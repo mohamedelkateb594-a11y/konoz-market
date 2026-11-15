@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -25,11 +26,15 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -81,22 +86,38 @@ fun InvoicesScreen(vm: InvoicesViewModel, onBack: () -> Unit, modifier: Modifier
     InvoiceShareDialog(ui, vm)
 }
 
-/** The invoice picked in [ui] with the customer phone field and the send/share buttons. Shows nothing when no invoice is selected. */
+/**
+ * The invoice picked in [ui] with the customer phone field and the send/share buttons. Shows nothing when no invoice is selected.
+ * [header] is extra content above the invoice (the cashier shows the payment result and change there); [focusPhone] puts the
+ * cursor in the phone field with the keyboard open; the keyboard Send key sends on WhatsApp; [closeLabelRes] labels the close button.
+ */
 @Composable
-fun InvoiceShareDialog(ui: InvoicesUi, vm: InvoicesViewModel) {
+fun InvoiceShareDialog(
+    ui: InvoicesUi,
+    vm: InvoicesViewModel,
+    header: (@Composable () -> Unit)? = null,
+    focusPhone: Boolean = false,
+    closeLabelRes: Int = R.string.ok,
+) {
     val data = ui.selected ?: return
+    val phoneFocus = remember { FocusRequester() }
     AlertDialog(
         onDismissRequest = vm::close,
         title = { Text(stringResource(R.string.inv_number_fmt, data.number)) },
         text = {
+            if (focusPhone) {
+                LaunchedEffect(data.number) { runCatching { phoneFocus.requestFocus() } }
+            }
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                header?.invoke()
                 InvoiceSummary(data)
                 OutlinedTextField(
                     value = ui.phone, onValueChange = vm::onPhone, singleLine = true,
                     label = { Text(stringResource(R.string.inv_phone)) },
                     placeholder = { Text(stringResource(R.string.inv_phone_hint)) },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone, imeAction = ImeAction.Send),
+                    keyboardActions = KeyboardActions(onSend = { vm.sendWhatsApp() }),
+                    modifier = Modifier.fillMaxWidth().focusRequester(phoneFocus),
                 )
                 ui.message?.let {
                     Text(
@@ -121,7 +142,7 @@ fun InvoiceShareDialog(ui: InvoicesUi, vm: InvoicesViewModel) {
                 }
             }
         },
-        confirmButton = { TextButton(onClick = vm::close) { Text(stringResource(R.string.ok)) } },
+        confirmButton = { TextButton(onClick = vm::close) { Text(stringResource(closeLabelRes)) } },
     )
 }
 
