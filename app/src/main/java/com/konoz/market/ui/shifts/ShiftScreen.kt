@@ -170,6 +170,7 @@ private fun SummaryLines(s: ShiftSummary, fmt: SimpleDateFormat) {
         Line(R.string.shift_cash_sales, Money.format(s.cashSales))
         Line(R.string.shift_cash_refunds, Money.format(s.cashRefunds))
         Line(R.string.shift_cash_expenses, Money.format(s.cashExpenses))
+        Line(R.string.shift_supplier_payments, Money.format(s.supplierPayments))
         Line(R.string.shift_expected, Money.format(s.expectedCash), bold = true)
         val actual = s.actualCash
         val diff = s.difference

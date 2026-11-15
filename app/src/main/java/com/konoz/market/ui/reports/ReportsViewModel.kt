@@ -15,6 +15,7 @@ import com.konoz.market.domain.PeriodRange
 import com.konoz.market.domain.PeriodSummary
 import com.konoz.market.domain.Periods
 import com.konoz.market.domain.ProductPerformance
+import com.konoz.market.domain.ReportCsv
 import com.konoz.market.domain.ReportService
 import com.konoz.market.domain.WeekdayStat
 import kotlinx.coroutines.CancellationException
@@ -63,6 +64,17 @@ class ReportsViewModel(
     }
 
     fun refresh() = load(_ui.value.period)
+
+    /**
+     * The CSV file text (with BOM) of the period on screen, or null while nothing is loaded. The product list is the full
+     * one (not the top-5 shown on screen). [includeProfit] = false leaves out costs and profits.
+     */
+    suspend fun csvText(includeProfit: Boolean, formatDate: (Long) -> String): String? {
+        val state = _ui.value
+        val summary = state.summary ?: return null
+        val products = service.productPerformance(summary.range)
+        return ReportCsv.BOM + ReportCsv.build(summary, products, state.categories, state.expenses, includeProfit, formatDate)
+    }
 
     private fun load(p: ReportPeriod) {
         job?.cancel()

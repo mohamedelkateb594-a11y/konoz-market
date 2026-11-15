@@ -8,6 +8,7 @@ import com.konoz.market.data.entity.PurchaseInvoice
 import com.konoz.market.data.entity.PurchaseItem
 import com.konoz.market.data.entity.PurchaseStatus
 import com.konoz.market.data.entity.StockBatch
+import com.konoz.market.data.entity.SupplierPayment
 
 /**
  * Purchases from suppliers and returns to suppliers. Every public function runs in ONE transaction.
@@ -18,6 +19,10 @@ import com.konoz.market.data.entity.StockBatch
  *  - approve (return, isReturn = true): takes the goods out of stock FEFO (earliest expiry first, expired included),
  *    PURCHASE_RETURN movements; refuses to go below zero stock.
  *  - settle: pays an approved purchase (or collects the refund of an approved return) over time.
+ *
+ * Cash drawer (owner decision): money paid to a supplier at approval or by [settle] leaves the drawer, and a refund
+ * collected for a return comes back into it. Each such movement is stored as a [SupplierPayment] linked to the shift
+ * that is open at that moment (no open shift = no drawer affected). A retried approval never records it twice.
  *
  * Purchases and returns share one invoice-number sequence. The invoice discount is spread over the lines so
  * batch costs (and COGS) include it.
@@ -132,6 +137,7 @@ class PurchaseService(
             stockPosted = true,
         )
         purchases.updateInvoice(approved)
+        recordCash(invoiceId, draft.supplierId, draft.isReturn, draft.paid, draft.userId, now)
         db.audit().insert(
             AuditLog(
                 userId = draft.userId,
@@ -151,10 +157,12 @@ class PurchaseService(
         if (amount <= 0L || amount > inv.remaining) throw PurchaseException.InvalidAmount()
         val updated = inv.copy(paid = inv.paid + amount, remaining = inv.remaining - amount)
         purchases.updateInvoice(updated)
+        val now = clock()
+        recordCash(invoiceId, inv.supplierId, inv.isReturn, amount, userId, now)
         db.audit().insert(
             AuditLog(
                 userId = userId, action = "SUPPLIER_SETTLEMENT", entity = "purchase_invoice", entityId = invoiceId,
-                details = "amount=$amount remaining=${updated.remaining}", createdAt = clock(),
+                details = "amount=$amount remaining=${updated.remaining}", createdAt = now,
             )
         )
         resultOf(updated, duplicate = false)
@@ -166,6 +174,19 @@ class PurchaseService(
         SupplierStatement.build(purchases.approvedForSupplier(supplierId))
 
     // ---------- internals ----------
+    /** Cash out for a purchase payment, cash in (negative) for a return refund, linked to the open shift. */
+    private suspend fun recordCash(invoiceId: Long, supplierId: Long, isReturn: Boolean, amount: Long, userId: Long?, now: Long) {
+        if (amount <= 0L) return
+        db.supplierPayments().insert(
+            SupplierPayment(
+                purchaseInvoiceId = invoiceId, supplierId = supplierId,
+                shiftId = db.shifts().getOpenShift()?.id,
+                amount = if (isReturn) -amount else amount,
+                userId = userId, createdAt = now,
+            )
+        )
+    }
+
     private suspend fun receive(invoiceId: Long, draft: PurchaseDraft, index: Int, line: PurchaseLine, effectiveCost: Long, now: Long) {
         val key = "PURCHASE:${draft.uuid}:$index"
         if (stock.movementExists(key) > 0) return // already posted once: never apply twice

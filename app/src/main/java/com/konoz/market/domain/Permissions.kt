@@ -13,6 +13,8 @@ enum class Permission {
     /** Damaged / expired write-offs, manual adjustments and the movement log. */
     ADJUST_STOCK,
     PROCESS_RETURN,
+    /** Products tab: create/edit products, barcodes, CSV import. Prices still need EDIT_PRICES. */
+    MANAGE_PRODUCTS,
     OPERATE_SHIFTS,
     MANAGE_USERS,
     EDIT_PRICES,
@@ -23,9 +25,11 @@ enum class Permission {
 
 object Permissions {
     private val cashier = setOf(Permission.PROCESS_RETURN, Permission.OPERATE_SHIFTS, Permission.MANAGE_EXPENSES)
-    private val stockKeeper = setOf(Permission.MANAGE_PURCHASES, Permission.COUNT_STOCK, Permission.ADJUST_STOCK)
+    private val stockKeeper = setOf(
+        Permission.MANAGE_PURCHASES, Permission.COUNT_STOCK, Permission.ADJUST_STOCK, Permission.MANAGE_PRODUCTS,
+    )
 
-    /** The admin may do everything; a cashier only sells, takes returns, records petty expenses and runs the drawer; a stock keeper handles stock. */
+    /** The admin may do everything; a cashier only sells, takes returns, records petty expenses and runs the drawer; a stock keeper handles stock and products. */
     fun has(role: UserRole, permission: Permission): Boolean = when (role) {
         UserRole.ADMIN -> true
         UserRole.CASHIER -> permission in cashier
