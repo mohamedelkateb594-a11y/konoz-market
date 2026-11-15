@@ -23,7 +23,8 @@ import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
 
 /**
- * Backup file = one ZIP: `manifest.json` (first), `konoz_market.db`, `product_images/*`, `receipts/*`.
+ * Backup file = one ZIP: manifest.json (first), konoz_market.db, then the files of the product_images and
+ * receipts folders. (Do not write a slash followed by a star in a comment: Kotlin comments nest.)
  * Restore REPLACES all data with the file's content, so importing the same file twice gives the same state and
  * invoices can never be duplicated. The file is fully validated (format, safe names, SHA-256, SQLite integrity,
  * schema version not newer than this app) before anything is touched, and a safety backup of the current data is
@@ -169,10 +170,11 @@ class BackupService(
                         if (name != MANIFEST) throw BackupException(BackupFailure.NOT_A_BACKUP, "manifest must be first")
                         val text = readLimited(zip, MAX_MANIFEST_BYTES)
                         if (text == null) throw BackupException(BackupFailure.NOT_A_BACKUP, "manifest too large")
-                        manifest = BackupManifest.fromJson(String(text, Charsets.UTF_8))
+                        val parsed = BackupManifest.fromJson(String(text, Charsets.UTF_8))
                             ?: throw BackupException(BackupFailure.NOT_A_BACKUP, "bad manifest")
-                        if (manifest.formatVersion > BackupManifest.FORMAT_VERSION) throw BackupException(BackupFailure.NEWER_VERSION, "newer format")
-                        if (manifest.dbVersion > currentDbVersion()) throw BackupException(BackupFailure.NEWER_VERSION, "newer database")
+                        if (parsed.formatVersion > BackupManifest.FORMAT_VERSION) throw BackupException(BackupFailure.NEWER_VERSION, "newer format")
+                        if (parsed.dbVersion > currentDbVersion()) throw BackupException(BackupFailure.NEWER_VERSION, "newer database")
+                        manifest = parsed
                         first = false
                     } else if (!entry.isDirectory) {
                         val target = targetFor(dir, name) ?: throw BackupException(BackupFailure.CORRUPT, "unsafe entry")
@@ -210,7 +212,7 @@ class BackupService(
         return out.toByteArray()
     }
 
-    /** Only the database and flat files inside the two known folders are accepted: no paths, no "..". */
+    /** Only the database and flat files inside the two known folders are accepted: no paths, no dot-dot. */
     private fun targetFor(root: File, name: String): File? {
         if (name == DB_ENTRY) return File(root, DB_ENTRY)
         val parts = name.split('/')
@@ -247,7 +249,7 @@ class BackupService(
                 rewritePaths(it, "expenses", "receiptPath", File(context.filesDir, RECEIPTS_DIR))
                 it.execSQL(
                     "INSERT INTO audit_logs(userId, action, entity, entityId, details, createdAt) VALUES(NULL, ?, 'backup', NULL, ?, ?)",
-                    arrayOf("backup_restore", "restoredBy=${actorId ?: 0}; backupCreatedAt=${staged.manifest.createdAt}", clock()),
+                    arrayOf<Any?>("backup_restore", "restoredBy=${actorId ?: 0}; backupCreatedAt=${staged.manifest.createdAt}", clock()),
                 )
                 it.setTransactionSuccessful()
             } finally {
@@ -262,7 +264,7 @@ class BackupService(
             buildList { while (c.moveToNext()) add(c.getLong(0) to c.getString(1)) }
         }
         rows.forEach { (rowId, old) ->
-            sqlite.execSQL("UPDATE $table SET $column = ? WHERE rowid = ?", arrayOf(File(dir, File(old).name).path, rowId))
+            sqlite.execSQL("UPDATE $table SET $column = ? WHERE rowid = ?", arrayOf<Any?>(File(dir, File(old).name).path, rowId))
         }
     }
 
