@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="menu_backup">Backup and restore</string>
+    <string name="backup_title">Backup and restore</string>
+    <string name="backup_create_title">Save a backup</string>
+    <string name="backup_create_hint">Saves all invoices, products, stock, expenses, users and pictures into one file. Keep a copy outside the phone (Google Drive, a memory card or your computer): it is the only way to recover your data if the phone is lost.</string>
+    <string name="backup_save_file">Save backup file</string>
+    <string name="backup_last_fmt">Last backup: %1$s</string>
+    <string name="backup_never">No backup has been made yet.</string>
+    <string name="backup_auto_title">Daily automatic backup</string>
+    <string name="backup_auto_hint">Keeps the last 7 backups on this phone. They are lost if the phone is lost or the app is uninstalled, so also save a copy outside the phone from the list below.</string>
+    <string name="backup_local_title">Backups on this phone</string>
+    <string name="backup_local_empty">No backups on this phone yet.</string>
+    <string name="backup_local_save_copy">Save a copy</string>
+    <string name="backup_local_restore">Restore</string>
+    <string name="backup_restore_title">Restore from a file</string>
+    <string name="backup_restore_hint">Use this to move your data to a new phone: install the app, sign in, then choose the backup file.</string>
+    <string name="backup_restore_choose">Choose a backup file</string>
+    <string name="backup_confirm_title">Restore this backup?</string>
+    <string name="backup_confirm_info_fmt">Made on %1$s: %2$d invoices, %3$d products, %4$d users, %5$d receipt photos, %6$d product pictures.</string>
+    <string name="backup_confirm_body">All the data on this phone will be REPLACED by this backup. What is on the phone now is saved first as a safety copy. The app will restart.</string>
+    <string name="backup_confirm_btn">Replace and restore</string>
+    <string name="backup_msg_saved">The backup was saved.</string>
+    <string name="backup_msg_copied">The copy was saved.</string>
+    <string name="backup_msg_restored">Restored. The app is restarting...</string>
+    <string name="backup_err_not_backup">This file is not a KONOZ MARKET backup.</string>
+    <string name="backup_err_version">This backup was made by a different version of the app and cannot be restored here.</string>
+    <string name="backup_err_corrupt">The backup file is damaged or incomplete. Nothing was changed.</string>
+    <string name="backup_err_no_admin">This backup has no active admin, so it cannot be restored. Nothing was changed.</string>
+    <string name="backup_err_failed">The operation failed. Nothing was changed. Please try again.</string>
+</resources>

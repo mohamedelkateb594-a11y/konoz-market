@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="menu_backup">النسخ الاحتياطي والاستعادة</string>
+    <string name="backup_title">النسخ الاحتياطي والاستعادة</string>
+    <string name="backup_create_title">حفظ نسخة احتياطية</string>
+    <string name="backup_create_hint">يحفظ كل الفواتير والمنتجات والمخزون والمصروفات والمستخدمين والصور في ملف واحد. احتفظ بنسخة خارج الهاتف (Google Drive أو كارت ذاكرة أو الكمبيوتر): هي الطريقة الوحيدة لاسترجاع بياناتك إذا ضاع الهاتف.</string>
+    <string name="backup_save_file">حفظ ملف النسخة</string>
+    <string name="backup_last_fmt">آخر نسخة: %1$s</string>
+    <string name="backup_never">لم تُنشَأ أي نسخة بعد.</string>
+    <string name="backup_auto_title">نسخ احتياطي يومي تلقائي</string>
+    <string name="backup_auto_hint">يحتفظ بآخر 7 نسخ على هذا الهاتف. تضيع إذا ضاع الهاتف أو حُذف التطبيق، لذلك احفظ نسخة خارج الهاتف من القائمة أدناه.</string>
+    <string name="backup_local_title">النسخ الموجودة على هذا الهاتف</string>
+    <string name="backup_local_empty">لا توجد نسخ على هذا الهاتف بعد.</string>
+    <string name="backup_local_save_copy">حفظ نسخة منها</string>
+    <string name="backup_local_restore">استعادة</string>
+    <string name="backup_restore_title">الاستعادة من ملف</string>
+    <string name="backup_restore_hint">استخدمها لنقل بياناتك إلى هاتف جديد: ثبّت التطبيق وسجّل الدخول ثم اختر ملف النسخة.</string>
+    <string name="backup_restore_choose">اختيار ملف نسخة</string>
+    <string name="backup_confirm_title">استعادة هذه النسخة؟</string>
+    <string name="backup_confirm_info_fmt">نُسخت في %1$s: %2$d فاتورة، %3$d منتج، %4$d مستخدم، %5$d صورة إيصال، %6$d صورة منتج.</string>
+    <string name="backup_confirm_body">ستُستبدَل كل البيانات على هذا الهاتف بهذه النسخة. ما هو موجود الآن يُحفظ أولًا كنسخة أمان. سيعاد تشغيل التطبيق.</string>
+    <string name="backup_confirm_btn">استبدال واستعادة</string>
+    <string name="backup_msg_saved">تم حفظ النسخة الاحتياطية.</string>
+    <string name="backup_msg_copied">تم حفظ النسخة.</string>
+    <string name="backup_msg_restored">تمت الاستعادة. جارٍ إعادة تشغيل التطبيق...</string>
+    <string name="backup_err_not_backup">هذا الملف ليس نسخة احتياطية من كنوز ماركت.</string>
+    <string name="backup_err_version">هذه النسخة عملتها نسخة مختلفة من التطبيق ولا يمكن استعادتها هنا.</string>
+    <string name="backup_err_corrupt">ملف النسخة تالف أو غير كامل. لم يتغير أي شيء.</string>
+    <string name="backup_err_no_admin">لا تحتوي هذه النسخة على مدير نشط فلا يمكن استعادتها. لم يتغير أي شيء.</string>
+    <string name="backup_err_failed">فشلت العملية. لم يتغير أي شيء. حاول مرة أخرى.</string>
+</resources>
