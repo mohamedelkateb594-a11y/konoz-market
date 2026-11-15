@@ -62,23 +62,18 @@ fun KonozRoot() {
 }
 
 /**
- * Cashier is first, per the product requirement. The dashboard (profit, costs, inventory value) is only for users who
- * may see profit, and the Products tab only for users who may manage products.
+ * Cashier is first, per the product requirement. By permission:
+ *  - the dashboard (profit, costs, inventory value) needs VIEW_PROFIT;
+ *  - the products tab (prices, costs, bulk price update, import) needs EDIT_PRICES, so only the admin can change prices.
  */
 @Composable
 private fun MainApp() {
     val app = LocalContext.current.applicationContext as KonozApp
     val user by app.session.user.collectAsStateWithLifecycle()
     val canSeeProfit = user?.let { Permissions.has(it.role, Permission.VIEW_PROFIT) } == true
-    val canManageProducts = user?.let { Permissions.has(it.role, Permission.MANAGE_PRODUCTS) } == true
-    val tabs = remember(canSeeProfit, canManageProducts) {
-        allTabs.filter {
-            when (it.id) {
-                TabId.DASHBOARD -> canSeeProfit
-                TabId.PRODUCTS -> canManageProducts
-                else -> true
-            }
-        }
+    val canEditProducts = user?.let { Permissions.has(it.role, Permission.EDIT_PRICES) } == true
+    val tabs = remember(canSeeProfit, canEditProducts) {
+        allTabs.filter { (it.id != TabId.DASHBOARD || canSeeProfit) && (it.id != TabId.PRODUCTS || canEditProducts) }
     }
 
     var selectedName by rememberSaveable { mutableStateOf(TabId.CASHIER.name) }
@@ -105,10 +100,8 @@ private fun MainApp() {
     ) { padding ->
         when (selected) {
             TabId.CASHIER -> CashierRoute(
-                // Only users who manage products can register an unknown barcode; for others the scan just reports it.
-                onRegisterBarcode = { code ->
-                    if (canManageProducts) { pendingBarcode = code; select(TabId.PRODUCTS) }
-                },
+                // Registering an unknown barcode creates a product with prices: only users who may edit products can do it.
+                onRegisterBarcode = { code -> if (canEditProducts) { pendingBarcode = code; select(TabId.PRODUCTS) } },
                 modifier = Modifier.padding(padding),
             )
             TabId.DASHBOARD -> DashboardRoute(

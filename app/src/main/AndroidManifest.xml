@@ -10,6 +10,12 @@
     <uses-feature android:name="android.hardware.camera" android:required="false" />
     <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
 
+    <!-- Needed to find WhatsApp when sharing an invoice to a customer's number (Android 11+ package visibility). -->
+    <queries>
+        <package android:name="com.whatsapp" />
+        <package android:name="com.whatsapp.w4b" />
+    </queries>
+
     <application
         android:name=".KonozApp"
         android:allowBackup="false"
@@ -27,7 +33,7 @@
             </intent-filter>
         </activity>
 
-        <!-- Lets the share sheet read the files the app exports (reports, later invoices). Only cache/exports is exposed. -->
+        <!-- Serves the invoice files handed to WhatsApp and the share sheet. -->
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

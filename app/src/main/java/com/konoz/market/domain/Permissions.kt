@@ -13,12 +13,14 @@ enum class Permission {
     /** Damaged / expired write-offs, manual adjustments and the movement log. */
     ADJUST_STOCK,
     PROCESS_RETURN,
+    /** Products tab: create/edit products, barcodes, CSV import. Prices still need EDIT_PRICES. */
+    MANAGE_PRODUCTS,
     OPERATE_SHIFTS,
     MANAGE_USERS,
     EDIT_PRICES,
     GIVE_LARGE_DISCOUNT,
-    /** Products tab: create/edit products, prices, costs, barcodes, CSV import. */
-    MANAGE_PRODUCTS,
+    /** Creates, exports and restores backups (a restore replaces all data on the phone). */
+    MANAGE_BACKUP,
 }
 
 object Permissions {
