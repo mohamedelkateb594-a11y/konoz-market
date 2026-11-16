@@ -87,9 +87,9 @@ fun InvoicesScreen(vm: InvoicesViewModel, onBack: () -> Unit, modifier: Modifier
 }
 
 /**
- * The invoice picked in [ui] with the customer phone field and the send/share/print buttons. Shows nothing when no invoice is selected.
+ * The invoice picked in [ui] with the customer phone field and the send/print buttons. Shows nothing when no invoice is selected.
  * [header] is extra content above the invoice (the cashier shows the payment result and change there); [focusPhone] puts the
- * cursor in the phone field with the keyboard open; the keyboard Send key sends on WhatsApp; [closeLabelRes] labels the close button.
+ * cursor in the phone field with the keyboard open; the keyboard Send key sends the PDF on WhatsApp; [closeLabelRes] labels the close button.
  */
 @Composable
 fun InvoiceShareDialog(
@@ -116,7 +116,7 @@ fun InvoiceShareDialog(
                     label = { Text(stringResource(R.string.inv_phone)) },
                     placeholder = { Text(stringResource(R.string.inv_phone_hint)) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone, imeAction = ImeAction.Send),
-                    keyboardActions = KeyboardActions(onSend = { vm.sendText() }),
+                    keyboardActions = KeyboardActions(onSend = { vm.sendPdf() }),
                     modifier = Modifier.fillMaxWidth().focusRequester(phoneFocus),
                 )
                 ui.message?.let {
@@ -133,16 +133,15 @@ fun InvoiceShareDialog(
                         color = MaterialTheme.colorScheme.error,
                     )
                 }
-                Button(onClick = vm::sendText, enabled = !ui.busy, modifier = Modifier.fillMaxWidth()) {
-                    Text(stringResource(R.string.inv_send_text_wa))
-                }
                 Button(onClick = vm::sendPdf, enabled = !ui.busy, modifier = Modifier.fillMaxWidth()) {
                     Text(stringResource(R.string.inv_send_pdf_wa))
                 }
                 Button(onClick = vm::sendImage, enabled = !ui.busy, modifier = Modifier.fillMaxWidth()) {
                     Text(stringResource(R.string.inv_send_image_wa))
                 }
-                Text(stringResource(R.string.inv_send_note), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                OutlinedButton(onClick = vm::sendText, enabled = !ui.busy, modifier = Modifier.fillMaxWidth()) {
+                    Text(stringResource(R.string.inv_send_text_wa))
+                }
                 OutlinedButton(onClick = vm::print, enabled = !ui.busy, modifier = Modifier.fillMaxWidth()) {
                     Text(stringResource(R.string.inv_print))
                 }
