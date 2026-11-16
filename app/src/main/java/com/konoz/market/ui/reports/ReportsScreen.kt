@@ -21,6 +21,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -67,6 +68,7 @@ import java.util.Locale
 private enum class ExportFormat { CSV, PDF, EXCEL }
 
 /** [onBack] = null when the screen is shown as a tab instead of inside the More menu. */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReportsScreen(vm: ReportsViewModel, onBack: (() -> Unit)?, modifier: Modifier = Modifier) {
     val ui by vm.ui.collectAsStateWithLifecycle()
@@ -78,6 +80,7 @@ fun ReportsScreen(vm: ReportsViewModel, onBack: (() -> Unit)?, modifier: Modifie
     var exporting by remember { mutableStateOf(false) }
     var exportFailed by remember { mutableStateOf(false) }
     var menuOpen by remember { mutableStateOf(false) }
+    var pickCustom by remember { mutableStateOf(false) }
     val shareTitle = stringResource(R.string.export_share_title)
 
     /** One report, three formats: CSV, PDF and Excel are all built from the same CSV rows, so they always show the same numbers. */
@@ -114,6 +117,13 @@ fun ReportsScreen(vm: ReportsViewModel, onBack: (() -> Unit)?, modifier: Modifie
             exportFailed = !ok
             exporting = false
         }
+    }
+
+    if (pickCustom) {
+        CustomRangeDialog(
+            onDismiss = { pickCustom = false },
+            onConfirm = { from, to -> pickCustom = false; vm.setCustomRange(from, to) },
+        )
     }
 
     LazyColumn(
@@ -162,6 +172,14 @@ fun ReportsScreen(vm: ReportsViewModel, onBack: (() -> Unit)?, modifier: Modifie
                 )
                 items(periods) { (p, label) ->
                     FilterChip(selected = ui.period == p, onClick = { vm.setPeriod(p) }, label = { Text(stringResource(label)) })
+                }
+                item {
+                    val picked = ui.customRange?.takeIf { ui.period == ReportPeriod.CUSTOM }
+                    val label = if (picked == null) stringResource(R.string.rep_period_custom) else {
+                        val f = SimpleDateFormat("dd/MM/yyyy", Locale.US)
+                        f.format(Date(picked.from)) + " - " + f.format(Date(picked.to))
+                    }
+                    FilterChip(selected = ui.period == ReportPeriod.CUSTOM, onClick = { pickCustom = true }, label = { Text(label) })
                 }
             }
         }

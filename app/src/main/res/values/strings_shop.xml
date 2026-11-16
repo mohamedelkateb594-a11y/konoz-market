@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="shop_menu">Shop settings</string>
+    <string name="shop_title">Shop settings</string>
+    <string name="shop_name_label">Shop name</string>
+    <string name="shop_name_hint">Printed at the top of every invoice and receipt.</string>
+    <string name="shop_name_save">Save name</string>
+    <string name="shop_saved">Saved.</string>
+    <string name="shop_categories">Product categories</string>
+    <string name="shop_categories_hint">Add, rename or remove categories to match what you sell.</string>
+    <string name="shop_category_new">New category name</string>
+    <string name="shop_category_add">Add</string>
+    <string name="shop_categories_empty">No categories yet.</string>
+    <string name="shop_category_rename">Rename</string>
+    <string name="shop_category_remove">Remove</string>
+    <string name="shop_category_rename_title">Rename category</string>
+    <string name="shop_category_remove_title">Remove category?</string>
+    <string name="shop_category_remove_msg">\"%1$s\" will be hidden from the lists. Products already using it are not deleted.</string>
+    <string name="shop_category_taken">A category with this name already exists.</string>
+    <string name="shop_category_blank">Enter a name.</string>
+    <string name="shop_default_name">تاجر</string>
+</resources>

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="shop_menu">إعدادات المحل</string>
+    <string name="shop_title">إعدادات المحل</string>
+    <string name="shop_name_label">اسم المحل</string>
+    <string name="shop_name_hint">يظهر في أعلى كل فاتورة وإيصال.</string>
+    <string name="shop_name_save">حفظ الاسم</string>
+    <string name="shop_saved">تم الحفظ.</string>
+    <string name="shop_categories">فئات المنتجات</string>
+    <string name="shop_categories_hint">أضف الفئات أو غيّر أسماءها أو احذفها بما يناسب ما تبيعه.</string>
+    <string name="shop_category_new">اسم فئة جديدة</string>
+    <string name="shop_category_add">إضافة</string>
+    <string name="shop_categories_empty">لا توجد فئات بعد.</string>
+    <string name="shop_category_rename">تعديل الاسم</string>
+    <string name="shop_category_remove">حذف</string>
+    <string name="shop_category_rename_title">تعديل اسم الفئة</string>
+    <string name="shop_category_remove_title">حذف الفئة؟</string>
+    <string name="shop_category_remove_msg">ستختفي «%1$s» من القوائم. المنتجات المرتبطة بها لا تُحذف.</string>
+    <string name="shop_category_taken">توجد فئة بهذا الاسم بالفعل.</string>
+    <string name="shop_category_blank">اكتب اسمًا.</string>
+    <string name="shop_default_name">تاجر</string>
+</resources>

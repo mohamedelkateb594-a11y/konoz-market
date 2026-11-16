@@ -85,12 +85,31 @@ class InvoicesViewModel(private val app: KonozApp) : ViewModel() {
 
     fun onPhone(text: String) = _ui.update { it.copy(phone = text.take(20), message = null) }
 
-    /** Sends the PDF to the typed customer number on WhatsApp. */
-    fun sendWhatsApp() = share(InvoiceFormat.PDF, withWhatsApp = true)
+    /**
+     * Opens the WhatsApp chat of the typed number with the invoice written as a message. This is the one way to land directly
+     * in that customer's chat without picking from the contacts, so it needs no saved contact.
+     */
+    fun sendText() {
+        val state = _ui.value
+        val data = state.selected ?: return
+        val number = PhoneNumbers.toWhatsApp(state.phone) ?: run {
+            _ui.update { it.copy(message = ShareMessage.INVALID_PHONE) }
+            return
+        }
+        try {
+            if (sharer.openChat(number, InvoiceText.build(app, data)) == ShareResult.CHOOSER_NO_WHATSAPP) {
+                _ui.update { it.copy(message = ShareMessage.NO_WHATSAPP) }
+            }
+        } catch (e: Exception) {
+            _ui.update { it.copy(message = ShareMessage.FAILED) }
+        }
+    }
 
-    fun sharePdf() = share(InvoiceFormat.PDF, withWhatsApp = false)
+    /** The invoice as a PDF file, addressed to the typed number on WhatsApp (share sheet when no number is typed). */
+    fun sendPdf() = share(InvoiceFormat.PDF)
 
-    fun shareImage() = share(InvoiceFormat.IMAGE, withWhatsApp = false)
+    /** The invoice as an image, addressed to the typed number on WhatsApp (share sheet when no number is typed). */
+    fun sendImage() = share(InvoiceFormat.IMAGE)
 
     /** Prints the open invoice on the Bluetooth receipt printer chosen in More > Receipt printer. */
     fun print() {
@@ -114,17 +133,17 @@ class InvoicesViewModel(private val app: KonozApp) : ViewModel() {
         }
     }
 
-    private fun share(format: InvoiceFormat, withWhatsApp: Boolean) {
+    private fun share(format: InvoiceFormat) {
         val state = _ui.value
         val data = state.selected ?: return
         if (state.busy) return
-        val number = if (withWhatsApp) {
+        val number = if (state.phone.isBlank()) {
+            null
+        } else {
             PhoneNumbers.toWhatsApp(state.phone) ?: run {
                 _ui.update { it.copy(message = ShareMessage.INVALID_PHONE) }
                 return
             }
-        } else {
-            null
         }
         _ui.update { it.copy(busy = true, message = null) }
         viewModelScope.launch {

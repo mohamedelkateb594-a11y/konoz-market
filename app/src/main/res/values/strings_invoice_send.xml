@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="inv_send_text_wa">Open customer chat on WhatsApp (invoice as message)</string>
+    <string name="inv_send_pdf_wa">Send as PDF on WhatsApp</string>
+    <string name="inv_send_image_wa">Send as image on WhatsApp</string>
+    <string name="inv_send_note">The message button opens the typed number chat directly. File buttons may ask you to confirm the chat, depending on your WhatsApp version.</string>
+</resources>
