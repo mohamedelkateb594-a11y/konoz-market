@@ -8,6 +8,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.konoz.market.KonozApp
 import com.konoz.market.data.entity.Product
 import com.konoz.market.domain.CategorySales
+import com.konoz.market.domain.CustomPeriod
 import com.konoz.market.domain.ExpenseByCategory
 import com.konoz.market.domain.HourStat
 import com.konoz.market.domain.PeriodKind
@@ -26,14 +27,16 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.util.Calendar
 
-enum class ReportPeriod { TODAY, MONTH, YEAR, LAST_30_DAYS }
+enum class ReportPeriod { TODAY, MONTH, YEAR, LAST_30_DAYS, CUSTOM }
 
 data class ReportsUi(
     val period: ReportPeriod = ReportPeriod.TODAY,
+    /** The days the owner picked (first instant of the first day to last instant of the last day); null until picked. */
+    val customRange: PeriodRange? = null,
     val loading: Boolean = true,
     val failed: Boolean = false,
     val summary: PeriodSummary? = null,
-    /** The previous day / month / year; null for "last 30 days". */
+    /** The previous day / month / year; null for "last 30 days" and a custom period. */
     val previous: PeriodSummary? = null,
     val topQty: List<ProductPerformance> = emptyList(),
     val topProfit: List<ProductPerformance> = emptyList(),
@@ -53,12 +56,20 @@ class ReportsViewModel(
     private val _ui = MutableStateFlow(ReportsUi())
     val ui: StateFlow<ReportsUi> = _ui.asStateFlow()
     private var job: Job? = null
+    private var custom: PeriodRange? = null
 
     init {
         load(ReportPeriod.TODAY)
     }
 
+    /** [pickedFrom] / [pickedTo]: the UTC-midnight values a Material date picker returns; the order does not matter. */
+    fun setCustomRange(pickedFrom: Long, pickedTo: Long) {
+        custom = CustomPeriod.rangeOf(pickedFrom, pickedTo)
+        load(ReportPeriod.CUSTOM)
+    }
+
     fun setPeriod(p: ReportPeriod) {
+        if (p == ReportPeriod.CUSTOM && custom == null) return
         if (p == _ui.value.period && !_ui.value.failed) return
         load(p)
     }
@@ -87,11 +98,12 @@ class ReportsViewModel(
                     ReportPeriod.TODAY -> PeriodKind.DAY
                     ReportPeriod.MONTH -> PeriodKind.MONTH
                     ReportPeriod.YEAR -> PeriodKind.YEAR
-                    ReportPeriod.LAST_30_DAYS -> null
+                    ReportPeriod.LAST_30_DAYS, ReportPeriod.CUSTOM -> null
                 }
                 val comparison = kind?.let { service.compare(it, now) }
                 _ui.value = ReportsUi(
                     period = p,
+                    customRange = custom,
                     loading = false,
                     summary = comparison?.current ?: service.summary(range),
                     previous = comparison?.previous,
@@ -116,6 +128,7 @@ class ReportsViewModel(
         ReportPeriod.TODAY -> Periods.rangeOf(PeriodKind.DAY, now)
         ReportPeriod.MONTH -> Periods.rangeOf(PeriodKind.MONTH, now)
         ReportPeriod.YEAR -> Periods.rangeOf(PeriodKind.YEAR, now)
+        ReportPeriod.CUSTOM -> custom ?: Periods.rangeOf(PeriodKind.DAY, now)
         ReportPeriod.LAST_30_DAYS -> {
             val start = Calendar.getInstance().apply { timeInMillis = now; add(Calendar.DAY_OF_MONTH, -29) }.timeInMillis
             PeriodRange(Periods.rangeOf(PeriodKind.DAY, start).from, Periods.rangeOf(PeriodKind.DAY, now).to)
