@@ -61,6 +61,8 @@ import com.konoz.market.ui.suppliers.StatementScreen
 import com.konoz.market.ui.suppliers.StatementViewModel
 import com.konoz.market.ui.suppliers.SuppliersScreen
 import com.konoz.market.ui.suppliers.SuppliersViewModel
+import com.konoz.market.ui.theme.ThemeMode
+import com.konoz.market.ui.theme.ThemePreference
 import com.konoz.market.ui.users.UsersScreen
 import com.konoz.market.ui.users.UsersViewModel
 
@@ -119,6 +121,7 @@ fun MoreRoute(modifier: Modifier = Modifier, startRoute: String? = null, onStart
     val context = LocalContext.current
     val app = context.applicationContext as KonozApp
     val user by app.session.user.collectAsStateWithLifecycle()
+    val themeMode by ThemePreference.mode
     fun allowed(permission: Permission?) = permission == null || user?.let { Permissions.has(it.role, permission) } == true
 
     var route by rememberSaveable { mutableStateOf(MENU) }
@@ -233,12 +236,20 @@ fun MoreRoute(modifier: Modifier = Modifier, startRoute: String? = null, onStart
                 Triple(R.string.shop_menu, Permission.MANAGE_USERS) { session++; route = MoreTargets.SHOP },
                 Triple(R.string.menu_users, Permission.MANAGE_USERS) { session++; route = MoreTargets.USERS },
                 Triple(R.string.menu_backup, Permission.MANAGE_BACKUP) { session++; route = MoreTargets.BACKUP },
+                // Appearance: one tap cycles System -> Light -> Dark; the label shows the current choice and the whole app repaints at once.
+                Triple<Int, Permission?, () -> Unit>(themeLabel(themeMode), null) { ThemePreference.next(context) },
                 Triple<Int, Permission?, () -> Unit>(R.string.menu_language, null) { AppLanguage.switch(context) },
                 Triple<Int, Permission?, () -> Unit>(R.string.auth_logout, null) { route = MENU; app.session.signOut() },
             ).filter { allowed(it.second) },
             modifier = modifier,
         )
     }
+}
+
+private fun themeLabel(mode: ThemeMode): Int = when (mode) {
+    ThemeMode.SYSTEM -> R.string.menu_theme_system
+    ThemeMode.LIGHT -> R.string.menu_theme_light
+    ThemeMode.DARK -> R.string.menu_theme_dark
 }
 
 /** The menu is a tile grid (see MoreTileGrid.kt); this only adapts the permission-filtered list. */
