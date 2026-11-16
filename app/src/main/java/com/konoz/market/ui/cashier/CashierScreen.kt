@@ -30,6 +30,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -49,6 +50,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -110,7 +112,9 @@ fun CashierScreen(
 
     Column(modifier.fillMaxSize()) {
         if (scanning) {
-            Box(Modifier.fillMaxWidth().height(170.dp)) {
+            // The camera takes the top quarter of the screen; the rest is left for the invoice.
+            val cameraHeight = (LocalConfiguration.current.screenHeightDp / 4).dp
+            Box(Modifier.fillMaxWidth().height(cameraHeight)) {
                 CameraBarcodeScanner(enabled = !anyDialog, onBarcode = { vm.onScan(it) }, modifier = Modifier.fillMaxSize())
                 IconButton(onClick = { vm.setScanning(false) }, modifier = Modifier.align(Alignment.TopEnd)) {
                     Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.close_camera))
@@ -203,7 +207,7 @@ fun CashierScreen(
         }
 
         Surface(tonalElevation = 3.dp, shadowElevation = 6.dp) {
-            Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 if (totals != null) {
                     val discounts = totals.itemDiscountTotal + totals.invoiceDiscount
                     if (discounts > 0L) {
@@ -213,13 +217,20 @@ fun CashierScreen(
                         Text(stringResource(R.string.tax_fmt, Money.format(totals.taxAmount)), style = MaterialTheme.typography.bodyMedium)
                     }
                 }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(stringResource(R.string.total_label), style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-                    Text(
-                        Money.format(totals?.total ?: 0L),
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(R.string.total_label), style = MaterialTheme.typography.titleSmall)
+                        Text(
+                            Money.format(totals?.total ?: 0L),
+                            style = MaterialTheme.typography.headlineMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                    Button(
+                        onClick = { showPay = true },
+                        enabled = !cart.isEmpty,
+                        modifier = Modifier.weight(1f).height(56.dp),
+                    ) { Text(stringResource(R.string.pay), style = MaterialTheme.typography.titleMedium) }
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedButton(onClick = { vm.hold() }, enabled = !cart.isEmpty, modifier = Modifier.weight(1f)) {
@@ -232,11 +243,6 @@ fun CashierScreen(
                         Text(stringResource(R.string.invoice_discount))
                     }
                 }
-                Button(
-                    onClick = { showPay = true },
-                    enabled = !cart.isEmpty,
-                    modifier = Modifier.fillMaxWidth().height(56.dp),
-                ) { Text(stringResource(R.string.pay), style = MaterialTheme.typography.titleMedium) }
             }
         }
     }
@@ -317,7 +323,7 @@ private fun CartRow(
     onMinus: () -> Unit,
     onRemove: () -> Unit,
 ) {
-    Card(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
+    ElevatedCard(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
@@ -338,7 +344,7 @@ private fun CartRow(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(
-                        Money.format(item.unitPrice) + " \u00d7 " + formatQty(item.qtyMilli) + " " + stringResource(unitLabelRes(item.unit)),
+                        Money.format(item.unitPrice) + " × " + formatQty(item.qtyMilli) + " " + stringResource(unitLabelRes(item.unit)),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
