@@ -19,7 +19,6 @@ import com.konoz.market.core.Money
 import com.konoz.market.core.Quantities
 import com.konoz.market.data.entity.PaymentMethod
 import com.konoz.market.domain.InvoiceData
-import com.konoz.market.ui.shop.ShopProfile
 import com.konoz.market.ui.theme.Brand
 import java.io.OutputStream
 import java.text.SimpleDateFormat
@@ -163,7 +162,7 @@ class InvoiceRenderer(private val context: Context, private val money: (Long) ->
 
         // ---- header ----
         card {
-            block(ShopProfile.displayName(context), title, Layout.Alignment.ALIGN_CENTER)
+            block(context.getString(R.string.inv_shop_name), title, Layout.Alignment.ALIGN_CENTER)
             y += 4f
             row(context.getString(R.string.inv_number_fmt, d.number), dateFormat.format(Date(d.dateMillis)), numberPaint, mutedSmall)
             d.cashier?.let { row(context.getString(R.string.inv_cashier), it, mutedSmall, body) }
