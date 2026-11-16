@@ -116,7 +116,7 @@ fun InvoiceShareDialog(
                     label = { Text(stringResource(R.string.inv_phone)) },
                     placeholder = { Text(stringResource(R.string.inv_phone_hint)) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone, imeAction = ImeAction.Send),
-                    keyboardActions = KeyboardActions(onSend = { vm.sendWhatsApp() }),
+                    keyboardActions = KeyboardActions(onSend = { vm.sendText() }),
                     modifier = Modifier.fillMaxWidth().focusRequester(phoneFocus),
                 )
                 ui.message?.let {
@@ -133,17 +133,18 @@ fun InvoiceShareDialog(
                         color = MaterialTheme.colorScheme.error,
                     )
                 }
-                Button(onClick = vm::sendWhatsApp, enabled = !ui.busy, modifier = Modifier.fillMaxWidth()) {
-                    Text(stringResource(R.string.inv_send_whatsapp))
+                Button(onClick = vm::sendText, enabled = !ui.busy, modifier = Modifier.fillMaxWidth()) {
+                    Text(stringResource(R.string.inv_send_text_wa))
                 }
+                Button(onClick = vm::sendPdf, enabled = !ui.busy, modifier = Modifier.fillMaxWidth()) {
+                    Text(stringResource(R.string.inv_send_pdf_wa))
+                }
+                Button(onClick = vm::sendImage, enabled = !ui.busy, modifier = Modifier.fillMaxWidth()) {
+                    Text(stringResource(R.string.inv_send_image_wa))
+                }
+                Text(stringResource(R.string.inv_send_note), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 OutlinedButton(onClick = vm::print, enabled = !ui.busy, modifier = Modifier.fillMaxWidth()) {
                     Text(stringResource(R.string.inv_print))
-                }
-                OutlinedButton(onClick = vm::sharePdf, enabled = !ui.busy, modifier = Modifier.fillMaxWidth()) {
-                    Text(stringResource(R.string.inv_share_pdf))
-                }
-                OutlinedButton(onClick = vm::shareImage, enabled = !ui.busy, modifier = Modifier.fillMaxWidth()) {
-                    Text(stringResource(R.string.inv_share_image))
                 }
             }
         },

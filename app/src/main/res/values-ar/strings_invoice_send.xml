@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="inv_send_text_wa">فتح محادثة العميل على واتساب (الفاتورة كرسالة)</string>
+    <string name="inv_send_pdf_wa">إرسال PDF على واتساب</string>
+    <string name="inv_send_image_wa">إرسال صورة على واتساب</string>
+    <string name="inv_send_note">زر الرسالة يفتح محادثة الرقم المكتوب مباشرة. أزرار الملفات قد تطلب منك تأكيد المحادثة حسب إصدار واتساب.</string>
+</resources>
