@@ -9,6 +9,7 @@ import androidx.core.content.FileProvider
 import com.konoz.market.R
 import com.konoz.market.core.Money
 import com.konoz.market.domain.InvoiceData
+import com.konoz.market.ui.shop.ShopProfile
 import java.io.File
 
 enum class InvoiceFormat(val extension: String, val mime: String) {
@@ -45,9 +46,9 @@ class InvoiceSharer(private val context: Context, private val renderer: InvoiceR
         return file
     }
 
-    /** Short text sent with the file. */
+    /** Short text sent with the file (starts with the shop name the owner chose in Shop settings). */
     fun caption(data: InvoiceData): String =
-        context.getString(R.string.inv_caption_fmt, context.getString(R.string.inv_shop_name), data.number, Money.format(data.total))
+        context.getString(R.string.inv_caption_fmt, ShopProfile.displayName(context), data.number, Money.format(data.total))
 
     /**
      * [whatsappNumber] = digits with country code (see PhoneNumbers.toWhatsApp). With it, WhatsApp (or WhatsApp Business)
@@ -87,6 +88,22 @@ class InvoiceSharer(private val context: Context, private val renderer: InvoiceR
         val chooser = Intent.createChooser(send(), null).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         context.startActivity(chooser)
         return if (whatsappNumber != null) ShareResult.CHOOSER_NO_WHATSAPP else ShareResult.CHOOSER
+    }
+
+    /**
+     * Opens WhatsApp straight on the chat of [number] (digits with country code) with [text] ready to send.
+     * Nothing is launched and CHOOSER_NO_WHATSAPP is returned when WhatsApp is not installed.
+     */
+    fun openChat(number: String, text: String): ShareResult {
+        val uri = Uri.parse("https://wa.me/$number?text=" + Uri.encode(text))
+        for (pkg in WHATSAPP_PACKAGES) {
+            val intent = Intent(Intent.ACTION_VIEW, uri).setPackage(pkg).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            if (intent.resolveActivity(context.packageManager) != null) {
+                context.startActivity(intent)
+                return ShareResult.WHATSAPP
+            }
+        }
+        return ShareResult.CHOOSER_NO_WHATSAPP
     }
 
     private fun tryStart(intent: Intent, pkg: String, uri: Uri): Boolean {
