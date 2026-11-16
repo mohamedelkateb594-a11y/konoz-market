@@ -49,6 +49,8 @@ import com.konoz.market.ui.returns.ReturnsScreen
 import com.konoz.market.ui.returns.ReturnsViewModel
 import com.konoz.market.ui.shifts.ShiftScreen
 import com.konoz.market.ui.shifts.ShiftViewModel
+import com.konoz.market.ui.shop.ShopSettingsScreen
+import com.konoz.market.ui.shop.ShopSettingsViewModel
 import com.konoz.market.ui.stockcount.StockCountListScreen
 import com.konoz.market.ui.stockcount.StockCountListViewModel
 import com.konoz.market.ui.stockcount.StockCountScreen
@@ -72,6 +74,7 @@ object MoreTargets {
     const val INVOICES = "invoices"
     const val BACKUP = "backup"
     const val PRINTER = "printer"
+    const val SHOP = "shop"
 }
 
 private const val MENU = "menu"
@@ -83,7 +86,7 @@ private const val ALERTS = "alerts"
 
 /**
  * Routes: menu, suppliers, statement/{supplierId}, purchase/{supplierId}/{0|1 = return}, returns, stockops,
- * movements, alerts, expenses, counts, count/{countId}, reports, shifts, users, invoices, backup, printer.
+ * movements, alerts, expenses, counts, count/{countId}, reports, shifts, users, invoices, backup, printer, shop.
  */
 private fun parentOf(route: String): String {
     val parts = route.split('/')
@@ -105,6 +108,7 @@ private fun requiredPermission(route: String): Permission? = when (route.split('
     MoreTargets.REPORTS -> Permission.VIEW_PROFIT
     MoreTargets.SHIFTS -> Permission.OPERATE_SHIFTS
     MoreTargets.USERS -> Permission.MANAGE_USERS
+    MoreTargets.SHOP -> Permission.MANAGE_USERS
     MoreTargets.BACKUP -> Permission.MANAGE_BACKUP
     else -> null
 }
@@ -209,6 +213,10 @@ fun MoreRoute(modifier: Modifier = Modifier, startRoute: String? = null, onStart
             val vm: PrinterViewModel = viewModel(key = "printer_$session", factory = PrinterViewModel.Factory)
             PrinterScreen(vm, onBack = { route = MENU }, modifier = modifier)
         }
+        MoreTargets.SHOP -> {
+            val vm: ShopSettingsViewModel = viewModel(key = "shop_$session", factory = ShopSettingsViewModel.Factory)
+            ShopSettingsScreen(vm, onBack = { route = MENU }, modifier = modifier)
+        }
         else -> MoreMenu(
             items = listOf(
                 Triple<Int, Permission?, () -> Unit>(R.string.menu_invoices, null) { session++; route = MoreTargets.INVOICES },
@@ -222,6 +230,7 @@ fun MoreRoute(modifier: Modifier = Modifier, startRoute: String? = null, onStart
                 Triple(R.string.menu_movements, Permission.ADJUST_STOCK) { session++; route = MOVEMENTS },
                 Triple<Int, Permission?, () -> Unit>(R.string.menu_alerts, null) { session++; route = ALERTS },
                 Triple<Int, Permission?, () -> Unit>(R.string.menu_printer, null) { session++; route = MoreTargets.PRINTER },
+                Triple(R.string.shop_menu, Permission.MANAGE_USERS) { session++; route = MoreTargets.SHOP },
                 Triple(R.string.menu_users, Permission.MANAGE_USERS) { session++; route = MoreTargets.USERS },
                 Triple(R.string.menu_backup, Permission.MANAGE_BACKUP) { session++; route = MoreTargets.BACKUP },
                 Triple<Int, Permission?, () -> Unit>(R.string.menu_language, null) { AppLanguage.switch(context) },
