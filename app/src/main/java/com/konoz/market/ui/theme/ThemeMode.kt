@@ -21,7 +21,7 @@ object ThemePreference {
     /** Reads the saved choice; call once before the UI is drawn. */
     fun load(context: Context) {
         val saved = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(KEY, null)
-        current.value = ThemeMode.entries.firstOrNull { it.name == saved } ?: ThemeMode.SYSTEM
+        current.value = ThemeMode.values().firstOrNull { it.name == saved } ?: ThemeMode.SYSTEM
     }
 
     fun set(context: Context, mode: ThemeMode) {
@@ -31,7 +31,7 @@ object ThemePreference {
 
     /** System -> Light -> Dark -> System. */
     fun next(context: Context) {
-        val all = ThemeMode.entries
+        val all = ThemeMode.values()
         set(context, all[(current.value.ordinal + 1) % all.size])
     }
 
