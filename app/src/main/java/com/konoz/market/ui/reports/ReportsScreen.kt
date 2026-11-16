@@ -20,6 +20,9 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -43,20 +46,29 @@ import com.konoz.market.KonozApp
 import com.konoz.market.R
 import com.konoz.market.core.Money
 import com.konoz.market.data.entity.ExpenseCategory
+import com.konoz.market.domain.CsvRows
 import com.konoz.market.domain.Permission
 import com.konoz.market.domain.Permissions
 import com.konoz.market.domain.PeriodSummary
 import com.konoz.market.domain.ProductPerformance
+import com.konoz.market.domain.XlsxWriter
 import com.konoz.market.ui.common.formatQty
+import com.konoz.market.ui.common.shareBytesFile
 import com.konoz.market.ui.common.shareTextFile
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.ByteArrayOutputStream
 import java.text.DateFormatSymbols
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+private enum class ExportFormat { CSV, PDF, EXCEL }
+
 /** [onBack] = null when the screen is shown as a tab instead of inside the More menu. */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReportsScreen(vm: ReportsViewModel, onBack: (() -> Unit)?, modifier: Modifier = Modifier) {
     val ui by vm.ui.collectAsStateWithLifecycle()
@@ -67,7 +79,52 @@ fun ReportsScreen(vm: ReportsViewModel, onBack: (() -> Unit)?, modifier: Modifie
     val scope = rememberCoroutineScope()
     var exporting by remember { mutableStateOf(false) }
     var exportFailed by remember { mutableStateOf(false) }
+    var menuOpen by remember { mutableStateOf(false) }
+    var pickCustom by remember { mutableStateOf(false) }
     val shareTitle = stringResource(R.string.export_share_title)
+
+    /** One report, three formats: CSV, PDF and Excel are all built from the same CSV rows, so they always show the same numbers. */
+    fun runExport(format: ExportFormat) {
+        val s = summary ?: return
+        exporting = true
+        exportFailed = false
+        scope.launch {
+            val canProfit = user?.let { Permissions.has(it.role, Permission.VIEW_PROFIT) } == true
+            val day = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+            val stamp = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US)
+            val base = "konoz-report-" + day.format(Date(s.range.from))
+            val ok = try {
+                val text = vm.csvText(canProfit) { stamp.format(Date(it)) }
+                when {
+                    text == null -> false
+                    format == ExportFormat.CSV -> shareTextFile(context, "$base.csv", text, "text/csv", shareTitle)
+                    format == ExportFormat.PDF -> {
+                        val bytes = withContext(Dispatchers.Default) {
+                            ByteArrayOutputStream().also { ReportPdf(context).write(CsvRows.parse(text), it) }.toByteArray()
+                        }
+                        shareBytesFile(context, "$base.pdf", bytes, "application/pdf", shareTitle)
+                    }
+                    else -> {
+                        val bytes = withContext(Dispatchers.Default) { XlsxWriter.build(CsvRows.parse(text)) }
+                        shareBytesFile(context, "$base.xlsx", bytes, XlsxWriter.MIME, shareTitle)
+                    }
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                false
+            }
+            exportFailed = !ok
+            exporting = false
+        }
+    }
+
+    if (pickCustom) {
+        CustomRangeDialog(
+            onDismiss = { pickCustom = false },
+            onConfirm = { from, to -> pickCustom = false; vm.setCustomRange(from, to) },
+        )
+    }
 
     LazyColumn(
         modifier.fillMaxSize(),
@@ -81,31 +138,25 @@ fun ReportsScreen(vm: ReportsViewModel, onBack: (() -> Unit)?, modifier: Modifie
                 }
                 Text(stringResource(R.string.reports_title), style = MaterialTheme.typography.titleLarge)
                 Spacer(Modifier.weight(1f))
-                TextButton(
-                    enabled = summary != null && !exporting,
-                    onClick = {
-                        val s = summary ?: return@TextButton
-                        exporting = true
-                        exportFailed = false
-                        scope.launch {
-                            val canProfit = user?.let { Permissions.has(it.role, Permission.VIEW_PROFIT) } == true
-                            val day = SimpleDateFormat("yyyy-MM-dd", Locale.US)
-                            val stamp = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US)
-                            val ok = try {
-                                val text = vm.csvText(canProfit) { stamp.format(Date(it)) }
-                                text != null && shareTextFile(
-                                    context, "konoz-report-" + day.format(Date(s.range.from)) + ".csv", text, "text/csv", shareTitle,
-                                )
-                            } catch (e: CancellationException) {
-                                throw e
-                            } catch (e: Exception) {
-                                false
-                            }
-                            exportFailed = !ok
-                            exporting = false
-                        }
-                    },
-                ) { Text(stringResource(R.string.export_csv)) }
+                Box {
+                    TextButton(enabled = summary != null && !exporting, onClick = { menuOpen = true }) {
+                        Text(stringResource(R.string.rep_export_menu))
+                    }
+                    DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.rep_export_pdf)) },
+                            onClick = { menuOpen = false; runExport(ExportFormat.PDF) },
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.rep_export_excel)) },
+                            onClick = { menuOpen = false; runExport(ExportFormat.EXCEL) },
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.export_csv)) },
+                            onClick = { menuOpen = false; runExport(ExportFormat.CSV) },
+                        )
+                    }
+                }
             }
         }
         if (exportFailed) {
@@ -121,6 +172,14 @@ fun ReportsScreen(vm: ReportsViewModel, onBack: (() -> Unit)?, modifier: Modifie
                 )
                 items(periods) { (p, label) ->
                     FilterChip(selected = ui.period == p, onClick = { vm.setPeriod(p) }, label = { Text(stringResource(label)) })
+                }
+                item {
+                    val picked = ui.customRange?.takeIf { ui.period == ReportPeriod.CUSTOM }
+                    val label = if (picked == null) stringResource(R.string.rep_period_custom) else {
+                        val f = SimpleDateFormat("dd/MM/yyyy", Locale.US)
+                        f.format(Date(picked.from)) + " - " + f.format(Date(picked.to))
+                    }
+                    FilterChip(selected = ui.period == ReportPeriod.CUSTOM, onClick = { pickCustom = true }, label = { Text(label) })
                 }
             }
         }

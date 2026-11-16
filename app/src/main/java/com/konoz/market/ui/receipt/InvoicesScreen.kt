@@ -87,9 +87,9 @@ fun InvoicesScreen(vm: InvoicesViewModel, onBack: () -> Unit, modifier: Modifier
 }
 
 /**
- * The invoice picked in [ui] with the customer phone field and the send/share buttons. Shows nothing when no invoice is selected.
+ * The invoice picked in [ui] with the customer phone field and the send/print buttons. Shows nothing when no invoice is selected.
  * [header] is extra content above the invoice (the cashier shows the payment result and change there); [focusPhone] puts the
- * cursor in the phone field with the keyboard open; the keyboard Send key sends on WhatsApp; [closeLabelRes] labels the close button.
+ * cursor in the phone field with the keyboard open; the keyboard Send key sends the PDF on WhatsApp; [closeLabelRes] labels the close button.
  */
 @Composable
 fun InvoiceShareDialog(
@@ -116,7 +116,7 @@ fun InvoiceShareDialog(
                     label = { Text(stringResource(R.string.inv_phone)) },
                     placeholder = { Text(stringResource(R.string.inv_phone_hint)) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone, imeAction = ImeAction.Send),
-                    keyboardActions = KeyboardActions(onSend = { vm.sendWhatsApp() }),
+                    keyboardActions = KeyboardActions(onSend = { vm.sendPdf() }),
                     modifier = Modifier.fillMaxWidth().focusRequester(phoneFocus),
                 )
                 ui.message?.let {
@@ -126,19 +126,24 @@ fun InvoiceShareDialog(
                                 ShareMessage.INVALID_PHONE -> R.string.inv_err_phone
                                 ShareMessage.NO_WHATSAPP -> R.string.inv_err_no_whatsapp
                                 ShareMessage.FAILED -> R.string.inv_err_failed
+                                ShareMessage.NO_PRINTER -> R.string.inv_err_no_printer
+                                ShareMessage.PRINT_FAILED -> R.string.inv_err_print
                             },
                         ),
                         color = MaterialTheme.colorScheme.error,
                     )
                 }
-                Button(onClick = vm::sendWhatsApp, enabled = !ui.busy, modifier = Modifier.fillMaxWidth()) {
-                    Text(stringResource(R.string.inv_send_whatsapp))
+                Button(onClick = vm::sendPdf, enabled = !ui.busy, modifier = Modifier.fillMaxWidth()) {
+                    Text(stringResource(R.string.inv_send_pdf_wa))
                 }
-                OutlinedButton(onClick = vm::sharePdf, enabled = !ui.busy, modifier = Modifier.fillMaxWidth()) {
-                    Text(stringResource(R.string.inv_share_pdf))
+                Button(onClick = vm::sendImage, enabled = !ui.busy, modifier = Modifier.fillMaxWidth()) {
+                    Text(stringResource(R.string.inv_send_image_wa))
                 }
-                OutlinedButton(onClick = vm::shareImage, enabled = !ui.busy, modifier = Modifier.fillMaxWidth()) {
-                    Text(stringResource(R.string.inv_share_image))
+                OutlinedButton(onClick = vm::sendText, enabled = !ui.busy, modifier = Modifier.fillMaxWidth()) {
+                    Text(stringResource(R.string.inv_send_text_wa))
+                }
+                OutlinedButton(onClick = vm::print, enabled = !ui.busy, modifier = Modifier.fillMaxWidth()) {
+                    Text(stringResource(R.string.inv_print))
                 }
             }
         },

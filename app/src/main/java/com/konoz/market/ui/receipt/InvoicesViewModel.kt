@@ -10,6 +10,7 @@ import com.konoz.market.data.entity.SalesInvoice
 import com.konoz.market.domain.InvoiceData
 import com.konoz.market.domain.InvoiceLoader
 import com.konoz.market.domain.PhoneNumbers
+import com.konoz.market.ui.printer.PrintException
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,12 +21,14 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-enum class ShareMessage { INVALID_PHONE, NO_WHATSAPP, FAILED }
+enum class ShareMessage { INVALID_PHONE, NO_WHATSAPP, FAILED, NO_PRINTER, PRINT_FAILED }
 
 data class InvoicesUi(
     val query: String = "",
     val recent: List<SalesInvoice> = emptyList(),
     val selected: InvoiceData? = null,
+    /** Database id of [selected], needed to print it. */
+    val selectedId: Long? = null,
     /** What was typed, as typed; converted only when sending. */
     val phone: String = "",
     val busy: Boolean = false,
@@ -53,7 +56,9 @@ class InvoicesViewModel(private val app: KonozApp) : ViewModel() {
     fun open(invoiceId: Long) {
         viewModelScope.launch {
             try {
-                loader.load(invoiceId)?.let { data -> _ui.update { it.copy(selected = data, phone = "", message = null) } }
+                loader.load(invoiceId)?.let { data ->
+                    _ui.update { it.copy(selected = data, selectedId = invoiceId, phone = "", message = null) }
+                }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -76,28 +81,69 @@ class InvoicesViewModel(private val app: KonozApp) : ViewModel() {
         }
     }
 
-    fun close() = _ui.update { it.copy(selected = null, phone = "", message = null) }
+    fun close() = _ui.update { it.copy(selected = null, selectedId = null, phone = "", message = null) }
 
     fun onPhone(text: String) = _ui.update { it.copy(phone = text.take(20), message = null) }
 
-    /** Sends the PDF to the typed customer number on WhatsApp. */
-    fun sendWhatsApp() = share(InvoiceFormat.PDF, withWhatsApp = true)
+    /**
+     * Opens the WhatsApp chat of the typed number with the invoice written as a message. This is the one way to land directly
+     * in that customer's chat without picking from the contacts, so it needs no saved contact.
+     */
+    fun sendText() {
+        val state = _ui.value
+        val data = state.selected ?: return
+        val number = PhoneNumbers.toWhatsApp(state.phone) ?: run {
+            _ui.update { it.copy(message = ShareMessage.INVALID_PHONE) }
+            return
+        }
+        try {
+            if (sharer.openChat(number, InvoiceText.build(app, data)) == ShareResult.CHOOSER_NO_WHATSAPP) {
+                _ui.update { it.copy(message = ShareMessage.NO_WHATSAPP) }
+            }
+        } catch (e: Exception) {
+            _ui.update { it.copy(message = ShareMessage.FAILED) }
+        }
+    }
 
-    fun sharePdf() = share(InvoiceFormat.PDF, withWhatsApp = false)
+    /** The invoice as a PDF file, addressed to the typed number on WhatsApp (share sheet when no number is typed). */
+    fun sendPdf() = share(InvoiceFormat.PDF)
 
-    fun shareImage() = share(InvoiceFormat.IMAGE, withWhatsApp = false)
+    /** The invoice as an image, addressed to the typed number on WhatsApp (share sheet when no number is typed). */
+    fun sendImage() = share(InvoiceFormat.IMAGE)
 
-    private fun share(format: InvoiceFormat, withWhatsApp: Boolean) {
+    /** Prints the open invoice on the Bluetooth receipt printer chosen in More > Receipt printer. */
+    fun print() {
+        val state = _ui.value
+        val id = state.selectedId ?: return
+        if (state.busy) return
+        _ui.update { it.copy(busy = true, message = null) }
+        viewModelScope.launch {
+            try {
+                app.printService.printInvoice(id)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: PrintException) {
+                val m = if (e.reason == PrintException.Reason.NO_PRINTER) ShareMessage.NO_PRINTER else ShareMessage.PRINT_FAILED
+                _ui.update { it.copy(message = m) }
+            } catch (e: Exception) {
+                _ui.update { it.copy(message = ShareMessage.PRINT_FAILED) }
+            } finally {
+                _ui.update { it.copy(busy = false) }
+            }
+        }
+    }
+
+    private fun share(format: InvoiceFormat) {
         val state = _ui.value
         val data = state.selected ?: return
         if (state.busy) return
-        val number = if (withWhatsApp) {
+        val number = if (state.phone.isBlank()) {
+            null
+        } else {
             PhoneNumbers.toWhatsApp(state.phone) ?: run {
                 _ui.update { it.copy(message = ShareMessage.INVALID_PHONE) }
                 return
             }
-        } else {
-            null
         }
         _ui.update { it.copy(busy = true, message = null) }
         viewModelScope.launch {

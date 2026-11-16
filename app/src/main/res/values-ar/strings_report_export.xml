@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="rep_export_menu">تصدير</string>
+    <string name="rep_export_pdf">ملف PDF</string>
+    <string name="rep_export_excel">ملف Excel</string>
+</resources>

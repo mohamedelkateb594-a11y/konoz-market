@@ -30,6 +30,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -47,6 +48,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -69,7 +71,10 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-/** The receipt after payment (change due, send to the customer) is shown by [CashierRoute] through the invoice send dialog. */
+/**
+ * Layout, top to bottom: the camera (exactly the top quarter of the screen, clipped), the invoice items right under it,
+ * then the bottom panel (search box, total, pay). The receipt after payment is shown by [CashierRoute].
+ */
 @Composable
 fun CashierScreen(
     vm: CashierViewModel,
@@ -110,10 +115,10 @@ fun CashierScreen(
     val anyDialog = message != null || showPay || showHeld || showInvoiceDiscount || editId != null || lastSale != null
 
     Column(modifier.fillMaxSize()) {
+        // ---- the camera: the top quarter of the screen, nothing is ever drawn over it ----
         if (scanning) {
-            // The camera sits at the very top and takes a quarter of the screen height.
             val cameraHeight = (LocalConfiguration.current.screenHeightDp / 4).dp
-            Box(Modifier.fillMaxWidth().height(cameraHeight)) {
+            Box(Modifier.fillMaxWidth().height(cameraHeight).clipToBounds()) {
                 CameraBarcodeScanner(enabled = !anyDialog, onBarcode = { vm.onScan(it) }, modifier = Modifier.fillMaxSize())
                 IconButton(onClick = { vm.setScanning(false) }, modifier = Modifier.align(Alignment.TopEnd)) {
                     Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.close_camera))
@@ -130,23 +135,15 @@ fun CashierScreen(
             }
         }
 
-        OutlinedTextField(
-            value = query,
-            onValueChange = vm::setQuery,
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
-            leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
-            placeholder = { Text(stringResource(R.string.cashier_search_hint)) },
-            singleLine = true,
-        )
-
-        Box(Modifier.weight(1f).fillMaxWidth()) {
+        // ---- the invoice items, directly under the camera (clipped so they never draw over it) ----
+        Box(Modifier.weight(1f).fillMaxWidth().clipToBounds()) {
             if (query.isNotBlank()) {
                 SearchResults(results, onPick = { vm.addProduct(it.id) })
-            } else {
+            } else if (cart.isEmpty) {
                 Column(Modifier.fillMaxSize()) {
                     if (favorites.isNotEmpty()) {
                         LazyRow(
-                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
                             items(favorites, key = { it.id }) { p ->
@@ -154,37 +151,36 @@ fun CashierScreen(
                             }
                         }
                     }
-                    if (cart.isEmpty) {
-                        Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
-                            Text(
-                                stringResource(R.string.cart_empty),
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                    } else {
-                        LazyColumn(
-                            contentPadding = PaddingValues(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            item(key = "cart_header") {
-                                Text(
-                                    stringResource(R.string.cashier_items_count_fmt, cart.items.size),
-                                    style = MaterialTheme.typography.titleSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
-                            itemsIndexed(cart.items, key = { _, it -> it.productId }) { index, item ->
-                                CartRow(
-                                    index = index + 1,
-                                    item = item,
-                                    onClick = { editId = item.productId },
-                                    onPlus = { vm.changeQty(item.productId, 1) },
-                                    onMinus = { vm.changeQty(item.productId, -1) },
-                                    onRemove = { vm.remove(item.productId) },
-                                )
-                            }
-                        }
+                    Box(Modifier.weight(1f).fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
+                        Text(
+                            stringResource(R.string.cart_empty),
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    item(key = "cart_header") {
+                        Text(
+                            stringResource(R.string.cashier_items_count_fmt, cart.items.size),
+                            style = MaterialTheme.typography.titleSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    itemsIndexed(cart.items, key = { _, it -> it.productId }) { index, item ->
+                        CartRow(
+                            index = index + 1,
+                            item = item,
+                            onClick = { editId = item.productId },
+                            onPlus = { vm.changeQty(item.productId, 1) },
+                            onMinus = { vm.changeQty(item.productId, -1) },
+                            onRemove = { vm.remove(item.productId) },
+                        )
                     }
                 }
             }
@@ -205,8 +201,17 @@ fun CashierScreen(
             }
         }
 
+        // ---- bottom panel: search, total, pay ----
         Surface(tonalElevation = 3.dp, shadowElevation = 6.dp) {
-            Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                OutlinedTextField(
+                    value = query,
+                    onValueChange = vm::setQuery,
+                    modifier = Modifier.fillMaxWidth(),
+                    leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                    placeholder = { Text(stringResource(R.string.cashier_search_hint)) },
+                    singleLine = true,
+                )
                 if (totals != null) {
                     val discounts = totals.itemDiscountTotal + totals.invoiceDiscount
                     if (discounts > 0L) {
@@ -216,13 +221,20 @@ fun CashierScreen(
                         Text(stringResource(R.string.tax_fmt, Money.format(totals.taxAmount)), style = MaterialTheme.typography.bodyMedium)
                     }
                 }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(stringResource(R.string.total_label), style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-                    Text(
-                        Money.format(totals?.total ?: 0L),
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(R.string.total_label), style = MaterialTheme.typography.titleSmall)
+                        Text(
+                            Money.format(totals?.total ?: 0L),
+                            style = MaterialTheme.typography.headlineMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                    Button(
+                        onClick = { showPay = true },
+                        enabled = !cart.isEmpty,
+                        modifier = Modifier.weight(1f).height(56.dp),
+                    ) { Text(stringResource(R.string.pay), style = MaterialTheme.typography.titleMedium) }
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedButton(onClick = { vm.hold() }, enabled = !cart.isEmpty, modifier = Modifier.weight(1f)) {
@@ -235,11 +247,6 @@ fun CashierScreen(
                         Text(stringResource(R.string.invoice_discount))
                     }
                 }
-                Button(
-                    onClick = { showPay = true },
-                    enabled = !cart.isEmpty,
-                    modifier = Modifier.fillMaxWidth().height(56.dp),
-                ) { Text(stringResource(R.string.pay), style = MaterialTheme.typography.titleMedium) }
             }
         }
     }
@@ -296,6 +303,7 @@ fun CashierScreen(
 @Composable
 private fun SearchResults(results: List<Product>, onPick: (Product) -> Unit) {
     LazyColumn(
+        modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
@@ -320,7 +328,7 @@ private fun CartRow(
     onMinus: () -> Unit,
     onRemove: () -> Unit,
 ) {
-    Card(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
+    ElevatedCard(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
@@ -341,7 +349,7 @@ private fun CartRow(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(
-                        Money.format(item.unitPrice) + " \u00d7 " + formatQty(item.qtyMilli) + " " + stringResource(unitLabelRes(item.unit)),
+                        Money.format(item.unitPrice) + " × " + formatQty(item.qtyMilli) + " " + stringResource(unitLabelRes(item.unit)),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
