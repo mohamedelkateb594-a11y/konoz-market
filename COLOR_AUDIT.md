@@ -16,7 +16,7 @@ Scope: colors only. No layout, order of elements or function was changed.
 4. Several pairs were under WCAG AA (measured, see table). Fixed by small value changes that keep the Modern Blue identity.
 5. Control borders (`outline`) were 1.4:1 (light) and 1.7:1 (dark). Raised to 3:1 or more. `outlineVariant` stays subtle and is only for dividers.
 6. No Info token. Added (`info` / `onInfo`).
-7. Every other screen checked (Dashboard, More grid, Cashier, Shop settings, Invoice renderer) already uses theme tokens only.
+7. Files read and found clean (tokens only, no raw colors): Dashboard, More tile grid, Cashier, Shop settings, Invoice renderer. The other screens (products, purchases, expenses, stock count, reports, shifts, users, backup, printer, alerts, returns) were NOT opened one by one: the repository text search is unavailable here, so a grep for `Color(0x`, `Color.White`, `Color.Black` over `ui/` is still to be run in an IDE.
 
 ## Changes (ratio = WCAG contrast; AA text needs 4.5, borders and graphics need 3)
 | Token | Before | After | Pair | Before | After |
@@ -37,4 +37,4 @@ Disabled, pressed, focused and hover states are produced by Material 3 from the 
 
 ## Open decisions for the owner
 - The sign-in screen keeps the violet accent from the owner's reference. Switching it to the brand blue is a one-line change in `Brand.SignInAccentLight` / `SignInAccentDark`.
-- Not tested on a device: all numbers come from calculation, not from screenshots. Please check each screen in light and dark after installing.
+- Not tested on a device and not compiled yet: all numbers come from calculation, not from screenshots. Please check each screen in light and dark after installing.
