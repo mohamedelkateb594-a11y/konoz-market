@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="dash_start_cashier">ابدأ الكاشير</string>
+    <string name="rcard_section">التقارير</string>
+    <string name="rcard_summary_title">ملخص الأرباح</string>
+    <string name="rcard_summary_desc">المبيعات والتكلفة وصافي الربح التقديري</string>
+    <string name="rcard_top_qty_title">الأكثر مبيعًا</string>
+    <string name="rcard_top_qty_desc">المنتجات الأعلى حركة حسب الكمية</string>
+    <string name="rcard_top_profit_title">الأكثر ربحًا</string>
+    <string name="rcard_top_profit_desc">المنتجات التي حققت أعلى ربح</string>
+    <string name="rcard_least_sold_title">الأقل مبيعًا</string>
+    <string name="rcard_least_sold_desc">المنتجات الأضعف حركة في الفترة</string>
+    <string name="rcard_non_moving_title">منتجات راكدة</string>
+    <string name="rcard_non_moving_desc">متوفرة في المخزون ولم تُباع</string>
+    <string name="rcard_categories_title">حسب التصنيف</string>
+    <string name="rcard_categories_desc">المبيعات والربح لكل تصنيف</string>
+    <string name="rcard_expenses_title">المصروفات</string>
+    <string name="rcard_expenses_desc">توزيع المصروفات حسب النوع</string>
+    <string name="rcard_peak_title">أوقات الذروة</string>
+    <string name="rcard_peak_desc">أكثر ساعات اليوم ازدحامًا</string>
+    <string name="rcard_weekdays_title">أيام الأسبوع</string>
+    <string name="rcard_weekdays_desc">مقارنة متوسط المبيعات بين الأيام</string>
+</resources>

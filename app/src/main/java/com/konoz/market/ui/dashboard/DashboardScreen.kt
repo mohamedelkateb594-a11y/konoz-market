@@ -37,13 +37,18 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
-/** What the shortcut buttons do; the root decides how to navigate. */
+/**
+ * What the shortcut buttons do; the root decides how to navigate.
+ * [onOpenReport] gets a section id of ReportSections (a report card opens the Reports screen at that section);
+ * by default it opens the Reports screen at the top, like [onReports].
+ */
 class DashboardActions(
     val onCashier: () -> Unit,
     val onAddProduct: () -> Unit,
     val onStockCount: () -> Unit,
     val onExpenses: () -> Unit,
     val onReports: () -> Unit,
+    val onOpenReport: (String) -> Unit = { onReports() },
 )
 
 @Composable
@@ -65,7 +70,8 @@ fun DashboardScreen(vm: DashboardViewModel, actions: DashboardActions, modifier:
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        item { Text(stringResource(R.string.dash_title), style = MaterialTheme.typography.titleLarge) }
+        item { DashboardHeader(onStartCashier = actions.onCashier) }
+        item { ReportCardsStrip(onOpenReport = actions.onOpenReport) }
         item {
             Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {

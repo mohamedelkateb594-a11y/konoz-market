@@ -88,7 +88,7 @@ private const val ALERTS = "alerts"
 
 /**
  * Routes: menu, suppliers, statement/{supplierId}, purchase/{supplierId}/{0|1 = return}, returns, stockops,
- * movements, alerts, expenses, counts, count/{countId}, reports, shifts, users, invoices, backup, printer, shop.
+ * movements, alerts, expenses, counts, count/{countId}, reports or reports/{sectionId} (see ReportSections), shifts, users, invoices, backup, printer, shop.
  */
 private fun parentOf(route: String): String {
     val parts = route.split('/')
@@ -194,7 +194,7 @@ fun MoreRoute(modifier: Modifier = Modifier, startRoute: String? = null, onStart
         }
         MoreTargets.REPORTS -> {
             val vm: ReportsViewModel = viewModel(key = "reports_$session", factory = ReportsViewModel.Factory)
-            ReportsScreen(vm, onBack = { route = MENU }, modifier = modifier)
+            ReportsScreen(vm, onBack = { route = MENU }, modifier = modifier, section = parts.getOrNull(1))
         }
         MoreTargets.SHIFTS -> {
             val vm: ShiftViewModel = viewModel(key = "shifts_$session", factory = ShiftViewModel.Factory)
