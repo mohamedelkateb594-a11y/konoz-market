@@ -50,22 +50,24 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.konoz.market.R
+import com.konoz.market.ui.reports.ReportSections
 import com.konoz.market.ui.theme.ReportCardTokens
 import kotlin.math.abs
 
-/** One report card: its name, its short description and its icon. Same nine reports as the sections of the Reports screen. */
-private class ReportCardSpec(val titleRes: Int, val descRes: Int, val icon: ImageVector)
+/** One report card: the Reports screen section it opens ([sectionId]), its name, short description and icon. */
+private class ReportCardSpec(val sectionId: String, val titleRes: Int, val descRes: Int, val icon: ImageVector)
 
+/** Same nine reports, in the same order, as the sections of the Reports screen (ReportSections.order). */
 private val reportCards = listOf(
-    ReportCardSpec(R.string.rcard_summary_title, R.string.rcard_summary_desc, Icons.Filled.Assessment),
-    ReportCardSpec(R.string.rcard_top_qty_title, R.string.rcard_top_qty_desc, Icons.Filled.Whatshot),
-    ReportCardSpec(R.string.rcard_top_profit_title, R.string.rcard_top_profit_desc, Icons.Filled.Savings),
-    ReportCardSpec(R.string.rcard_least_sold_title, R.string.rcard_least_sold_desc, Icons.Filled.ArrowDownward),
-    ReportCardSpec(R.string.rcard_non_moving_title, R.string.rcard_non_moving_desc, Icons.Filled.HourglassEmpty),
-    ReportCardSpec(R.string.rcard_categories_title, R.string.rcard_categories_desc, Icons.Filled.Category),
-    ReportCardSpec(R.string.rcard_expenses_title, R.string.rcard_expenses_desc, Icons.Filled.Payments),
-    ReportCardSpec(R.string.rcard_peak_title, R.string.rcard_peak_desc, Icons.Filled.Schedule),
-    ReportCardSpec(R.string.rcard_weekdays_title, R.string.rcard_weekdays_desc, Icons.Filled.CalendarMonth),
+    ReportCardSpec(ReportSections.SUMMARY, R.string.rcard_summary_title, R.string.rcard_summary_desc, Icons.Filled.Assessment),
+    ReportCardSpec(ReportSections.TOP_QTY, R.string.rcard_top_qty_title, R.string.rcard_top_qty_desc, Icons.Filled.Whatshot),
+    ReportCardSpec(ReportSections.TOP_PROFIT, R.string.rcard_top_profit_title, R.string.rcard_top_profit_desc, Icons.Filled.Savings),
+    ReportCardSpec(ReportSections.LEAST_SOLD, R.string.rcard_least_sold_title, R.string.rcard_least_sold_desc, Icons.Filled.ArrowDownward),
+    ReportCardSpec(ReportSections.NON_MOVING, R.string.rcard_non_moving_title, R.string.rcard_non_moving_desc, Icons.Filled.HourglassEmpty),
+    ReportCardSpec(ReportSections.CATEGORIES, R.string.rcard_categories_title, R.string.rcard_categories_desc, Icons.Filled.Category),
+    ReportCardSpec(ReportSections.EXPENSES, R.string.rcard_expenses_title, R.string.rcard_expenses_desc, Icons.Filled.Payments),
+    ReportCardSpec(ReportSections.PEAK_HOURS, R.string.rcard_peak_title, R.string.rcard_peak_desc, Icons.Filled.Schedule),
+    ReportCardSpec(ReportSections.WEEKDAYS, R.string.rcard_weekdays_title, R.string.rcard_weekdays_desc, Icons.Filled.CalendarMonth),
 )
 
 /**
@@ -98,11 +100,11 @@ internal fun DashboardHeader(onStartCashier: () -> Unit, modifier: Modifier = Mo
 /**
  * The reports as a horizontal strip of landscape cards. Swipe left or right; the strip snaps to a card, and the cards
  * near the edges shrink and fade a little, so moving between them is smooth.
- * Tapping a card opens the existing Reports screen through [onOpenReport] (navigation is unchanged).
+ * Tapping a card calls [onOpenReport] with the id of its section, and the Reports screen opens scrolled to it.
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-internal fun ReportCardsStrip(onOpenReport: () -> Unit, modifier: Modifier = Modifier) {
+internal fun ReportCardsStrip(onOpenReport: (String) -> Unit, modifier: Modifier = Modifier) {
     val listState = rememberLazyListState()
     val fling = rememberSnapFlingBehavior(lazyListState = listState)
     val screenWidthDp = LocalConfiguration.current.screenWidthDp
@@ -116,11 +118,11 @@ internal fun ReportCardsStrip(onOpenReport: () -> Unit, modifier: Modifier = Mod
             contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            itemsIndexed(reportCards, key = { _, spec -> spec.titleRes }) { index, spec ->
+            itemsIndexed(reportCards, key = { _, spec -> spec.sectionId }) { index, spec ->
                 ReportCard(
                     spec = spec,
                     style = ReportCardTokens.styles[index % ReportCardTokens.styles.size],
-                    onClick = onOpenReport,
+                    onClick = { onOpenReport(spec.sectionId) },
                     modifier = Modifier
                         .width(cardWidth)
                         .height(116.dp)
