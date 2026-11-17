@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="dash_start_cashier">Start cashier</string>
+    <string name="rcard_section">Reports</string>
+    <string name="rcard_summary_title">Profit summary</string>
+    <string name="rcard_summary_desc">Sales, cost and estimated net profit</string>
+    <string name="rcard_top_qty_title">Best sellers</string>
+    <string name="rcard_top_qty_desc">Fastest moving products by quantity</string>
+    <string name="rcard_top_profit_title">Most profitable</string>
+    <string name="rcard_top_profit_desc">Products that earned the highest profit</string>
+    <string name="rcard_least_sold_title">Least sold</string>
+    <string name="rcard_least_sold_desc">Slowest moving products in the period</string>
+    <string name="rcard_non_moving_title">Stagnant products</string>
+    <string name="rcard_non_moving_desc">In stock but never sold</string>
+    <string name="rcard_categories_title">By category</string>
+    <string name="rcard_categories_desc">Sales and profit per category</string>
+    <string name="rcard_expenses_title">Expenses</string>
+    <string name="rcard_expenses_desc">Expenses grouped by type</string>
+    <string name="rcard_peak_title">Peak hours</string>
+    <string name="rcard_peak_desc">The busiest hours of the day</string>
+    <string name="rcard_weekdays_title">Weekdays</string>
+    <string name="rcard_weekdays_desc">Average sales compared across days</string>
+</resources>
