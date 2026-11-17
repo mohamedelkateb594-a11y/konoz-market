@@ -111,6 +111,8 @@ private fun MainApp() {
                     onStockCount = { moreTarget = MoreTargets.COUNTS; select(TabId.MORE) },
                     onExpenses = { moreTarget = MoreTargets.EXPENSES; select(TabId.MORE) },
                     onReports = { moreTarget = MoreTargets.REPORTS; select(TabId.MORE) },
+                    // A report card opens the Reports screen scrolled to its section (route reports/<sectionId>).
+                    onOpenReport = { sectionId -> moreTarget = MoreTargets.REPORTS + "/" + sectionId; select(TabId.MORE) },
                 ),
                 modifier = Modifier.padding(padding),
             )
