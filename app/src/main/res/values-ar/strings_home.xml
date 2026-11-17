@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="home_menu">القائمة</string>
+    <string name="home_menu_title">خصائص البرنامج</string>
+    <string name="home_start_cashier">ابدأ الكاشير</string>
+    <string name="home_back_to_home">العودة للوحة التحكم</string>
+    <string name="home_pick_hint">اختر بندًا من الشريط لعرض تفاصيله هنا</string>
+    <string name="hc_products_desc">الأصناف والأسعار والكميات</string>
+    <string name="hc_invoices_desc">فواتير البيع ومشاركتها وطباعتها</string>
+    <string name="hc_shifts_desc">فتح الوردية وإغلاقها وجرد الخزينة</string>
+    <string name="hc_reports_desc">الأرباح والمبيعات وأداء المنتجات</string>
+    <string name="hc_suppliers_desc">الموردون وفواتير الشراء والحسابات</string>
+    <string name="hc_expenses_desc">تسجيل المصروفات اليومية</string>
+    <string name="hc_stockcount_desc">جرد المخزون واعتماد الفروقات</string>
+    <string name="hc_returns_desc">مرتجعات المبيعات واسترداد المبلغ</string>
+    <string name="hc_stockops_desc">تالف وتسويات وتحويل وحدات</string>
+    <string name="hc_movements_desc">سجل حركة كل منتج</string>
+    <string name="hc_alerts_desc">نقص المخزون وقرب انتهاء الصلاحية</string>
+    <string name="hc_users_desc">المستخدمون والصلاحيات</string>
+    <string name="hc_shop_desc">اسم المحل وبياناته</string>
+    <string name="hc_backup_desc">نسخ احتياطي واستعادة</string>
+    <string name="hc_printer_desc">الطابعة الحرارية</string>
+    <string name="cs_search_chip">ابحث عن المنتج</string>
+    <string name="cs_search_close">إغلاق البحث</string>
+    <string name="cart_col_qty">الكمية</string>
+    <string name="cart_col_price">السعر</string>
+    <string name="cart_col_name">المنتج</string>
+    <string name="cart_col_total">الإجمالي</string>
+</resources>

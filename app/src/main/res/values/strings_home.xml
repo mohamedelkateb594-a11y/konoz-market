@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="home_menu">Menu</string>
+    <string name="home_menu_title">Program settings</string>
+    <string name="home_start_cashier">Start cashier</string>
+    <string name="home_back_to_home">Back to dashboard</string>
+    <string name="home_pick_hint">Pick an item from the strip to see its details here</string>
+    <string name="hc_products_desc">Items, prices and quantities</string>
+    <string name="hc_invoices_desc">Sales invoices, sharing and printing</string>
+    <string name="hc_shifts_desc">Open and close shifts, cash count</string>
+    <string name="hc_reports_desc">Profit, sales and product performance</string>
+    <string name="hc_suppliers_desc">Suppliers, purchase invoices, accounts</string>
+    <string name="hc_expenses_desc">Record daily expenses</string>
+    <string name="hc_stockcount_desc">Stock count and approving differences</string>
+    <string name="hc_returns_desc">Sales returns and refunds</string>
+    <string name="hc_stockops_desc">Damage, adjustments, unit conversion</string>
+    <string name="hc_movements_desc">Movement log of each product</string>
+    <string name="hc_alerts_desc">Low stock and near-expiry products</string>
+    <string name="hc_users_desc">Users and permissions</string>
+    <string name="hc_shop_desc">Shop name and details</string>
+    <string name="hc_backup_desc">Backup and restore</string>
+    <string name="hc_printer_desc">Thermal printer</string>
+    <string name="cs_search_chip">Find product</string>
+    <string name="cs_search_close">Close search</string>
+    <string name="cart_col_qty">Qty</string>
+    <string name="cart_col_price">Price</string>
+    <string name="cart_col_name">Product</string>
+    <string name="cart_col_total">Total</string>
+</resources>
