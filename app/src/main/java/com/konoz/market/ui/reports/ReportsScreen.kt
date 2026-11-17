@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
@@ -27,10 +28,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -56,9 +59,12 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-/** [onBack] = null when the screen is shown as a tab instead of inside the More menu. */
+/**
+ * [onBack] = null when the screen is shown as a tab instead of inside the More menu.
+ * [section] (one of [ReportSections]) scrolls to that section once, after the data has loaded; null = stay at the top.
+ */
 @Composable
-fun ReportsScreen(vm: ReportsViewModel, onBack: (() -> Unit)?, modifier: Modifier = Modifier) {
+fun ReportsScreen(vm: ReportsViewModel, onBack: (() -> Unit)?, modifier: Modifier = Modifier, section: String? = null) {
     val ui by vm.ui.collectAsStateWithLifecycle()
     val summary = ui.summary
     val context = LocalContext.current
@@ -69,8 +75,20 @@ fun ReportsScreen(vm: ReportsViewModel, onBack: (() -> Unit)?, modifier: Modifie
     var exportFailed by remember { mutableStateOf(false) }
     val shareTitle = stringResource(R.string.export_share_title)
 
+    val listState = rememberLazyListState()
+    var scrolledToSection by rememberSaveable(section) { mutableStateOf(false) }
+    LaunchedEffect(section, summary != null) {
+        val target = ReportSections.order.indexOf(section)
+        if (!scrolledToSection && target >= 0 && summary != null) {
+            // Items before the sections: header, the export error (only when shown), the period chips.
+            listState.animateScrollToItem(2 + (if (exportFailed) 1 else 0) + target)
+            scrolledToSection = true
+        }
+    }
+
     LazyColumn(
         modifier.fillMaxSize(),
+        state = listState,
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
@@ -135,6 +153,7 @@ fun ReportsScreen(vm: ReportsViewModel, onBack: (() -> Unit)?, modifier: Modifie
         } else if (summary == null) {
             item { Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() } }
         } else {
+            // The order of these nine items must match ReportSections.order.
             item { SummaryCard(summary, ui.previous) }
             item { Section(R.string.rep_top_qty) { ProductRows(ui.topQty, showProfit = false) } }
             item { Section(R.string.rep_top_profit) { ProductRows(ui.topProfit, showProfit = true) } }
