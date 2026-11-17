@@ -39,8 +39,8 @@ import java.util.Locale
 
 /**
  * What the shortcut buttons do; the root decides how to navigate.
- * [onOpenReport] gets a section id of ReportSections (a report card opens the Reports screen at that section);
- * by default it opens the Reports screen at the top, like [onReports].
+ * [onOpenReport] gets a section id of ReportSections (used by the report-cards strip of ReportCardsStrip.kt, which the home screen
+ * no longer shows); by default it opens the Reports screen at the top, like [onReports].
  */
 class DashboardActions(
     val onCashier: () -> Unit,
@@ -59,6 +59,10 @@ fun DashboardRoute(actions: DashboardActions, modifier: Modifier = Modifier) {
     DashboardScreen(vm, actions, modifier)
 }
 
+/**
+ * The dashboard figures. The header (start-cashier button) and the strip of cards now belong to the home screen
+ * (ui/home/HomeScreen.kt), which hosts this screen under its strip.
+ */
 @Composable
 fun DashboardScreen(vm: DashboardViewModel, actions: DashboardActions, modifier: Modifier = Modifier) {
     val ui by vm.ui.collectAsStateWithLifecycle()
@@ -70,8 +74,6 @@ fun DashboardScreen(vm: DashboardViewModel, actions: DashboardActions, modifier:
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        item { DashboardHeader(onStartCashier = actions.onCashier) }
-        item { ReportCardsStrip(onOpenReport = actions.onOpenReport) }
         item {
             Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
