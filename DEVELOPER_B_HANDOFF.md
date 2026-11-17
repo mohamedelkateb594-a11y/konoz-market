@@ -2,17 +2,21 @@
 
 _Branch: `claude/developer-b`. `main` @ ffa2c4c = دمج PR #1 (حتى المهمة 9 فقط)؛ كل ما بعده على هذا الفرع ولم يُدمج. A (`DEVELOPER_A_HANDOFF.md`) وC (`DEVELOPER_C_HANDOFF.md`) يعملان على نفس الفرع: اقرأ ملفاتهم و`list_commits` قبل أي كتابة، ولا تكتب ملفًا موجودًا دون قراءته من آخر commit._
 
-## آخر تحديث (2026-11-17): UI دفعة 3 — شريط بطاقات التقارير + زر «ابدأ الكاشير» في اللوحة
-- **قفل:** `LOCK_TASK_UI_DASHBOARD_REPORTS.md` (يُحذف عند الدمج).
-- **طلب المالك:** قسم التقارير في الواجهة الرئيسية (لوحة التحكم) = شريط أفقي قابل للسحب من بطاقات أفقية (Landscape) بحواف دائرية وتدرجات أزرق فاتح وظلال خفيفة؛ أيقونة + اسم التقرير + وصف مختصر؛ حركة سلسة؛ زر «ابدأ الكاشير» بارز بأيقونة ماكينة كاشير يفتح الكاشير الحالي. ألوان النصوص المحددة: الاسم `#26364A` عريض، الوصف `#52647A`، الأيقونة `#245BDB` أو لون مناسب لكل بطاقة، ولا نص أبيض داخل البطاقات. **تغيير تصميم فقط.**
-- **ما تغيّر (لا شيء غيره):**
-  - جديد `ui/theme/ReportCardColors.kt`: `ReportCardTokens` (ألوان العنوان والوصف والأيقونة وشارة الأيقونة + 9 تدرجات فاتحة وألوان أيقونات متناسقة). ثابتة عمدًا في الوضعين (البطاقات فاتحة دائمًا، نص كحلي عليها). كل لون نهاية تدرج يعطي تباين وصف ≥ 4.5 (حسابيًا، لم يُراجع بصريًا).
-  - جديد `ui/dashboard/ReportCardsStrip.kt`: `DashboardHeader` (العنوان + زر «ابدأ الكاشير» في نهاية الصف، أي أعلى اليسار بالعربية وينعكس تلقائيًا)، `ReportCardsStrip` (`LazyRow` + `rememberSnapFlingBehavior`، البطاقة بعرض 78% من الشاشة بين 240 و300dp وارتفاع 116dp، البطاقات البعيدة عن المركز تصغر وتخفت قليلًا عبر `graphicsLayer`)، تسع بطاقات بنفس أقسام شاشة التقارير (ملخص الأرباح، الأكثر مبيعًا، الأكثر ربحًا، الأقل مبيعًا، الراكدة، حسب التصنيف، المصروفات، أوقات الذروة، أيام الأسبوع).
-  - `ui/dashboard/DashboardScreen.kt`: عنصر العنوان القديم استُبدل بعنصرين (`DashboardHeader(onStartCashier = actions.onCashier)` و`ReportCardsStrip(onOpenReport = actions.onReports)`). باقي الملف كما هو (المؤشرات، الرسم، آخر المبيعات، الاختصارات بما فيها «الكاشير» و«التقارير»).
+## آخر تحديث (2026-11-17): UI دفعة 3 — شريط بطاقات التقارير + «ابدأ الكاشير» + فتح القسم مباشرة
+- **قفل:** `LOCK_TASK_UI_DASHBOARD_REPORTS.md` (يُحذف عند الدمج؛ فيه ملاحظات الدمج لـA وC).
+- **طلب المالك:** قسم التقارير في الواجهة الرئيسية (لوحة التحكم) = شريط أفقي قابل للسحب من بطاقات أفقية (Landscape) بحواف دائرية وتدرجات أزرق فاتح وظلال خفيفة؛ أيقونة + اسم التقرير + وصف مختصر؛ حركة سلسة؛ زر «ابدأ الكاشير» بارز بأيقونة ماكينة كاشير يفتح الكاشير الحالي. ألوان النصوص المحددة: الاسم `#26364A` عريض، الوصف `#52647A`، الأيقونة `#245BDB` أو لون مناسب لكل بطاقة، ولا نص أبيض داخل البطاقات. ثم وافق المالك (نفس اليوم) على أن تفتح كل بطاقة قسمها مباشرة.
+- **ما تغيّر:**
+  - جديد `ui/theme/ReportCardColors.kt`: `ReportCardTokens` (ألوان العنوان والوصف والأيقونة وشارة الأيقونة + 9 تدرجات فاتحة وألوان أيقونات متناسقة). ثابتة عمدًا في الوضعين (البطاقات فاتحة دائمًا، نص كحلي عليها). تباين الوصف ≥ 4.5 حسابيًا (لم يُراجع بصريًا).
+  - جديد `ui/dashboard/ReportCardsStrip.kt`: `DashboardHeader` (العنوان + زر «ابدأ الكاشير» في نهاية الصف، أي أعلى اليسار بالعربية وينعكس تلقائيًا)، `ReportCardsStrip` (`LazyRow` + `rememberSnapFlingBehavior`، عرض البطاقة 78% من الشاشة بين 240 و300dp وارتفاع 116dp، البطاقات البعيدة عن المركز تصغر وتخفت قليلًا عبر `graphicsLayer`)، تسع بطاقات بنفس أقسام شاشة التقارير.
+  - جديد `ui/reports/ReportSections.kt`: معرّفات الأقسام الـ9 و`order` (**يجب أن يطابق ترتيب عناصر الأقسام في `ReportsScreen`**؛ إن أضفت قسمًا أو غيرت ترتيبه عدّل `order` وقائمة البطاقات).
+  - `ui/reports/ReportsScreen.kt`: معامل اختياري `section: String? = null`؛ بعد تحميل البيانات تمرّر القائمة مرة واحدة (`animateScrollToItem(2 + (خطأ التصدير ظاهر ? 1 : 0) + ترتيب القسم)`) وتحفظ ذلك بـ`rememberSaveable` حتى لا تعيد التمرير عند تغيير الفترة. بلا `section` السلوك كما كان. لا تغيير غير ذلك.
+  - `ui/more/MoreRoute.kt`: سطر واحد: فرع REPORTS يمرر `section = parts.getOrNull(1)` (المسار الجديد `reports/<id>`؛ `requiredPermission` و`parentOf` يعملان لأنهما يقرآن الجزء الأول فقط، وVIEW_PROFIT ما زالت مطلوبة). تحديث تعليق المسارات.
+  - `ui/KonozRoot.kt`: سطر واحد: `onOpenReport = { id -> moreTarget = MoreTargets.REPORTS + "/" + id; select(TabId.MORE) }`.
+  - `ui/dashboard/DashboardScreen.kt`: عنصر العنوان القديم استُبدل بـ`DashboardHeader` و`ReportCardsStrip(onOpenReport = actions.onOpenReport)`؛ `DashboardActions` أخذ حقلًا أخيرًا `onOpenReport: (String) -> Unit = { onReports() }` (بقيمة افتراضية فلا يكسر أي مستدعٍ). باقي الشاشة كما هو (المؤشرات، الرسم، آخر المبيعات، الاختصارات بما فيها «الكاشير» و«التقارير»).
   - جديد `res/values{,-ar}/strings_report_cards.xml` (`dash_start_cashier`, `rcard_*`).
-- **لم يُمس:** `ReportsScreen`/`ReportsViewModel`/`ReportService`، `KonozRoot`، `MoreRoute`، `Color.kt`/`Theme.kt`، الصلاحيات، التنقل. ضغط أي بطاقة يستدعي `actions.onReports` الموجود (يفتح شاشة التقارير في «المزيد» كما كان). **لا فتح مباشر لقسم بعينه**: يحتاج تمرير معرّف القسم عبر `KonozRoot`→`MoreRoute`→`ReportsScreen` (قرار المالك).
-- **غير مُختبر:** لم يُبنَ المشروع (لا Android SDK هنا؛ العمل عبر GitHub API). مواضع احتمال خطأ ترجمة: أسماء الأيقونات (`Whatshot`, `Savings`, `HourglassEmpty`, `CalendarMonth`, `Assessment`, `Category`, `ArrowDownward`, `PointOfSale` من `material-icons-extended`)، و`rememberSnapFlingBehavior` (حزمة `foundation.gestures.snapping`، مع `@OptIn(ExperimentalFoundationApi)`). لم تُراجَع الشاشة بصريًا ولا على تابلت.
-- **تنسيق مع A وC:** لا تعارض متوقع: `DashboardScreen.kt` لا يعدّله فرعا A (`claude/developer-a-language`) ولا C (`claude/developer-c-branding`) حسب ملفاتهما. عند الدمج، إن ظهر تعارض في `DashboardScreen.kt` فالمطلوب فقط أن يبقى عنصرا `DashboardHeader` و`ReportCardsStrip` مكان عنصر العنوان.
+- **لم يُمس:** `ReportsViewModel`/`ReportService`، `Color.kt`/`Theme.kt`، الصلاحيات.
+- **غير مُختبر:** لم يُبنَ المشروع (لا Android SDK هنا؛ العمل عبر GitHub API)، ولم يظهر Check Run للـcommits الجديدة على PR #2 (آخر Check ناجح قديم من 2026-11-15 12:36). مواضع احتمال خطأ ترجمة: أسماء الأيقونات (`Whatshot`, `Savings`, `HourglassEmpty`, `CalendarMonth`, `Assessment`, `Category`, `ArrowDownward`, `PointOfSale` من `material-icons-extended`)، و`rememberSnapFlingBehavior` (حزمة `foundation.gestures.snapping`، مع `@OptIn(ExperimentalFoundationApi)`)، و`LazyColumn(state = ...)` في `ReportsScreen`. لم تُراجَع الشاشة بصريًا ولا على تابلت؛ لم تُجرَّب لقطة الدوران (المسار `reports/<id>` محفوظ و`scrolledToSection` محفوظ فلا تعيد التمرير).
+- **تنسيق مع A وC:** `DashboardScreen.kt` و`ReportsScreen.kt` لا يعدّلهما فرعا A (`claude/developer-a-language`) وC (`claude/developer-c-branding`) حسب ملفاتهما. `MoreRoute.kt` و`KonozRoot.kt` مشتركان: عند أي تعارض خذ نسخة A/C وأعد تطبيق السطر الواحد فقط (انظر ملف القفل).
 
 ## دفعتا UI السابقتان (2026-11-15): هوية Modern Blue — الدفعتان 1 و2
 - **قرار المالك:** اعتماد ألوان Modern Blue (Primary #174EA6، Secondary #4285F4، Accent #E8F0FE، خلفية #F5F7FB، نص #1F2937/#64748B). اسم التطبيق (كنوز ماركت أم Tager) **لم يُحسم** ولا ألمسه.
@@ -23,7 +27,7 @@ _Branch: `claude/developer-b`. `main` @ ffa2c4c = دمج PR #1 (حتى المه�
   - **كاميرا الكاشير:** في `CashierScreen.kt` ارتفاع المعاينة صار ربع ارتفاع الشاشة (`LocalConfiguration.screenHeightDp / 4`) في أعلى الشاشة. تعديل سطرين فقط (استيراد + الارتفاع).
   - **مشاركة واتساب:** `InvoiceSharer.kt` يجرّب `com.whatsapp.ContactPicker` (يقرأ `jid`) قبل شاشة المشاركة العامة. غير مُختبر؛ المفتاح `jid` غير موثّق ويعتمد على نسخة واتساب. بديل مقترح إن فشل: فتح محادثة الرقم برابط `wa.me` ثم إرفاق الملف يدويًا (بانتظار قرار المالك).
 - **لم يُنفَّذ بعد (معلن):** الإعدادات، مركز الإعدادات، مكونات مشتركة (أزرار/حقول/حالات فارغة). لم يُبحث عن ألوان مكتوبة مباشرة `Color(0x...)` في الشاشات (ملاحظة: ألوان بطاقات التقارير الجديدة في `ReportCardTokens` وليست داخل الشاشة).
-- **تنسيق مع A (مهم، فرع `claude/developer-a-language`):** الفرع يعدّل نفس الملفات: `Theme.kt` (خط Cairo داخل `KonozTheme`)، `CashierScreen.kt` (سلة مرتبة بزر حذف، إزالة `onShareInvoice` وعرض الفاتورة بعد الدفع عبر `CashierRoute`)، و`MoreRoute.kt` (عناصر الطابعة واللغة). **عند الدمج:** (1) في `CashierScreen.kt` خذ نسخة A كاملة ثم أعد تطبيق سطري الكاميرا فقط (استيراد `LocalConfiguration` + `val cameraHeight = (LocalConfiguration.current.screenHeightDp / 4).dp` و`.height(cameraHeight)` بدل `.height(170.dp)`)؛ (2) في `MoreRoute.kt` خذ نسخة A ثم استبدل جسم الدالة الخاصة `MoreMenu` بـ`MoreTileGrid(items.map { (label, _, action) -> MoreTile(label, action) }, modifier)`؛ (3) `Theme.kt`: خذ نسخة A وأدخل فيها أجزاء الألوان من نسخة B (الفرق في الألوان فقط). `InvoiceRenderer.kt` و`InvoiceSharer.kt` متطابقان في الفرعين قبل تعديلي فيُؤخذ تعديلي كما هو.
+- **تنسيق مع A (مهم، فرع `claude/developer-a-language`):** الفرع يعدّل نفس الملفات: `Theme.kt` (خط Cairo داخل `KonozTheme`)، `CashierScreen.kt` (سلة مرتبة بزر حذف، إزالة `onShareInvoice` وعرض الفاتورة بعد الدفع عبر `CashierRoute`)، و`MoreRoute.kt` (عناصر الطابعة واللغة). **عند الدمج:** (1) في `CashierScreen.kt` خذ نسخة A كاملة ثم أعد تطبيق سطري الكاميرا فقط (استيراد `LocalConfiguration` + `val cameraHeight = (LocalConfiguration.current.screenHeightDp / 4).dp` و`.height(cameraHeight)` بدل `.height(170.dp)`)؛ (2) في `MoreRoute.kt` خذ نسخة A ثم استبدل جسم الدالة الخاصة `MoreMenu` بـ`MoreTileGrid(items.map { (label, _, action) -> MoreTile(label, action) }, modifier)` **وأعد سطر `section = parts.getOrNull(1)` في فرع REPORTS**؛ (3) `Theme.kt`: خذ نسخة A وأدخل فيها أجزاء الألوان من نسخة B (الفرق في الألوان فقط). `InvoiceRenderer.kt` و`InvoiceSharer.kt` متطابقان في الفرعين قبل تعديلي فيُؤخذ تعديلي كما هو.
 - **تنسيق مع C (`claude/developer-c-branding`):** يغيّر اسم التطبيق وإعدادات المتجر في «المزيد» ويربط اسم المتجر بالفواتير (`inv_shop_name`): الرسم الجديد يقرأ `R.string.inv_shop_name` كما كان، فلا تعارض متوقع في المنطق، لكن `MoreRoute.kt` سيتعارض نصيًا (نفس الحل أعلاه).
 - **ملاحظة تصحيحية:** PR #6 (من C) مدمج في هذا الفرع: قاعدة البيانات **الإصدار 2** (`supplier_payments` + `MIGRATION_1_2`)، البيع يتطلب وردية مفتوحة، سداد الموردين يؤثر على الخزينة. `BackupService` يقرأ إصدار القاعدة ديناميكيًا فلا يتأثر، وأي نسخة v1 قديمة ستُرفض.
 - **تباين الألوان:** نص أبيض على Secondary #4285F4 تباينه حوالي 3.6 فقط؛ يُستخدم Secondary للعناصر الثانوية/الحاويات لا للنصوص الأساسية.
@@ -39,7 +43,7 @@ _Branch: `claude/developer-b`. `main` @ ffa2c4c = دمج PR #1 (حتى المه�
 ## قرارات المالك
 - A لا يعمل على المصروفات أو الجرد؛ الفرع تابع للمالك. `uuid` فريد في `Expense`. الضريبة تُستبعد من الإيراد. خسائر المخزون في صافي الربح. 4.3: إرسال الفاتورة على واتساب مع كتابة رقم العميل. 4.3b: تنبيه عند كل سكان يضيف منتجًا.
 - 2026-11-15: هوية Modern Blue؛ «المزيد» شبكة بطاقات؛ الفاتورة بشكل عصري؛ كاميرا الكاشير ربع الشاشة من فوق.
-- 2026-11-17: بطاقات التقارير في اللوحة: شريط أفقي، اسم `#26364A` عريض، وصف `#52647A`، أيقونة `#245BDB` أو لون مناسب لكل بطاقة، لا نص أبيض على الخلفيات الفاتحة؛ زر «ابدأ الكاشير» أعلى اليسار.
+- 2026-11-17: بطاقات التقارير في اللوحة: شريط أفقي، اسم `#26364A` عريض، وصف `#52647A`، أيقونة `#245BDB` أو لون مناسب لكل بطاقة، لا نص أبيض على الخلفيات الفاتحة؛ زر «ابدأ الكاشير» أعلى اليسار؛ كل بطاقة تفتح قسمها في شاشة التقارير.
 
 ## مكتمل
 - 9 المصروفات والجرد، 10 التقارير واللوحة، 11 الورديات (`DEVELOPER_C_HANDOFF.md`).
@@ -54,10 +58,9 @@ _Branch: `claude/developer-b`. `main` @ ffa2c4c = دمج PR #1 (حتى المه�
 - رقم العميل لا يُحفظ. اعتماد الجرد وتعديل المخزون محميان على مستوى القائمة/المسار فقط. `changeOwnPin` بلا شاشة. لا «أسعار سريعة» للكاشير.
 
 ## معلّق
-- **بناء الفرع** (بعد دفعات UI 1 و2 و3) وإصلاح الأخطاء، ثم `./gradlew testDebugUnitTest`، ثم تجربة على جهاز: الوضعان الفاتح والداكن، شريط بطاقات التقارير (السحب، الحركة، العربية RTL، شاشة صغيرة وتابلت)، زر «ابدأ الكاشير»، الفاتورة (صورة/PDF/طباعة)، شبكة «المزيد»، الكاميرا، إرسال واتساب.
+- **بناء الفرع** (بعد دفعات UI 1 و2 و3) وإصلاح الأخطاء، ثم `./gradlew testDebugUnitTest`، ثم تجربة على جهاز: الوضعان الفاتح والداكن، شريط بطاقات التقارير (السحب، الحركة، RTL، شاشة صغيرة وتابلت)، فتح كل بطاقة لقسمها في التقارير، زر «ابدأ الكاشير»، الفاتورة (صورة/PDF/طباعة)، شبكة «المزيد»، الكاميرا، إرسال واتساب.
 - مواضع احتمال خطأ ترجمة في دفعة 2: أيقونات `material-icons-extended` في `MoreTileGrid.kt` (أسماء مثل `FactCheck`/`AssignmentReturn` قد تكون AutoMirrored في إصدارات جديدة فتظهر كتحذير إهمال لا خطأ)، و`LazyVerticalGrid` (`foundation`).
 - دمج فرعَي A (اللغة والطباعة والتصدير) وC (الهوية) حسب الخطوات أعلاه، ثم ما تبقى من دفعة 3: الإعدادات ومكونات مشتركة.
-- قرار المالك: هل تفتح كل بطاقة تقرير قسمها مباشرة في شاشة التقارير (يتطلب تمرير معرّف القسم عبر `KonozRoot`/`MoreRoute`/`ReportsScreen` وتمرير القائمة إليه)؟
 - فترة مخصصة في واجهة التقارير.
 
 ## ملاحظات
@@ -67,6 +70,6 @@ _Branch: `claude/developer-b`. `main` @ ffa2c4c = دمج PR #1 (حتى المه�
 - لا تكتب «شرطة مائلة ثم نجمة» داخل تعليق Kotlin.
 
 ## الخطوة التالية بالضبط
-1. تشغيل بناء `claude/developer-b` وإرسال أي `e:`/`error:` لإصلاحها (يشمل `ReportCardsStrip.kt` و`ReportCardColors.kt`).
-2. تجربة اللوحة على الهاتف: السحب والحركة وألوان النصوص وزر «ابدأ الكاشير»، ثم الفاتورة والكاميرا وشبكة «المزيد» وواتساب.
+1. تشغيل بناء `claude/developer-b` (Actions) وإرسال أي `e:`/`error:` لإصلاحها (يشمل `ReportCardsStrip.kt` و`ReportCardColors.kt` و`ReportSections.kt` و`ReportsScreen.kt`).
+2. تجربة اللوحة على الهاتف: السحب والحركة وألوان النصوص وزر «ابدأ الكاشير» وفتح كل بطاقة لقسمها، ثم الفاتورة والكاميرا وشبكة «المزيد» وواتساب.
 3. بعد دمج فرعَي A وC: ما تبقى من دفعة 3 بعد تسجيل قفل جديد.
