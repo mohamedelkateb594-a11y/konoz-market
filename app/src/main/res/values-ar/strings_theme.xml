@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="menu_theme_system">المظهر: تلقائي</string>
+    <string name="menu_theme_light">المظهر: فاتح</string>
+    <string name="menu_theme_dark">المظهر: داكن</string>
+</resources>

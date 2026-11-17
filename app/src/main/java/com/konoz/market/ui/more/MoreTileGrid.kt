@@ -19,6 +19,7 @@ import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.AssignmentReturn
 import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.BrightnessMedium
 import androidx.compose.material.icons.filled.FactCheck
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.LocalShipping
@@ -106,6 +107,7 @@ private fun iconFor(labelRes: Int): ImageVector = when (labelRes) {
     R.string.menu_alerts -> Icons.Filled.NotificationsActive
     R.string.menu_users -> Icons.Filled.Group
     R.string.menu_backup -> Icons.Filled.Backup
+    R.string.menu_theme_system, R.string.menu_theme_light, R.string.menu_theme_dark -> Icons.Filled.BrightnessMedium
     R.string.auth_logout -> Icons.AutoMirrored.Filled.ExitToApp
     else -> Icons.Filled.Settings
 }

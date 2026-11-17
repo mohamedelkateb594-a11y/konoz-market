@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="menu_theme_system">Appearance: automatic</string>
+    <string name="menu_theme_light">Appearance: light</string>
+    <string name="menu_theme_dark">Appearance: dark</string>
+</resources>

@@ -1,6 +1,5 @@
 package com.konoz.market.ui.theme
 
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
@@ -11,9 +10,8 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.unit.LayoutDirection
 
-/** Semantic colors that Material3 does not provide (success / warning). */
+/** Semantic colors that Material3 does not provide (success / warning / info and the sign-in screen accent). */
 data class KonozColors(
     val success: Color,
     val onSuccess: Color,
@@ -22,6 +20,12 @@ data class KonozColors(
     val accent: Color,
     val warningContainer: Color,
     val onWarningContainer: Color,
+    val info: Color,
+    val onInfo: Color,
+    val signInAccent: Color,
+    val onSignInAccent: Color,
+    val signInHeader: Color,
+    val isDark: Boolean,
 ) {
     /** Old name of [accent], kept so existing screens keep compiling. */
     val accentLime: Color get() = accent
@@ -29,12 +33,18 @@ data class KonozColors(
 
 private val LightKonozColors = KonozColors(
     success = Brand.Success,
-    onSuccess = Color.White,
+    onSuccess = Brand.OnBrand,
     warning = Brand.Warning,
     onWarning = Brand.TextMain,
     accent = Brand.Accent,
     warningContainer = Brand.WarningContainerLight,
     onWarningContainer = Brand.OnWarningContainerLight,
+    info = Brand.Info,
+    onInfo = Brand.OnBrand,
+    signInAccent = Brand.SignInAccentLight,
+    onSignInAccent = Brand.OnBrand,
+    signInHeader = Brand.SignInHeaderLight,
+    isDark = false,
 )
 
 private val DarkKonozColors = KonozColors(
@@ -45,17 +55,23 @@ private val DarkKonozColors = KonozColors(
     accent = Brand.SecondaryContainerDark,
     warningContainer = Brand.WarningContainerDark,
     onWarningContainer = Brand.OnWarningContainerDark,
+    info = Brand.InfoDarkMode,
+    onInfo = Brand.BackgroundDark,
+    signInAccent = Brand.SignInAccentDark,
+    onSignInAccent = Brand.BackgroundDark,
+    signInHeader = Brand.SurfaceVariantDark,
+    isDark = true,
 )
 
 val LocalKonozColors = staticCompositionLocalOf { LightKonozColors }
 
 private val LightScheme = lightColorScheme(
     primary = Brand.Primary,
-    onPrimary = Color.White,
+    onPrimary = Brand.OnBrand,
     primaryContainer = Brand.Accent,
     onPrimaryContainer = Brand.PrimaryDeep,
     secondary = Brand.Secondary,
-    onSecondary = Color.White,
+    onSecondary = Brand.OnBrand,
     secondaryContainer = Brand.Accent,
     onSecondaryContainer = Brand.PrimaryDeep,
     tertiary = Brand.Warning,
@@ -70,7 +86,7 @@ private val LightScheme = lightColorScheme(
     onSurfaceVariant = Brand.TextSecondary,
     surfaceTint = Brand.Primary,
     error = Brand.Error,
-    onError = Color.White,
+    onError = Brand.OnBrand,
     errorContainer = Brand.ErrorContainerLight,
     onErrorContainer = Brand.OnErrorContainerLight,
     outline = Brand.OutlineLight,
@@ -105,9 +121,13 @@ private val DarkScheme = darkColorScheme(
     outlineVariant = Brand.OutlineVariantDark,
 )
 
+/**
+ * [darkTheme] is decided by the caller from the user's choice (system / light / dark, see [ThemePreference]); the default
+ * follows the phone. Everything below reads colors from the scheme, so a switch repaints every screen without recreating the activity.
+ */
 @Composable
 fun KonozTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    darkTheme: Boolean = androidx.compose.foundation.isSystemInDarkTheme(),
     content: @Composable () -> Unit,
 ) {
     val context = LocalContext.current
