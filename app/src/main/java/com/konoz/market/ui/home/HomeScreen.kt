@@ -38,6 +38,7 @@ import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.AssignmentReturn
 import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.BrightnessMedium
 import androidx.compose.material.icons.filled.FactCheck
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Inventory2
@@ -277,8 +278,9 @@ fun HomeHint(modifier: Modifier = Modifier) {
 }
 
 /**
- * The side menu with the program settings (users, shop data, backup, printer, language, sign-out). It opens from the start edge
+ * The side menu with the program settings (users, shop data, backup, printer, appearance, language, sign-out). It opens from the start edge
  * (the right in Arabic) and covers 75% of the screen width. Meant to be placed over the whole screen, outside the Scaffold.
+ * [themeLabelRes] != null adds the appearance row (one tap cycles system / light / dark).
  */
 @Composable
 fun HomeSideMenu(
@@ -289,6 +291,8 @@ fun HomeSideMenu(
     onLanguage: () -> Unit,
     onLogout: () -> Unit,
     onClose: () -> Unit,
+    themeLabelRes: Int? = null,
+    onTheme: () -> Unit = {},
 ) {
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     Box(Modifier.fillMaxSize()) {
@@ -325,6 +329,9 @@ fun HomeSideMenu(
                     Spacer(Modifier.height(8.dp))
                     entries.forEach { item ->
                         MenuRow(stringResource(item.labelRes), item.icon, selected = item.id == selectedId, onClick = { onSelect(item) })
+                    }
+                    if (themeLabelRes != null) {
+                        MenuRow(stringResource(themeLabelRes), Icons.Filled.BrightnessMedium, selected = false, onClick = onTheme)
                     }
                     MenuRow(stringResource(R.string.menu_language), Icons.Filled.Language, selected = false, onClick = onLanguage)
                     MenuRow(stringResource(R.string.auth_logout), Icons.AutoMirrored.Filled.ExitToApp, selected = false, danger = true, onClick = onLogout)

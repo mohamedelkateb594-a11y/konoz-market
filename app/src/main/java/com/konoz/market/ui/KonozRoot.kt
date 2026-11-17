@@ -45,6 +45,8 @@ import com.konoz.market.ui.language.AppLanguage
 import com.konoz.market.ui.more.MoreRoute
 import com.konoz.market.ui.more.MoreTargets
 import com.konoz.market.ui.products.ProductsRoute
+import com.konoz.market.ui.theme.ThemeMode
+import com.konoz.market.ui.theme.ThemePreference
 
 private const val SCREEN_HOME = "home"
 private const val SCREEN_CASHIER = "cashier"
@@ -61,6 +63,12 @@ fun KonozRoot() {
     }
 }
 
+private fun themeLabel(mode: ThemeMode): Int = when (mode) {
+    ThemeMode.SYSTEM -> R.string.menu_theme_system
+    ThemeMode.LIGHT -> R.string.menu_theme_light
+    ThemeMode.DARK -> R.string.menu_theme_dark
+}
+
 /**
  * Two screens, no bottom bar:
  *  - home: the header, the swipeable cards (products and every former More item), and under them the details of the
@@ -74,6 +82,7 @@ private fun MainApp() {
     val context = LocalContext.current
     val app = context.applicationContext as KonozApp
     val user by app.session.user.collectAsStateWithLifecycle()
+    val themeMode by ThemePreference.mode
     fun allowed(permission: Permission?) = permission == null || user?.let { Permissions.has(it.role, permission) } == true
     val canSeeProfit = allowed(Permission.VIEW_PROFIT)
     val canEditProducts = allowed(Permission.EDIT_PRICES)
@@ -175,6 +184,9 @@ private fun MainApp() {
                 onLanguage = { menuOpen = false; AppLanguage.switch(context) },
                 onLogout = { menuOpen = false; app.session.signOut() },
                 onClose = { menuOpen = false },
+                // The appearance switch lived in the old More menu: it stays reachable from the side menu.
+                themeLabelRes = themeLabel(themeMode),
+                onTheme = { ThemePreference.next(context) },
             )
         }
     }
