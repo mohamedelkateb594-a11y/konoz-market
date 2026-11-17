@@ -65,7 +65,8 @@ fun DashboardScreen(vm: DashboardViewModel, actions: DashboardActions, modifier:
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        item { Text(stringResource(R.string.dash_title), style = MaterialTheme.typography.titleLarge) }
+        item { DashboardHeader(onStartCashier = actions.onCashier) }
+        item { ReportCardsStrip(onOpenReport = actions.onReports) }
         item {
             Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
