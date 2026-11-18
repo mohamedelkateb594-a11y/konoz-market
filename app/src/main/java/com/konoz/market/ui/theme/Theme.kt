@@ -26,6 +26,8 @@ data class KonozColors(
     val onSignInAccent: Color,
     val signInHeader: Color,
     val isDark: Boolean,
+    val successContainer: Color = Color.Unspecified,
+    val onSuccessContainer: Color = Color.Unspecified,
 ) {
     /** Old name of [accent], kept so existing screens keep compiling. */
     val accentLime: Color get() = accent
@@ -45,6 +47,8 @@ private val LightKonozColors = KonozColors(
     onSignInAccent = Brand.OnBrand,
     signInHeader = Brand.SignInHeaderLight,
     isDark = false,
+    successContainer = Brand.SuccessContainerLight,
+    onSuccessContainer = Brand.OnSuccessContainerLight,
 )
 
 private val DarkKonozColors = KonozColors(
@@ -61,19 +65,22 @@ private val DarkKonozColors = KonozColors(
     onSignInAccent = Brand.BackgroundDark,
     signInHeader = Brand.SurfaceVariantDark,
     isDark = true,
+    successContainer = Brand.SuccessContainerDark,
+    onSuccessContainer = Brand.OnSuccessContainerDark,
 )
 
 val LocalKonozColors = staticCompositionLocalOf { LightKonozColors }
 
+/** Cards (Material3 Card uses surfaceContainerHighest) are white in light mode and #223229 in dark mode. */
 private val LightScheme = lightColorScheme(
     primary = Brand.Primary,
     onPrimary = Brand.OnBrand,
-    primaryContainer = Brand.Accent,
-    onPrimaryContainer = Brand.PrimaryDeep,
+    primaryContainer = Brand.Secondary,
+    onPrimaryContainer = Brand.TextMain,
     secondary = Brand.Secondary,
-    onSecondary = Brand.OnBrand,
+    onSecondary = Brand.TextMain,
     secondaryContainer = Brand.Accent,
-    onSecondaryContainer = Brand.PrimaryDeep,
+    onSecondaryContainer = Brand.TextMain,
     tertiary = Brand.Warning,
     onTertiary = Brand.TextMain,
     tertiaryContainer = Brand.WarningContainerLight,
@@ -82,9 +89,14 @@ private val LightScheme = lightColorScheme(
     onBackground = Brand.TextMain,
     surface = Brand.SurfaceLight,
     onSurface = Brand.TextMain,
-    surfaceVariant = Brand.BackgroundLight,
+    surfaceVariant = Brand.Accent,
     onSurfaceVariant = Brand.TextSecondary,
     surfaceTint = Brand.Primary,
+    surfaceContainerLowest = Brand.SurfaceLight,
+    surfaceContainerLow = Brand.BackgroundLight,
+    surfaceContainer = Brand.SurfaceContainerLight,
+    surfaceContainerHigh = Brand.SurfaceLight,
+    surfaceContainerHighest = Brand.SurfaceLight,
     error = Brand.Error,
     onError = Brand.OnBrand,
     errorContainer = Brand.ErrorContainerLight,
@@ -101,7 +113,7 @@ private val DarkScheme = darkColorScheme(
     secondary = Brand.SecondaryDarkMode,
     onSecondary = Brand.OnSecondaryDark,
     secondaryContainer = Brand.SecondaryContainerDark,
-    onSecondaryContainer = Brand.Accent,
+    onSecondaryContainer = Brand.TextMainDark,
     tertiary = Brand.WarningDarkMode,
     onTertiary = Brand.BackgroundDark,
     tertiaryContainer = Brand.WarningContainerDark,
@@ -113,6 +125,11 @@ private val DarkScheme = darkColorScheme(
     surfaceVariant = Brand.SurfaceVariantDark,
     onSurfaceVariant = Brand.TextSecondaryDark,
     surfaceTint = Brand.PrimaryDarkMode,
+    surfaceContainerLowest = Brand.SurfaceContainerLowestDark,
+    surfaceContainerLow = Brand.SurfaceContainerLowDark,
+    surfaceContainer = Brand.SurfaceDark,
+    surfaceContainerHigh = Brand.SurfaceVariantDark,
+    surfaceContainerHighest = Brand.SurfaceDark,
     error = Brand.DangerDarkMode,
     onError = Brand.BackgroundDark,
     errorContainer = Brand.ErrorContainerDark,
