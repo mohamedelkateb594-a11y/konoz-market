@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="pd_back">Back</string>
+    <string name="pd_edit">Edit product</string>
+    <string name="pd_not_found">Product not found</string>
+    <string name="pd_pricing">Pricing</string>
+    <string name="pd_stock">Stock</string>
+    <string name="pd_barcodes">Barcodes</string>
+    <string name="pd_barcode_count_fmt">%1$d barcodes</string>
+    <string name="pd_category">Category</string>
+    <string name="pd_supplier">Supplier</string>
+    <string name="pd_code">Internal code</string>
+    <string name="pd_expiry">Expiry date</string>
+    <string name="pd_none">Not set</string>
+    <string name="pd_active">Active</string>
+    <string name="pd_sale_price">Sale price</string>
+    <string name="pd_cost">Cost price</string>
+    <string name="pd_profit">Profit per unit</string>
+    <string name="pd_margin">Profit margin</string>
+    <string name="pd_current_qty">Current quantity</string>
+    <string name="pd_low_threshold">Low-stock threshold</string>
+    <string name="pd_cartons">Cartons</string>
+    <string name="pd_cartons_fmt">%1$s cartons + %2$s pieces (%3$s per carton)</string>
+    <string name="pd_stock_ok">Stock is fine</string>
+    <string name="pd_no_barcodes">No barcodes for this product</string>
+    <string name="pd_barcode_units_fmt">%1$s pieces per scan</string>
+</resources>
