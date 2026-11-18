@@ -15,8 +15,11 @@ data class ImportResult(val created: Int, val updated: Int, val errors: List<Imp
 /**
  * Product import/export as CSV (opens in Excel; native .xlsx is not supported).
  *
- * Columns: name, internal_code, category, unit, cost_price, sale_price, low_stock, pieces_per_carton,
- *          barcodes ("|" separated, "code*units" for carton barcodes), quantity, expiry (yyyy-MM-dd), active (1/0)
+ * Columns (the header row may be written in Arabic or English, see [HEADER_ALIASES]):
+ *   name, internal_code, category, unit, cost_price, sale_price, low_stock, pieces_per_carton,
+ *   barcodes ("|" separated, "code*units" for carton barcodes), quantity, expiry (yyyy-MM-dd), active (1/0)
+ * The unit may be an English name (PIECE, CARTON, KG, GRAM, LITER, PACK) or an Arabic one (see [UNIT_ALIASES]).
+ * The export writes an Arabic header row and Arabic unit names; importing that file back works unchanged.
  *
  * Import rules:
  *  - A row updates an existing product when its internal_code (or, failing that, its first barcode) matches;
@@ -32,7 +35,7 @@ class ProductCsvService(
         val products = db.products().observeAll().first()
         val categories = db.categories().observeAll().first().associateBy { it.id }
         val rows = ArrayList<List<String>>()
-        rows += HEADERS
+        rows += EXPORT_HEADERS
         for (p in products) {
             val barcodes = db.barcodes().getForProduct(p.id)
                 .joinToString("|") { if (it.unitsPerScan == 1) it.code else "${it.code}*${it.unitsPerScan}" }
@@ -40,7 +43,7 @@ class ProductCsvService(
                 p.name,
                 p.internalCode.orEmpty(),
                 p.categoryId?.let { categories[it]?.name }.orEmpty(),
-                p.unit.name,
+                unitArabic(p.unit),
                 Money.fromMinor(p.costPrice).toPlainString(),
                 Money.fromMinor(p.salePrice).toPlainString(),
                 Quantities.format(p.lowStockThresholdMilli),
@@ -57,8 +60,13 @@ class ProductCsvService(
     suspend fun importCsv(text: String, userId: Long?): ImportResult {
         val rows = Csv.parse(text)
         if (rows.isEmpty()) return ImportResult(0, 0, listOf(ImportError(1, "empty file")))
-        val index = rows[0].withIndex().associate { it.value.trim().lowercase() to it.index }
-        if ("name" !in index) return ImportResult(0, 0, listOf(ImportError(1, "missing column: name")))
+        // Header name (Arabic or English) -> canonical English key -> column position. The first column of a key wins.
+        val index = HashMap<String, Int>()
+        for ((position, header) in rows[0].withIndex()) {
+            val normalized = normalize(header)
+            index.putIfAbsent(HEADER_ALIASES[normalized] ?: normalized, position)
+        }
+        if ("name" !in index) return ImportResult(0, 0, listOf(ImportError(1, "missing column: name (الاسم)")))
 
         var created = 0
         var updated = 0
@@ -68,8 +76,10 @@ class ProductCsvService(
             val line = i + 1
             fun col(name: String): String = index[name]?.let { row.getOrNull(it) }?.trim().orEmpty()
             try {
-                val unitText = col("unit").ifEmpty { "PIECE" }.uppercase()
-                val unit = UnitType.values().firstOrNull { it.name == unitText } ?: throw IllegalArgumentException("unit: $unitText")
+                val unitText = normalize(col("unit").ifEmpty { "PIECE" })
+                val unit = UNIT_ALIASES[unitText]
+                    ?: UnitType.values().firstOrNull { it.name.lowercase() == unitText }
+                    ?: throw IllegalArgumentException("unit: ${col("unit")}")
                 val cost = Money.parseToMinor(col("cost_price").ifEmpty { "0" }) ?: throw IllegalArgumentException("cost_price")
                 val price = Money.parseToMinor(col("sale_price").ifEmpty { "0" }) ?: throw IllegalArgumentException("sale_price")
                 val low = Quantities.parseMilli(col("low_stock").ifEmpty { "0" }) ?: throw IllegalArgumentException("low_stock")
@@ -80,7 +90,7 @@ class ProductCsvService(
                 val expiry = col("expiry").takeIf { it.isNotEmpty() }?.let {
                     ExpiryDates.parse(it) ?: throw IllegalArgumentException("expiry: $it")
                 }
-                val active = when (col("active").lowercase().ifEmpty { "1" }) {
+                val active = when (normalize(col("active")).ifEmpty { "1" }) {
                     "1", "true", "yes", "نعم" -> true
                     "0", "false", "no", "لا" -> false
                     else -> throw IllegalArgumentException("active")
@@ -130,9 +140,63 @@ class ProductCsvService(
     }
 
     companion object {
+        /** The canonical (English) keys, in file order. */
         val HEADERS = listOf(
             "name", "internal_code", "category", "unit", "cost_price", "sale_price", "low_stock",
             "pieces_per_carton", "barcodes", "quantity", "expiry", "active",
         )
+
+        /** The header row the export writes (same order as [HEADERS]). */
+        val EXPORT_HEADERS = listOf(
+            "الاسم", "الكود الداخلي", "التصنيف", "الوحدة", "سعر الشراء", "سعر البيع", "حد التنبيه",
+            "قطع الكرتونة", "الباركود", "الكمية", "الصلاحية", "مفعل",
+        )
+
+        /** Accepted Arabic header names (already normalized) -> canonical key. English keys need no alias. */
+        private val HEADER_ALIASES: Map<String, String> = buildMap {
+            fun alias(key: String, vararg names: String) = names.forEach { put(normalize(it), key) }
+            alias("name", "الاسم", "اسم المنتج", "اسم الصنف", "المنتج", "الصنف")
+            alias("internal_code", "الكود الداخلي", "الكود", "كود", "كود المنتج")
+            alias("category", "التصنيف", "القسم", "الفئة")
+            alias("unit", "الوحدة", "وحدة القياس")
+            alias("cost_price", "سعر الشراء", "سعر التكلفة", "التكلفة", "الشراء")
+            alias("sale_price", "سعر البيع", "السعر", "البيع")
+            alias("low_stock", "حد التنبيه", "حد الطلب", "تنبيه المخزون", "الحد الأدنى", "تنبيه انخفاض المخزون")
+            alias("pieces_per_carton", "قطع الكرتونة", "عدد القطع في الكرتونة", "القطع في الكرتونة", "قطع الكرتون")
+            alias("barcodes", "الباركود", "الباركودات", "باركود")
+            alias("quantity", "الكمية", "الكمية الافتتاحية", "المخزون", "الرصيد")
+            alias("expiry", "الصلاحية", "تاريخ الصلاحية", "تاريخ الانتهاء")
+            alias("active", "مفعل", "نشط", "فعال", "متاح للبيع")
+        }
+
+        /** Accepted unit names (normalized): the Arabic ones; English ones are matched against [UnitType] names. */
+        private val UNIT_ALIASES: Map<String, UnitType> = buildMap {
+            fun alias(unit: UnitType, vararg names: String) = names.forEach { put(normalize(it), unit) }
+            alias(UnitType.PIECE, "قطعة", "قطعه", "حبة", "حبه")
+            alias(UnitType.CARTON, "كرتونة", "كرتونه", "كرتون", "كارتونة")
+            alias(UnitType.KG, "كيلو", "كجم", "كيلوجرام", "كيلو جرام")
+            alias(UnitType.GRAM, "جرام", "جم", "غرام")
+            alias(UnitType.LITER, "لتر")
+            alias(UnitType.PACK, "عبوة", "عبوه", "علبة", "علبه", "باكيت")
+        }
+
+        private fun unitArabic(unit: UnitType): String = when (unit) {
+            UnitType.PIECE -> "قطعة"
+            UnitType.CARTON -> "كرتونة"
+            UnitType.KG -> "كيلو"
+            UnitType.GRAM -> "جرام"
+            UnitType.LITER -> "لتر"
+            UnitType.PACK -> "عبوة"
+        }
+
+        /** Trims, lower-cases, removes Arabic diacritics and tatweel, collapses spaces and treats "_" as a space for matching. */
+        private fun normalize(text: String): String {
+            val sb = StringBuilder()
+            for (c in text.trim().lowercase()) {
+                if (c in '\u064B'..'\u0652' || c == '\u0640') continue
+                sb.append(if (c == '_') ' ' else c)
+            }
+            return sb.toString().replace(Regex("\\s+"), " ").trim()
+        }
     }
 }
