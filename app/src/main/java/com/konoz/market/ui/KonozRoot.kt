@@ -2,11 +2,12 @@ package com.konoz.market.ui
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Dashboard
-import androidx.compose.material.icons.filled.Inventory2
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.PointOfSale
+import androidx.compose.material.icons.rounded.Dashboard
+import androidx.compose.material.icons.rounded.Inventory2
+import androidx.compose.material.icons.rounded.Menu
+import androidx.compose.material.icons.rounded.PointOfSale
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
@@ -21,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.konoz.market.KonozApp
@@ -32,6 +34,7 @@ import com.konoz.market.ui.auth.AuthViewModel
 import com.konoz.market.ui.auth.ForcePinScreen
 import com.konoz.market.ui.auth.LoginScreen
 import com.konoz.market.ui.cashier.CashierRoute
+import com.konoz.market.ui.common.konozNavItemColors
 import com.konoz.market.ui.dashboard.DashboardActions
 import com.konoz.market.ui.dashboard.DashboardRoute
 import com.konoz.market.ui.more.MoreRoute
@@ -43,10 +46,10 @@ private enum class TabId { CASHIER, DASHBOARD, PRODUCTS, MORE }
 private data class Tab(val id: TabId, val labelRes: Int, val icon: ImageVector)
 
 private val allTabs = listOf(
-    Tab(TabId.CASHIER, R.string.nav_cashier, Icons.Filled.PointOfSale),
-    Tab(TabId.DASHBOARD, R.string.nav_dashboard, Icons.Filled.Dashboard),
-    Tab(TabId.PRODUCTS, R.string.nav_products, Icons.Filled.Inventory2),
-    Tab(TabId.MORE, R.string.nav_more, Icons.Filled.Menu),
+    Tab(TabId.CASHIER, R.string.nav_cashier, Icons.Rounded.PointOfSale),
+    Tab(TabId.DASHBOARD, R.string.nav_dashboard, Icons.Rounded.Dashboard),
+    Tab(TabId.PRODUCTS, R.string.nav_products, Icons.Rounded.Inventory2),
+    Tab(TabId.MORE, R.string.nav_more, Icons.Rounded.Menu),
 )
 
 /** Login first; the temporary admin PIN must be replaced; then the app. */
@@ -85,14 +88,16 @@ private fun MainApp() {
     }
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
-            NavigationBar {
+            NavigationBar(containerColor = MaterialTheme.colorScheme.surface, tonalElevation = 0.dp) {
                 tabs.forEach { tab ->
                     NavigationBarItem(
                         selected = selected == tab.id,
                         onClick = { select(tab.id) },
                         icon = { Icon(tab.icon, contentDescription = null) },
                         label = { Text(stringResource(tab.labelRes)) },
+                        colors = konozNavItemColors(),
                     )
                 }
             }
