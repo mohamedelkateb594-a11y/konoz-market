@@ -30,6 +30,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -70,6 +71,7 @@ fun InvoicesScreen(vm: InvoicesViewModel, onBack: () -> Unit, modifier: Modifier
                         Column(Modifier.weight(1f)) {
                             Text(stringResource(R.string.inv_number_fmt, inv.number ?: 0L), style = MaterialTheme.typography.titleMedium)
                             Text(timeFmt.format(Date(inv.completedAt ?: inv.createdAt)), style = MaterialTheme.typography.bodyMedium)
+                            inv.customerName?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                         }
                         Text(Money.format(inv.total), style = MaterialTheme.typography.titleMedium)
                     }
@@ -81,7 +83,7 @@ fun InvoicesScreen(vm: InvoicesViewModel, onBack: () -> Unit, modifier: Modifier
     InvoiceShareDialog(ui, vm)
 }
 
-/** The invoice picked in [ui] with the customer phone field and the send/share buttons. Shows nothing when no invoice is selected. */
+/** The invoice picked in [ui] with the customer phone and name fields and the send/share buttons. Shows nothing when no invoice is selected. */
 @Composable
 fun InvoiceShareDialog(ui: InvoicesUi, vm: InvoicesViewModel) {
     val data = ui.selected ?: return
@@ -98,11 +100,18 @@ fun InvoiceShareDialog(ui: InvoicesUi, vm: InvoicesViewModel) {
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                     modifier = Modifier.fillMaxWidth(),
                 )
+                OutlinedTextField(
+                    value = ui.name, onValueChange = vm::onName, singleLine = true,
+                    label = { Text(stringResource(R.string.inv_customer_name)) },
+                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
+                    modifier = Modifier.fillMaxWidth(),
+                )
                 ui.message?.let {
                     Text(
                         stringResource(
                             when (it) {
                                 ShareMessage.INVALID_PHONE -> R.string.inv_err_phone
+                                ShareMessage.NAME_REQUIRED -> R.string.inv_err_name
                                 ShareMessage.NO_WHATSAPP -> R.string.inv_err_no_whatsapp
                                 ShareMessage.FAILED -> R.string.inv_err_failed
                             },
