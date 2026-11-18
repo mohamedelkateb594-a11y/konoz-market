@@ -2,6 +2,7 @@ package com.konoz.market.ui.products
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,15 +15,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.StarBorder
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material.icons.rounded.Star
+import androidx.compose.material.icons.rounded.StarBorder
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
@@ -42,6 +45,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -54,15 +58,18 @@ import com.konoz.market.data.entity.Product
 import com.konoz.market.ui.common.ProductImage
 import com.konoz.market.ui.common.formatQty
 import com.konoz.market.ui.common.unitLabelRes
+import com.konoz.market.ui.theme.CardKind
+import com.konoz.market.ui.theme.cardBrush
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+/** The products list. Tapping a card calls [onOpen] (the details screen); editing happens from the details. */
 @Composable
 fun ProductsScreen(
     vm: ProductsViewModel,
     onAdd: () -> Unit,
-    onEdit: (Long) -> Unit,
+    onOpen: (Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val products by vm.products.collectAsStateWithLifecycle()
@@ -107,13 +114,14 @@ fun ProductsScreen(
                     value = query,
                     onValueChange = vm::setQuery,
                     modifier = Modifier.weight(1f),
-                    leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                    shape = RoundedCornerShape(24.dp),
+                    leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
                     placeholder = { Text(stringResource(R.string.search_products)) },
                     singleLine = true,
                 )
                 Box {
                     IconButton(onClick = { menuOpen = true }) {
-                        Icon(Icons.Filled.MoreVert, contentDescription = stringResource(R.string.menu_more))
+                        Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(R.string.menu_more))
                     }
                     DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
                         DropdownMenuItem(
@@ -141,6 +149,7 @@ fun ProductsScreen(
                         selected = filter == null,
                         onClick = { vm.setCategoryFilter(null) },
                         label = { Text(stringResource(R.string.filter_all)) },
+                        shape = RoundedCornerShape(50),
                     )
                 }
                 items(categories, key = { it.id }) { c ->
@@ -148,6 +157,7 @@ fun ProductsScreen(
                         selected = filter == c.id,
                         onClick = { vm.setCategoryFilter(c.id) },
                         label = { Text(c.name) },
+                        shape = RoundedCornerShape(50),
                     )
                 }
             }
@@ -163,12 +173,12 @@ fun ProductsScreen(
             } else {
                 LazyColumn(
                     contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 96.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
                     items(products, key = { it.id }) { p ->
                         ProductCard(
                             product = p,
-                            onClick = { onEdit(p.id) },
+                            onClick = { onOpen(p.id) },
                             onToggleFavorite = { vm.toggleFavorite(p) },
                             onToggleActive = { on -> if (on) vm.setActive(p, true) else pendingDeactivate = p },
                         )
@@ -179,7 +189,10 @@ fun ProductsScreen(
         FloatingActionButton(
             onClick = onAdd,
             modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
-        ) { Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.add_product)) }
+            shape = RoundedCornerShape(20.dp),
+            containerColor = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.onPrimary,
+        ) { Icon(Icons.Rounded.Add, contentDescription = stringResource(R.string.add_product)) }
     }
 
     pendingDeactivate?.let { p ->
@@ -205,6 +218,7 @@ fun ProductsScreen(
     notice?.let { n -> NoticeDialog(n, onDismiss = { vm.consumeNotice() }) }
 }
 
+/** Soft gradient by state: low stock = warm peach, inactive = plain, normal = pale mint. Text is plain onSurface on all of them. */
 @Composable
 private fun ProductCard(
     product: Product,
@@ -213,17 +227,32 @@ private fun ProductCard(
     onToggleActive: (Boolean) -> Unit,
 ) {
     val low = product.currentQtyMilli <= product.lowStockThresholdMilli
-    Card(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
-        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+    val kind = when {
+        !product.isActive -> CardKind.NEUTRAL
+        low -> CardKind.ALERT
+        else -> CardKind.INFO
+    }
+    Card(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+    ) {
+        Row(
+            Modifier.fillMaxWidth().background(cardBrush(kind)).padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
             ProductImage(product.imagePath, 56.dp)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(product.name, style = MaterialTheme.typography.titleMedium)
-                Text(Money.format(product.salePrice), style = MaterialTheme.typography.bodyLarge)
+                Text(product.name, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+                Text(Money.format(product.salePrice), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
                 Text(
                     stringResource(R.string.stock_fmt, formatQty(product.currentQtyMilli), stringResource(unitLabelRes(product.unit))) +
                         if (low) "  \u2022  " + stringResource(R.string.low_stock) else "",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = if (low) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = if (low) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.85f),
                 )
                 if (!product.isActive) {
                     Text(stringResource(R.string.inactive), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error)
@@ -231,7 +260,7 @@ private fun ProductCard(
             }
             IconButton(onClick = onToggleFavorite) {
                 Icon(
-                    if (product.isFavorite) Icons.Filled.Star else Icons.Filled.StarBorder,
+                    if (product.isFavorite) Icons.Rounded.Star else Icons.Rounded.StarBorder,
                     contentDescription = stringResource(R.string.favorite_label),
                     tint = if (product.isFavorite) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurfaceVariant,
                 )
