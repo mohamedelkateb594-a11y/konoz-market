@@ -7,17 +7,19 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -29,8 +31,6 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -49,11 +49,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.konoz.market.R
@@ -72,8 +77,9 @@ import java.util.Date
 import java.util.Locale
 
 /**
- * Layout, top to bottom: the camera (exactly the top quarter of the screen, clipped), the invoice items right under it,
- * then the bottom panel (search box, total, pay). The receipt after payment is shown by [CashierRoute].
+ * Layout, top to bottom: the camera (exactly the top quarter of the screen, clipped) with the product-search lens on it,
+ * the invoice (a fixed header row, then the items as small pill rows), then the bottom panel (total, pay).
+ * The search lens expands into a field with a drop-down list of products. The receipt after payment is shown by [CashierRoute].
  */
 @Composable
 fun CashierScreen(
@@ -95,6 +101,7 @@ fun CashierScreen(
     var showHeld by remember { mutableStateOf(false) }
     var showInvoiceDiscount by remember { mutableStateOf(false) }
     var editId by remember { mutableStateOf<Long?>(null) }
+    var searchOpen by remember { mutableStateOf(false) }
 
     // Every scan that puts a product on the invoice: short beep, vibration and a banner with the product and its new quantity.
     var scanAlert by remember { mutableStateOf<ScanAlert?>(null) }
@@ -112,142 +119,155 @@ fun CashierScreen(
     }
 
     val totals = cart.totals()
-    val anyDialog = message != null || showPay || showHeld || showInvoiceDiscount || editId != null || lastSale != null
+    val anyDialog = message != null || showPay || showHeld || showInvoiceDiscount || editId != null || lastSale != null || searchOpen
 
-    Column(modifier.fillMaxSize()) {
-        // ---- the camera: the top quarter of the screen, nothing is ever drawn over it ----
-        if (scanning) {
-            val cameraHeight = (LocalConfiguration.current.screenHeightDp / 4).dp
-            Box(Modifier.fillMaxWidth().height(cameraHeight).clipToBounds()) {
-                CameraBarcodeScanner(enabled = !anyDialog, onBarcode = { vm.onScan(it) }, modifier = Modifier.fillMaxSize())
-                IconButton(onClick = { vm.setScanning(false) }, modifier = Modifier.align(Alignment.TopEnd)) {
-                    Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.close_camera))
-                }
-            }
-        } else {
-            OutlinedButton(
-                onClick = { vm.setScanning(true) },
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp).height(56.dp),
-            ) {
-                Icon(Icons.Filled.QrCodeScanner, contentDescription = null)
-                Spacer(Modifier.width(8.dp))
-                Text(stringResource(R.string.open_camera))
-            }
-        }
+    fun closeSearch() {
+        vm.setQuery("")
+        searchOpen = false
+    }
 
-        // ---- the invoice items, directly under the camera (clipped so they never draw over it) ----
-        Box(Modifier.weight(1f).fillMaxWidth().clipToBounds()) {
-            if (query.isNotBlank()) {
-                SearchResults(results, onPick = { vm.addProduct(it.id) })
-            } else if (cart.isEmpty) {
-                Column(Modifier.fillMaxSize()) {
-                    if (favorites.isNotEmpty()) {
-                        LazyRow(
-                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            items(favorites, key = { it.id }) { p ->
-                                AssistChip(onClick = { vm.addProduct(p.id) }, label = { Text(p.name) })
-                            }
-                        }
-                    }
-                    Box(Modifier.weight(1f).fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
-                        Text(
-                            stringResource(R.string.cart_empty),
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
+    Box(modifier.fillMaxSize()) {
+        Column(Modifier.fillMaxSize()) {
+            // ---- the camera: the top quarter of the screen; only the search lens and the close button are on it ----
+            if (scanning) {
+                val cameraHeight = (LocalConfiguration.current.screenHeightDp / 4).dp
+                Box(Modifier.fillMaxWidth().height(cameraHeight).clipToBounds()) {
+                    CameraBarcodeScanner(enabled = !anyDialog, onBarcode = { vm.onScan(it) }, modifier = Modifier.fillMaxSize())
+                    SearchLens(onClick = { searchOpen = true }, modifier = Modifier.align(Alignment.TopStart).padding(8.dp))
+                    IconButton(onClick = { vm.setScanning(false) }, modifier = Modifier.align(Alignment.TopEnd)) {
+                        Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.close_camera))
                     }
                 }
             } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                Row(
+                    Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    item(key = "cart_header") {
-                        Text(
-                            stringResource(R.string.cashier_items_count_fmt, cart.items.size),
-                            style = MaterialTheme.typography.titleSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
+                    SearchLens(onClick = { searchOpen = true })
+                    OutlinedButton(onClick = { vm.setScanning(true) }, modifier = Modifier.weight(1f).height(56.dp)) {
+                        Icon(Icons.Filled.QrCodeScanner, contentDescription = null)
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(R.string.open_camera))
                     }
-                    itemsIndexed(cart.items, key = { _, it -> it.productId }) { index, item ->
-                        CartRow(
-                            index = index + 1,
-                            item = item,
-                            onClick = { editId = item.productId },
-                            onPlus = { vm.changeQty(item.productId, 1) },
-                            onMinus = { vm.changeQty(item.productId, -1) },
-                            onRemove = { vm.remove(item.productId) },
+                }
+            }
+
+            // ---- the invoice, directly under the camera (clipped so it never draws over it) ----
+            Box(Modifier.weight(1f).fillMaxWidth().clipToBounds()) {
+                if (cart.isEmpty) {
+                    Column(Modifier.fillMaxSize()) {
+                        if (favorites.isNotEmpty()) {
+                            LazyRow(
+                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                items(favorites, key = { it.id }) { p ->
+                                    AssistChip(onClick = { vm.addProduct(p.id) }, label = { Text(p.name) })
+                                }
+                            }
+                        }
+                        Box(Modifier.weight(1f).fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
+                            Text(
+                                stringResource(R.string.cart_empty),
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                } else {
+                    Column(Modifier.fillMaxSize()) {
+                        // The header row stays in place; only the items under it scroll.
+                        CartHeader(Modifier.padding(horizontal = 12.dp, vertical = 6.dp))
+                        LazyColumn(
+                            modifier = Modifier.weight(1f).fillMaxWidth(),
+                            contentPadding = PaddingValues(start = 12.dp, end = 12.dp, bottom = 8.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp),
+                        ) {
+                            items(cart.items, key = { it.productId }) { item ->
+                                CartRow(
+                                    item = item,
+                                    onClick = { editId = item.productId },
+                                    onPlus = { vm.changeQty(item.productId, 1) },
+                                    onMinus = { vm.changeQty(item.productId, -1) },
+                                    onRemove = { vm.remove(item.productId) },
+                                )
+                            }
+                        }
+                    }
+                }
+                scanAlert?.let { alert ->
+                    Surface(
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        shape = MaterialTheme.shapes.medium,
+                        tonalElevation = 6.dp,
+                        modifier = Modifier.align(Alignment.TopCenter).padding(12.dp),
+                    ) {
+                        Text(
+                            stringResource(R.string.scan_added_fmt, alert.name, formatQty(alert.qtyMilli)),
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
                         )
                     }
                 }
             }
-            scanAlert?.let { alert ->
-                Surface(
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    shape = MaterialTheme.shapes.medium,
-                    tonalElevation = 6.dp,
-                    modifier = Modifier.align(Alignment.TopCenter).padding(12.dp),
-                ) {
-                    Text(
-                        stringResource(R.string.scan_added_fmt, alert.name, formatQty(alert.qtyMilli)),
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
-                    )
+
+            // ---- bottom panel: total, pay ----
+            Surface(tonalElevation = 3.dp, shadowElevation = 6.dp) {
+                Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    if (totals != null) {
+                        val discounts = totals.itemDiscountTotal + totals.invoiceDiscount
+                        if (discounts > 0L) {
+                            Text(stringResource(R.string.discounts_fmt, Money.format(discounts)), style = MaterialTheme.typography.bodyMedium)
+                        }
+                        if (totals.taxAmount > 0L) {
+                            Text(stringResource(R.string.tax_fmt, Money.format(totals.taxAmount)), style = MaterialTheme.typography.bodyMedium)
+                        }
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Column(Modifier.weight(1f)) {
+                            Text(stringResource(R.string.total_label), style = MaterialTheme.typography.titleSmall)
+                            Text(
+                                Money.format(totals?.total ?: 0L),
+                                style = MaterialTheme.typography.headlineMedium,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                        }
+                        Button(
+                            onClick = { showPay = true },
+                            enabled = !cart.isEmpty,
+                            modifier = Modifier.weight(1f).height(56.dp),
+                        ) { Text(stringResource(R.string.pay), style = MaterialTheme.typography.titleMedium) }
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedButton(onClick = { vm.hold() }, enabled = !cart.isEmpty, modifier = Modifier.weight(1f)) {
+                            Text(stringResource(R.string.hold))
+                        }
+                        OutlinedButton(onClick = { showHeld = true }, modifier = Modifier.weight(1f)) {
+                            Text(stringResource(R.string.held_count, held.size))
+                        }
+                        OutlinedButton(onClick = { showInvoiceDiscount = true }, enabled = !cart.isEmpty, modifier = Modifier.weight(1f)) {
+                            Text(stringResource(R.string.invoice_discount))
+                        }
+                    }
                 }
             }
         }
 
-        // ---- bottom panel: search, total, pay ----
-        Surface(tonalElevation = 3.dp, shadowElevation = 6.dp) {
-            Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                OutlinedTextField(
-                    value = query,
-                    onValueChange = vm::setQuery,
-                    modifier = Modifier.fillMaxWidth(),
-                    leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
-                    placeholder = { Text(stringResource(R.string.cashier_search_hint)) },
-                    singleLine = true,
-                )
-                if (totals != null) {
-                    val discounts = totals.itemDiscountTotal + totals.invoiceDiscount
-                    if (discounts > 0L) {
-                        Text(stringResource(R.string.discounts_fmt, Money.format(discounts)), style = MaterialTheme.typography.bodyMedium)
-                    }
-                    if (totals.taxAmount > 0L) {
-                        Text(stringResource(R.string.tax_fmt, Money.format(totals.taxAmount)), style = MaterialTheme.typography.bodyMedium)
-                    }
-                }
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Column(Modifier.weight(1f)) {
-                        Text(stringResource(R.string.total_label), style = MaterialTheme.typography.titleSmall)
-                        Text(
-                            Money.format(totals?.total ?: 0L),
-                            style = MaterialTheme.typography.headlineMedium,
-                            color = MaterialTheme.colorScheme.primary,
-                        )
-                    }
-                    Button(
-                        onClick = { showPay = true },
-                        enabled = !cart.isEmpty,
-                        modifier = Modifier.weight(1f).height(56.dp),
-                    ) { Text(stringResource(R.string.pay), style = MaterialTheme.typography.titleMedium) }
-                }
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(onClick = { vm.hold() }, enabled = !cart.isEmpty, modifier = Modifier.weight(1f)) {
-                        Text(stringResource(R.string.hold))
-                    }
-                    OutlinedButton(onClick = { showHeld = true }, modifier = Modifier.weight(1f)) {
-                        Text(stringResource(R.string.held_count, held.size))
-                    }
-                    OutlinedButton(onClick = { showInvoiceDiscount = true }, enabled = !cart.isEmpty, modifier = Modifier.weight(1f)) {
-                        Text(stringResource(R.string.invoice_discount))
-                    }
-                }
-            }
+        // ---- the expanded product search: a field and a drop-down list of products over the camera and the invoice ----
+        if (searchOpen) {
+            ProductSearchPanel(
+                query = query,
+                onQuery = vm::setQuery,
+                products = if (query.isBlank()) favorites else results,
+                onPick = { p ->
+                    vm.addProduct(p.id)
+                    closeSearch()
+                },
+                onClose = ::closeSearch,
+                modifier = Modifier.align(Alignment.TopCenter).padding(horizontal = 8.dp, vertical = 8.dp),
+            )
         }
     }
 
@@ -300,70 +320,180 @@ fun CashierScreen(
     }
 }
 
+/** The collapsed search: a magnifier with its label under it. Tapping it expands [ProductSearchPanel]. */
 @Composable
-private fun SearchResults(results: List<Product>, onPick: (Product) -> Unit) {
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+private fun SearchLens(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
+        shadowElevation = 4.dp,
+        modifier = modifier,
     ) {
-        items(results, key = { it.id }) { p ->
-            Card(onClick = { onPick(p) }, modifier = Modifier.fillMaxWidth()) {
-                Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(p.name, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-                    Text(Money.format(p.salePrice), style = MaterialTheme.typography.bodyLarge)
+        Column(Modifier.padding(horizontal = 10.dp, vertical = 6.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(Icons.Filled.Search, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
+            Text(
+                stringResource(R.string.cs_search_chip),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+            )
+        }
+    }
+}
+
+/** The expanded search: a field, and under it the matching products (the favorites while the field is empty). Tap one to add it. */
+@Composable
+private fun ProductSearchPanel(
+    query: String,
+    onQuery: (String) -> Unit,
+    products: List<Product>,
+    onPick: (Product) -> Unit,
+    onClose: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val focus = remember { FocusRequester() }
+    LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
+    Surface(shape = RoundedCornerShape(24.dp), tonalElevation = 6.dp, shadowElevation = 10.dp, modifier = modifier.fillMaxWidth()) {
+        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                OutlinedTextField(
+                    value = query,
+                    onValueChange = onQuery,
+                    modifier = Modifier.weight(1f).focusRequester(focus),
+                    leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                    placeholder = { Text(stringResource(R.string.cashier_search_hint)) },
+                    singleLine = true,
+                    shape = RoundedCornerShape(50),
+                )
+                IconButton(onClick = onClose) {
+                    Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.cs_search_close))
+                }
+            }
+            LazyColumn(Modifier.heightIn(max = 280.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                items(products, key = { it.id }) { p ->
+                    Surface(
+                        onClick = { onPick(p) },
+                        shape = RoundedCornerShape(50),
+                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Row(Modifier.padding(horizontal = 16.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                p.name,
+                                style = MaterialTheme.typography.titleSmall,
+                                modifier = Modifier.weight(1f),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                            Text(Money.format(p.salePrice), style = MaterialTheme.typography.bodyMedium)
+                        }
+                    }
                 }
             }
         }
     }
 }
 
-/** One invoice line: number, name and a delete button on top; unit price x quantity, minus/plus and the line total below. */
+// Column weights shared by the header row and the item rows so the columns line up: quantity, price, product, total, delete.
+private const val QTY_W = 1.5f
+private const val PRICE_W = 1.1f
+private const val NAME_W = 2.2f
+private const val TOTAL_W = 1.2f
+
+/** The fixed header of the invoice: quantity, price, product, line total. */
+@Composable
+private fun CartHeader(modifier: Modifier = Modifier) {
+    Surface(shape = RoundedCornerShape(50), color = MaterialTheme.colorScheme.primary, modifier = modifier.fillMaxWidth()) {
+        Row(Modifier.padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            HeaderCell(stringResource(R.string.cart_col_qty), QTY_W)
+            HeaderCell(stringResource(R.string.cart_col_price), PRICE_W)
+            HeaderCell(stringResource(R.string.cart_col_name), NAME_W)
+            HeaderCell(stringResource(R.string.cart_col_total), TOTAL_W)
+            Spacer(Modifier.width(28.dp))
+        }
+    }
+}
+
+@Composable
+private fun RowScope.HeaderCell(text: String, weight: Float) {
+    Text(
+        text,
+        modifier = Modifier.weight(weight),
+        style = MaterialTheme.typography.labelLarge,
+        fontWeight = FontWeight.Bold,
+        color = MaterialTheme.colorScheme.onPrimary,
+        textAlign = TextAlign.Center,
+        maxLines = 1,
+    )
+}
+
+/** One invoice line as a small pill: minus / quantity / plus, unit price, product (with its unit and discount), line total, delete. */
 @Composable
 private fun CartRow(
-    index: Int,
     item: CartItem,
     onClick: () -> Unit,
     onPlus: () -> Unit,
     onMinus: () -> Unit,
     onRemove: () -> Unit,
 ) {
-    ElevatedCard(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(50),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        modifier = Modifier.fillMaxWidth().heightIn(min = 44.dp),
+    ) {
+        Row(Modifier.padding(horizontal = 12.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.weight(QTY_W), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+                IconButton(onClick = onMinus, modifier = Modifier.size(28.dp)) {
+                    Icon(Icons.Filled.Remove, contentDescription = null, modifier = Modifier.size(18.dp))
+                }
                 Text(
-                    index.toString(),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.width(28.dp),
+                    formatQty(item.qtyMilli),
+                    style = MaterialTheme.typography.titleSmall,
+                    textAlign = TextAlign.Center,
+                    maxLines = 1,
+                    modifier = Modifier.weight(1f),
                 )
-                Text(item.name, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-                IconButton(onClick = onRemove) {
-                    Icon(
-                        Icons.Filled.Delete,
-                        contentDescription = stringResource(R.string.cashier_remove_item),
-                        tint = MaterialTheme.colorScheme.error,
-                    )
+                IconButton(onClick = onPlus, modifier = Modifier.size(28.dp)) {
+                    Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                 }
             }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text(
-                        Money.format(item.unitPrice) + " × " + formatQty(item.qtyMilli) + " " + stringResource(unitLabelRes(item.unit)),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    if (item.discount > 0L) {
-                        Text(
-                            stringResource(R.string.line_discount_label) + ": " + Money.format(item.discount),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.error,
-                        )
-                    }
-                }
-                IconButton(onClick = onMinus) { Icon(Icons.Filled.Remove, contentDescription = null) }
-                IconButton(onClick = onPlus) { Icon(Icons.Filled.Add, contentDescription = null) }
-                Text(Money.format(item.net), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(start = 4.dp))
+            Text(
+                Money.format(item.unitPrice),
+                modifier = Modifier.weight(PRICE_W),
+                style = MaterialTheme.typography.bodySmall,
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Column(Modifier.weight(NAME_W).padding(horizontal = 4.dp)) {
+                Text(item.name, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                val unit = stringResource(unitLabelRes(item.unit))
+                Text(
+                    if (item.discount > 0L) unit + " - " + stringResource(R.string.line_discount_label) + " " + Money.format(item.discount) else unit,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (item.discount > 0L) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            Text(
+                Money.format(item.net),
+                modifier = Modifier.weight(TOTAL_W),
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.primary,
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            IconButton(onClick = onRemove, modifier = Modifier.size(28.dp)) {
+                Icon(
+                    Icons.Filled.Delete,
+                    contentDescription = stringResource(R.string.cashier_remove_item),
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.size(18.dp),
+                )
             }
         }
     }
