@@ -30,29 +30,28 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ExitToApp
-import androidx.compose.material.icons.filled.AssignmentReturn
-import androidx.compose.material.icons.filled.Backup
-import androidx.compose.material.icons.filled.BarChart
-import androidx.compose.material.icons.filled.BrightnessMedium
-import androidx.compose.material.icons.filled.FactCheck
-import androidx.compose.material.icons.filled.Group
-import androidx.compose.material.icons.filled.Inventory2
-import androidx.compose.material.icons.filled.Language
-import androidx.compose.material.icons.filled.LocalShipping
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.NotificationsActive
-import androidx.compose.material.icons.filled.Payments
-import androidx.compose.material.icons.filled.PointOfSale
-import androidx.compose.material.icons.filled.Print
-import androidx.compose.material.icons.filled.Receipt
-import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material.icons.filled.Storefront
-import androidx.compose.material.icons.filled.SwapVert
+import androidx.compose.material.icons.automirrored.rounded.ExitToApp
+import androidx.compose.material.icons.rounded.AssignmentReturn
+import androidx.compose.material.icons.rounded.Backup
+import androidx.compose.material.icons.rounded.BarChart
+import androidx.compose.material.icons.rounded.BrightnessMedium
+import androidx.compose.material.icons.rounded.FactCheck
+import androidx.compose.material.icons.rounded.Group
+import androidx.compose.material.icons.rounded.Inventory2
+import androidx.compose.material.icons.rounded.Language
+import androidx.compose.material.icons.rounded.LocalShipping
+import androidx.compose.material.icons.rounded.Menu
+import androidx.compose.material.icons.rounded.NotificationsActive
+import androidx.compose.material.icons.rounded.Payments
+import androidx.compose.material.icons.rounded.PointOfSale
+import androidx.compose.material.icons.rounded.Print
+import androidx.compose.material.icons.rounded.Receipt
+import androidx.compose.material.icons.rounded.Schedule
+import androidx.compose.material.icons.rounded.Storefront
+import androidx.compose.material.icons.rounded.SwapVert
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -95,29 +94,29 @@ class HomeItem(
     val moreRoute: String?,
 )
 
-/** What the home screen offers: [strip] = the swipeable cards, [menu] = the program settings in the side menu. */
+/** What the home screen offers: [strip] = the swipeable cards, [menu] = the program settings in the side menu. Icons are the Rounded set. */
 object HomeCatalog {
     const val PRODUCTS = "products"
 
     val strip: List<HomeItem> = listOf(
-        HomeItem(PRODUCTS, R.string.nav_products, R.string.hc_products_desc, Icons.Filled.Inventory2, Permission.EDIT_PRICES, null),
-        HomeItem(MoreTargets.INVOICES, R.string.menu_invoices, R.string.hc_invoices_desc, Icons.Filled.Receipt, null, MoreTargets.INVOICES),
-        HomeItem(MoreTargets.SHIFTS, R.string.menu_shifts, R.string.hc_shifts_desc, Icons.Filled.Schedule, Permission.OPERATE_SHIFTS, MoreTargets.SHIFTS),
-        HomeItem(MoreTargets.REPORTS, R.string.menu_reports, R.string.hc_reports_desc, Icons.Filled.BarChart, Permission.VIEW_PROFIT, MoreTargets.REPORTS),
-        HomeItem("suppliers", R.string.menu_suppliers, R.string.hc_suppliers_desc, Icons.Filled.LocalShipping, Permission.MANAGE_PURCHASES, "suppliers"),
-        HomeItem(MoreTargets.EXPENSES, R.string.menu_expenses, R.string.hc_expenses_desc, Icons.Filled.Payments, Permission.MANAGE_EXPENSES, MoreTargets.EXPENSES),
-        HomeItem(MoreTargets.COUNTS, R.string.menu_stock_count, R.string.hc_stockcount_desc, Icons.Filled.FactCheck, Permission.COUNT_STOCK, MoreTargets.COUNTS),
-        HomeItem("returns", R.string.menu_returns, R.string.hc_returns_desc, Icons.Filled.AssignmentReturn, Permission.PROCESS_RETURN, "returns"),
-        HomeItem("stockops", R.string.menu_stock_ops, R.string.hc_stockops_desc, Icons.Filled.Inventory2, Permission.ADJUST_STOCK, "stockops"),
-        HomeItem("movements", R.string.menu_movements, R.string.hc_movements_desc, Icons.Filled.SwapVert, Permission.ADJUST_STOCK, "movements"),
-        HomeItem("alerts", R.string.menu_alerts, R.string.hc_alerts_desc, Icons.Filled.NotificationsActive, null, "alerts"),
+        HomeItem(PRODUCTS, R.string.nav_products, R.string.hc_products_desc, Icons.Rounded.Inventory2, Permission.EDIT_PRICES, null),
+        HomeItem(MoreTargets.INVOICES, R.string.menu_invoices, R.string.hc_invoices_desc, Icons.Rounded.Receipt, null, MoreTargets.INVOICES),
+        HomeItem(MoreTargets.SHIFTS, R.string.menu_shifts, R.string.hc_shifts_desc, Icons.Rounded.Schedule, Permission.OPERATE_SHIFTS, MoreTargets.SHIFTS),
+        HomeItem(MoreTargets.REPORTS, R.string.menu_reports, R.string.hc_reports_desc, Icons.Rounded.BarChart, Permission.VIEW_PROFIT, MoreTargets.REPORTS),
+        HomeItem("suppliers", R.string.menu_suppliers, R.string.hc_suppliers_desc, Icons.Rounded.LocalShipping, Permission.MANAGE_PURCHASES, "suppliers"),
+        HomeItem(MoreTargets.EXPENSES, R.string.menu_expenses, R.string.hc_expenses_desc, Icons.Rounded.Payments, Permission.MANAGE_EXPENSES, MoreTargets.EXPENSES),
+        HomeItem(MoreTargets.COUNTS, R.string.menu_stock_count, R.string.hc_stockcount_desc, Icons.Rounded.FactCheck, Permission.COUNT_STOCK, MoreTargets.COUNTS),
+        HomeItem("returns", R.string.menu_returns, R.string.hc_returns_desc, Icons.Rounded.AssignmentReturn, Permission.PROCESS_RETURN, "returns"),
+        HomeItem("stockops", R.string.menu_stock_ops, R.string.hc_stockops_desc, Icons.Rounded.Inventory2, Permission.ADJUST_STOCK, "stockops"),
+        HomeItem("movements", R.string.menu_movements, R.string.hc_movements_desc, Icons.Rounded.SwapVert, Permission.ADJUST_STOCK, "movements"),
+        HomeItem("alerts", R.string.menu_alerts, R.string.hc_alerts_desc, Icons.Rounded.NotificationsActive, null, "alerts"),
     )
 
     val menu: List<HomeItem> = listOf(
-        HomeItem(MoreTargets.USERS, R.string.menu_users, R.string.hc_users_desc, Icons.Filled.Group, Permission.MANAGE_USERS, MoreTargets.USERS),
-        HomeItem(MoreTargets.SHOP, R.string.shop_menu, R.string.hc_shop_desc, Icons.Filled.Storefront, Permission.MANAGE_USERS, MoreTargets.SHOP),
-        HomeItem(MoreTargets.BACKUP, R.string.menu_backup, R.string.hc_backup_desc, Icons.Filled.Backup, Permission.MANAGE_BACKUP, MoreTargets.BACKUP),
-        HomeItem(MoreTargets.PRINTER, R.string.menu_printer, R.string.hc_printer_desc, Icons.Filled.Print, null, MoreTargets.PRINTER),
+        HomeItem(MoreTargets.USERS, R.string.menu_users, R.string.hc_users_desc, Icons.Rounded.Group, Permission.MANAGE_USERS, MoreTargets.USERS),
+        HomeItem(MoreTargets.SHOP, R.string.shop_menu, R.string.hc_shop_desc, Icons.Rounded.Storefront, Permission.MANAGE_USERS, MoreTargets.SHOP),
+        HomeItem(MoreTargets.BACKUP, R.string.menu_backup, R.string.hc_backup_desc, Icons.Rounded.Backup, Permission.MANAGE_BACKUP, MoreTargets.BACKUP),
+        HomeItem(MoreTargets.PRINTER, R.string.menu_printer, R.string.hc_printer_desc, Icons.Rounded.Print, null, MoreTargets.PRINTER),
     )
 
     fun find(id: String?): HomeItem? = if (id == null) null else (strip + menu).firstOrNull { it.id == id }
@@ -144,7 +143,7 @@ fun HomeScreen(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             IconButton(onClick = onOpenMenu) {
-                Icon(Icons.Filled.Menu, contentDescription = stringResource(R.string.home_menu), modifier = Modifier.size(28.dp))
+                Icon(Icons.Rounded.Menu, contentDescription = stringResource(R.string.home_menu), modifier = Modifier.size(28.dp))
             }
             Text(
                 stringResource(R.string.app_name),
@@ -155,11 +154,11 @@ fun HomeScreen(
             )
             Button(
                 onClick = onStartCashier,
-                shape = RoundedCornerShape(14.dp),
+                shape = RoundedCornerShape(18.dp),
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
                 elevation = ButtonDefaults.buttonElevation(defaultElevation = 3.dp),
             ) {
-                Icon(Icons.Filled.PointOfSale, contentDescription = null, modifier = Modifier.size(22.dp))
+                Icon(Icons.Rounded.PointOfSale, contentDescription = null, modifier = Modifier.size(22.dp))
                 Spacer(Modifier.width(8.dp))
                 Text(stringResource(R.string.home_start_cashier), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
             }
@@ -228,7 +227,7 @@ private fun HomeCard(
     Card(
         onClick = onClick,
         modifier = modifier,
-        shape = RoundedCornerShape(22.dp),
+        shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = style.gradientEnd),
         elevation = CardDefaults.cardElevation(defaultElevation = if (selected) 8.dp else 3.dp),
         border = if (selected) BorderStroke(2.dp, ReportCardTokens.IconDefault) else null,
@@ -241,7 +240,8 @@ private fun HomeCard(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Box(Modifier.size(48.dp).background(ReportCardTokens.IconBadge, CircleShape), contentAlignment = Alignment.Center) {
+            // Soft rounded-square badge (the reference design's icon shape) holding a rounded icon.
+            Box(Modifier.size(48.dp).background(ReportCardTokens.IconBadge, RoundedCornerShape(percent = 34)), contentAlignment = Alignment.Center) {
                 Icon(item.icon, contentDescription = null, tint = style.icon, modifier = Modifier.size(26.dp))
             }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -331,10 +331,10 @@ fun HomeSideMenu(
                         MenuRow(stringResource(item.labelRes), item.icon, selected = item.id == selectedId, onClick = { onSelect(item) })
                     }
                     if (themeLabelRes != null) {
-                        MenuRow(stringResource(themeLabelRes), Icons.Filled.BrightnessMedium, selected = false, onClick = onTheme)
+                        MenuRow(stringResource(themeLabelRes), Icons.Rounded.BrightnessMedium, selected = false, onClick = onTheme)
                     }
-                    MenuRow(stringResource(R.string.menu_language), Icons.Filled.Language, selected = false, onClick = onLanguage)
-                    MenuRow(stringResource(R.string.auth_logout), Icons.AutoMirrored.Filled.ExitToApp, selected = false, danger = true, onClick = onLogout)
+                    MenuRow(stringResource(R.string.menu_language), Icons.Rounded.Language, selected = false, onClick = onLanguage)
+                    MenuRow(stringResource(R.string.auth_logout), Icons.AutoMirrored.Rounded.ExitToApp, selected = false, danger = true, onClick = onLogout)
                 }
             }
         }
@@ -346,7 +346,7 @@ private fun MenuRow(label: String, icon: ImageVector, selected: Boolean, onClick
     val tint = if (danger) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
     Surface(
         onClick = onClick,
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(18.dp),
         color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
         modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
     ) {

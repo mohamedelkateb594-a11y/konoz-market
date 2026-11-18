@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="pd_back">رجوع</string>
+    <string name="pd_edit">تعديل المنتج</string>
+    <string name="pd_not_found">المنتج غير موجود</string>
+    <string name="pd_pricing">الأسعار</string>
+    <string name="pd_stock">المخزون</string>
+    <string name="pd_barcodes">الباركود</string>
+    <string name="pd_barcode_count_fmt">%1$d باركود</string>
+    <string name="pd_category">التصنيف</string>
+    <string name="pd_supplier">المورد</string>
+    <string name="pd_code">الكود الداخلي</string>
+    <string name="pd_expiry">تاريخ الصلاحية</string>
+    <string name="pd_none">غير محدد</string>
+    <string name="pd_active">نشط</string>
+    <string name="pd_sale_price">سعر البيع</string>
+    <string name="pd_cost">سعر التكلفة</string>
+    <string name="pd_profit">الربح للوحدة</string>
+    <string name="pd_margin">هامش الربح</string>
+    <string name="pd_current_qty">الكمية الحالية</string>
+    <string name="pd_low_threshold">حد التنبيه للمخزون المنخفض</string>
+    <string name="pd_cartons">الكراتين</string>
+    <string name="pd_cartons_fmt">%1$s كرتونة + %2$s قطعة (%3$s قطعة في الكرتونة)</string>
+    <string name="pd_stock_ok">المخزون كافٍ</string>
+    <string name="pd_no_barcodes">لا يوجد باركود لهذا المنتج</string>
+    <string name="pd_barcode_units_fmt">%1$s قطعة لكل مسحة</string>
+</resources>
