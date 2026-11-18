@@ -49,7 +49,10 @@ fun ProductsRoute(
     when {
         formId != null -> {
             // Closing the form returns to the details it was opened from (or the list), and reloads them.
-            val closeForm = { editId = null; session++ }
+            val closeForm: () -> Unit = {
+                editId = null
+                session++
+            }
             BackHandler { closeForm() }
             val editVm: ProductEditViewModel = viewModel(key = "edit_${formId}_$session", factory = ProductEditViewModel.factory(formId))
             LaunchedEffect(formId, session) {
@@ -68,7 +71,10 @@ fun ProductsRoute(
                 ProductDetailScreen(
                     vm = detailVm,
                     onBack = { detailId = null },
-                    onEdit = { session++; editId = detail },
+                    onEdit = {
+                        session++
+                        editId = detail
+                    },
                     onOpenSection = { sectionName = it.name },
                     modifier = modifier,
                 )
@@ -79,8 +85,15 @@ fun ProductsRoute(
         }
         else -> ProductsScreen(
             vm = listVm,
-            onAdd = { session++; editId = 0L },
-            onOpen = { session++; sectionName = null; detailId = it },
+            onAdd = {
+                session++
+                editId = 0L
+            },
+            onOpen = {
+                session++
+                sectionName = null
+                detailId = it
+            },
             modifier = modifier,
         )
     }
