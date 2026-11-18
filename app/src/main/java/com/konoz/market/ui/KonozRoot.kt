@@ -1,33 +1,19 @@
 package com.konoz.market.ui
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Dashboard
-import androidx.compose.material.icons.rounded.Schedule
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.konoz.market.KonozApp
@@ -79,8 +65,9 @@ private fun themeLabel(mode: ThemeMode): Int = when (mode) {
  * Three screens, no bottom bar:
  *  - home: the header, the swipeable cards (products and every former More item), and under them the details of the
  *    selected card (the dashboard when nothing is selected). The program settings are in the side menu.
- *  - cashier: opened only by the start-cashier button of the home screen; back returns to the home screen. It has a button
- *    that opens the shifts (the daily cash session) as a separate page and returns to the cashier.
+ *  - cashier: opened only by the start-cashier button of the home screen; the phone's back button returns to the home screen
+ *    (there is no on-screen button over the camera). The shifts button sits in the bottom panel beside the pay button and opens
+ *    the shifts (the daily cash session) as a separate page, then returns to the cashier.
  *  - page: a separate full screen for one program setting (users, shop data, backup, printer) or for the shifts opened from
  *    the cashier. Back returns to where it was opened from (home or cashier).
  * What each item needs is unchanged: the dashboard needs VIEW_PROFIT, products need EDIT_PRICES (so only the admin changes prices),
@@ -134,54 +121,13 @@ private fun MainApp() {
     Box(Modifier.fillMaxSize()) {
         Scaffold(containerColor = MaterialTheme.colorScheme.background) { padding ->
             when (screen) {
-                SCREEN_CASHIER -> Box(Modifier.fillMaxSize().padding(padding)) {
-                    CashierRoute(
-                        // Registering an unknown barcode creates a product with prices: only users who may edit products can do it.
-                        onRegisterBarcode = { code -> if (canEditProducts) { pendingBarcode = code; open(HomeCatalog.PRODUCTS) } },
-                        modifier = Modifier.fillMaxSize(),
-                    )
-                    Row(
-                        Modifier.align(Alignment.TopCenter).padding(top = 6.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Surface(
-                            onClick = { screen = SCREEN_HOME },
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
-                            shadowElevation = 4.dp,
-                            modifier = Modifier.size(40.dp),
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    Icons.Rounded.Dashboard,
-                                    contentDescription = stringResource(R.string.home_back_to_home),
-                                    tint = MaterialTheme.colorScheme.primary,
-                                )
-                            }
-                        }
-                        // Opens the shifts (open or close the daily session, cash count) without leaving the cashier for good.
-                        if (canOperateShifts) {
-                            Surface(
-                                onClick = { openPage(MoreTargets.SHIFTS, SCREEN_CASHIER) },
-                                shape = RoundedCornerShape(50),
-                                color = MaterialTheme.colorScheme.primaryContainer,
-                                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                                shadowElevation = 4.dp,
-                                modifier = Modifier.size(width = 112.dp, height = 40.dp),
-                            ) {
-                                Row(
-                                    Modifier.padding(horizontal = 12.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
-                                ) {
-                                    Icon(Icons.Rounded.Schedule, contentDescription = null, modifier = Modifier.size(20.dp))
-                                    Text(stringResource(R.string.menu_shifts), style = MaterialTheme.typography.labelLarge, maxLines = 1)
-                                }
-                            }
-                        }
-                    }
-                }
+                SCREEN_CASHIER -> CashierRoute(
+                    // Registering an unknown barcode creates a product with prices: only users who may edit products can do it.
+                    onRegisterBarcode = { code -> if (canEditProducts) { pendingBarcode = code; open(HomeCatalog.PRODUCTS) } },
+                    // Opens the shifts (open or close the daily session, cash count) without leaving the cashier for good.
+                    onOpenShifts = if (canOperateShifts) ({ openPage(MoreTargets.SHIFTS, SCREEN_CASHIER) }) else null,
+                    modifier = Modifier.fillMaxSize().padding(padding),
+                )
                 SCREEN_PAGE -> {
                     // Closing the page (its back arrow or the phone's back button) lands here through onHome and returns to the opener.
                     MoreRoute(
