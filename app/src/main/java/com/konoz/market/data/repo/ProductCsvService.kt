@@ -12,6 +12,9 @@ data class ImportError(val line: Int, val message: String)
 
 data class ImportResult(val created: Int, val updated: Int, val errors: List<ImportError>)
 
+/** The language of the header row and unit names the export writes. Import accepts both, in any mix. */
+enum class CsvLanguage { AR, EN }
+
 /**
  * Product import/export as CSV (opens in Excel; native .xlsx is not supported).
  *
@@ -19,7 +22,7 @@ data class ImportResult(val created: Int, val updated: Int, val errors: List<Imp
  *   name, internal_code, category, unit, cost_price, sale_price, low_stock, pieces_per_carton,
  *   barcodes ("|" separated, "code*units" for carton barcodes), quantity, expiry (yyyy-MM-dd), active (1/0)
  * The unit may be an English name (PIECE, CARTON, KG, GRAM, LITER, PACK) or an Arabic one (see [UNIT_ALIASES]).
- * The export writes an Arabic header row and Arabic unit names; importing that file back works unchanged.
+ * The export writes the header row and unit names in the chosen [CsvLanguage]; importing either file back works unchanged.
  *
  * Import rules:
  *  - A row updates an existing product when its internal_code (or, failing that, its first barcode) matches;
@@ -31,11 +34,11 @@ class ProductCsvService(
     private val db: KonozDatabase,
     private val repo: ProductRepository,
 ) {
-    suspend fun exportCsv(): String {
+    suspend fun exportCsv(language: CsvLanguage = CsvLanguage.AR): String {
         val products = db.products().observeAll().first()
         val categories = db.categories().observeAll().first().associateBy { it.id }
         val rows = ArrayList<List<String>>()
-        rows += EXPORT_HEADERS
+        rows += if (language == CsvLanguage.AR) EXPORT_HEADERS else HEADERS
         for (p in products) {
             val barcodes = db.barcodes().getForProduct(p.id)
                 .joinToString("|") { if (it.unitsPerScan == 1) it.code else "${it.code}*${it.unitsPerScan}" }
@@ -43,7 +46,7 @@ class ProductCsvService(
                 p.name,
                 p.internalCode.orEmpty(),
                 p.categoryId?.let { categories[it]?.name }.orEmpty(),
-                unitArabic(p.unit),
+                if (language == CsvLanguage.AR) unitArabic(p.unit) else p.unit.name,
                 Money.fromMinor(p.costPrice).toPlainString(),
                 Money.fromMinor(p.salePrice).toPlainString(),
                 Quantities.format(p.lowStockThresholdMilli),
@@ -140,13 +143,13 @@ class ProductCsvService(
     }
 
     companion object {
-        /** The canonical (English) keys, in file order. */
+        /** The canonical (English) keys, in file order. The English export writes this row. */
         val HEADERS = listOf(
             "name", "internal_code", "category", "unit", "cost_price", "sale_price", "low_stock",
             "pieces_per_carton", "barcodes", "quantity", "expiry", "active",
         )
 
-        /** The header row the export writes (same order as [HEADERS]). */
+        /** The header row the Arabic export writes (same order as [HEADERS]). */
         val EXPORT_HEADERS = listOf(
             "الاسم", "الكود الداخلي", "التصنيف", "الوحدة", "سعر الشراء", "سعر البيع", "حد التنبيه",
             "قطع الكرتونة", "الباركود", "الكمية", "الصلاحية", "مفعل",
