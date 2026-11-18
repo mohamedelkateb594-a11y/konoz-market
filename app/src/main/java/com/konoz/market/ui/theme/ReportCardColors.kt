@@ -1,37 +1,45 @@
 package com.konoz.market.ui.theme
 
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
 /**
- * Design tokens of the report cards on the dashboard.
- * The cards are light-blue surfaces in both light and dark mode, so their text and icon colors are fixed on purpose
- * (dark navy on light blue); they do not follow the dark color scheme.
+ * Design tokens of the report cards on the dashboard (Mint & Cream).
+ * They follow the theme: light mode = mint and cream gradients with dark green text; dark mode = deep green gradients
+ * with light text. Every description color keeps 4.5:1 or more on the end color of its gradient.
+ * The getters are @Composable (they read the current theme), and every call site is already inside a composable.
  */
 object ReportCardTokens {
-    /** Report name: dark navy, drawn bold. */
-    val Title = Color(0xFF26364A)
+    /** Report name, drawn bold. */
+    val Title: Color @Composable get() = MaterialTheme.colorScheme.onSurface
 
-    /** Short description: blue-gray. */
-    val Description = Color(0xFF52647A)
+    /** Short description. */
+    val Description: Color
+        @Composable get() = if (isDarkScheme()) Brand.TextSecondaryDark else Color(0xFF3F5A4B)
 
     /** Default icon color. */
-    val IconDefault = Color(0xFF245BDB)
+    val IconDefault: Color
+        @Composable get() = if (isDarkScheme()) Brand.SecondaryDarkMode else Brand.PrimaryDeep
 
     /** Translucent badge behind the icon (an icon background, never behind text). */
-    val IconBadge = Color(0xB3FFFFFF)
+    val IconBadge: Color
+        @Composable get() = if (isDarkScheme()) Color(0x33FFFFFF) else Color(0xB3FFFFFF)
 
-    /** Light gradient (start to end) and a matching icon color. Every end color keeps the description text above 4.5:1 contrast. */
     class Style(val gradientStart: Color, val gradientEnd: Color, val icon: Color)
 
-    val styles: List<Style> = listOf(
-        Style(Color(0xFFEAF2FF), Color(0xFFD2E3FF), IconDefault),
-        Style(Color(0xFFE6F3FF), Color(0xFFCBE6FF), Color(0xFF1565C0)),
-        Style(Color(0xFFEBEFFF), Color(0xFFD4DCFF), Color(0xFF3949C0)),
-        Style(Color(0xFFE3F6FB), Color(0xFFC7EBF7), Color(0xFF0B6E99)),
-        Style(Color(0xFFECF4FF), Color(0xFFD6E8FF), IconDefault),
-        Style(Color(0xFFE8F0FF), Color(0xFFD1E0FF), Color(0xFF1E4FB8)),
-        Style(Color(0xFFE8F5FF), Color(0xFFCDE8FF), Color(0xFF0277BD)),
-        Style(Color(0xFFEDF1FF), Color(0xFFD9E1FF), Color(0xFF2F54C8)),
-        Style(Color(0xFFE6F3FE), Color(0xFFCCE5FB), Color(0xFF1A6AC4)),
-    )
+    val styles: List<Style>
+        @Composable get() = if (isDarkScheme()) {
+            val money = Style(Brand.SurfaceVariantDark, Brand.CardMoneyDarkEnd, Brand.SecondaryDarkMode)
+            val stock = Style(Brand.CardWarmDark, Brand.CardWarmDarkEnd, Color(0xFFE8D28A))
+            val info = Style(Brand.CardInfoDark, Brand.CardInfoDarkEnd, Brand.PrimaryDarkMode)
+            val alert = Style(Brand.CardAlertDark, Brand.CardAlertDarkEnd, Brand.WarningDarkMode)
+            listOf(money, stock, info, money, alert, info, stock, money, info)
+        } else {
+            val money = Style(Brand.Accent, Brand.Secondary, Brand.PrimaryDeep)
+            val stock = Style(Brand.Cream, Brand.CreamDeep, Color(0xFF8A6A12))
+            val info = Style(Brand.MintSoft, Brand.Accent, Color(0xFF2B7A5E))
+            val alert = Style(Brand.CardAlertLight, Brand.CardAlertLightEnd, Color(0xFF9A5B12))
+            listOf(money, stock, info, money, alert, info, stock, money, info)
+        }
 }
