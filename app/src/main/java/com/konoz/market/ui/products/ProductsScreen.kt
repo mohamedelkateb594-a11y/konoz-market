@@ -51,6 +51,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.konoz.market.R
+import com.konoz.market.core.Csv
 import com.konoz.market.core.Money
 import com.konoz.market.core.Percent
 import com.konoz.market.data.entity.Category
@@ -59,6 +60,7 @@ import com.konoz.market.data.repo.CsvLanguage
 import com.konoz.market.ui.common.ProductImage
 import com.konoz.market.ui.common.formatQty
 import com.konoz.market.ui.common.unitLabelRes
+import com.konoz.market.ui.language.AppLanguage
 import com.konoz.market.ui.theme.CardKind
 import com.konoz.market.ui.theme.cardBrush
 import kotlinx.coroutines.Dispatchers
@@ -84,8 +86,10 @@ fun ProductsScreen(
     var menuOpen by remember { mutableStateOf(false) }
     var showBulk by remember { mutableStateOf(false) }
     var pendingDeactivate by remember { mutableStateOf<Product?>(null) }
-    // The language of the file being exported: set by the menu item that opens the save dialog.
-    var exportLanguage by remember { mutableStateOf(CsvLanguage.AR) }
+
+    // One export item: the file follows the program language (Arabic program = Arabic headers and units, English = English).
+    // Import needs no choice: it recognizes Arabic and English headers by itself.
+    val exportLanguage = if (AppLanguage.effective(context) == AppLanguage.AR) CsvLanguage.AR else CsvLanguage.EN
 
     val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { uri ->
         if (uri != null) scope.launch {
@@ -103,7 +107,7 @@ fun ProductsScreen(
         if (uri != null) scope.launch {
             val text = runCatching {
                 withContext(Dispatchers.IO) {
-                    context.contentResolver.openInputStream(uri)?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }
+                    context.contentResolver.openInputStream(uri)?.use { Csv.decode(it.readBytes()) }
                 }
             }.getOrNull()
             if (text == null) vm.notify(ProductsNotice.Failed) else vm.importCsv(text)
@@ -136,19 +140,10 @@ fun ProductsScreen(
                             onClick = { menuOpen = false; importLauncher.launch(arrayOf("*/*")) },
                         )
                         DropdownMenuItem(
-                            text = { Text(stringResource(R.string.export_csv_arabic)) },
+                            text = { Text(stringResource(R.string.export_csv)) },
                             onClick = {
                                 menuOpen = false
-                                exportLanguage = CsvLanguage.AR
-                                exportLauncher.launch("konoz-products-ar.csv")
-                            },
-                        )
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.export_csv_english)) },
-                            onClick = {
-                                menuOpen = false
-                                exportLanguage = CsvLanguage.EN
-                                exportLauncher.launch("konoz-products-en.csv")
+                                exportLauncher.launch(if (exportLanguage == CsvLanguage.AR) "konoz-products-ar.csv" else "konoz-products-en.csv")
                             },
                         )
                     }
