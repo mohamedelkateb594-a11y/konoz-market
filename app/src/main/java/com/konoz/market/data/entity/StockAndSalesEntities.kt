@@ -85,6 +85,10 @@ data class SalesInvoice(
     val createdAt: Long,
     val completedAt: Long? = null,
     val stockPosted: Boolean = false,
+    /** Who the invoice was sent to, as it was when sent. A copy: editing or deleting the customer in the list never changes it. */
+    val customerName: String? = null,
+    /** The customer's phone as WhatsApp digits, when one was given. */
+    val customerPhone: String? = null,
 )
 
 @Entity(
