@@ -61,8 +61,6 @@ import com.konoz.market.ui.suppliers.StatementScreen
 import com.konoz.market.ui.suppliers.StatementViewModel
 import com.konoz.market.ui.suppliers.SuppliersScreen
 import com.konoz.market.ui.suppliers.SuppliersViewModel
-import com.konoz.market.ui.theme.ThemeMode
-import com.konoz.market.ui.theme.ThemePreference
 import com.konoz.market.ui.users.UsersScreen
 import com.konoz.market.ui.users.UsersViewModel
 
@@ -115,24 +113,35 @@ private fun requiredPermission(route: String): Permission? = when (route.split('
     else -> null
 }
 
-/** [startRoute] (one of [MoreTargets]) opens that screen once, then [onStartConsumed] is called. */
+/**
+ * [startRoute] (one of [MoreTargets]) opens that screen once, then [onStartConsumed] is called.
+ * [embedded] = the screens are shown inside the home screen (under its strip of cards), which replaces the tile menu:
+ * when the route goes back to the menu, [onHome] is called instead of drawing the menu, and the first route is [startRoute].
+ */
 @Composable
-fun MoreRoute(modifier: Modifier = Modifier, startRoute: String? = null, onStartConsumed: () -> Unit = {}) {
+fun MoreRoute(
+    modifier: Modifier = Modifier,
+    startRoute: String? = null,
+    onStartConsumed: () -> Unit = {},
+    embedded: Boolean = false,
+    onHome: () -> Unit = {},
+) {
     val context = LocalContext.current
     val app = context.applicationContext as KonozApp
     val user by app.session.user.collectAsStateWithLifecycle()
-    val themeMode by ThemePreference.mode
     fun allowed(permission: Permission?) = permission == null || user?.let { Permissions.has(it.role, permission) } == true
 
-    var route by rememberSaveable { mutableStateOf(MENU) }
+    var route by rememberSaveable { mutableStateOf(if (embedded && startRoute != null) startRoute else MENU) }
     var session by rememberSaveable { mutableIntStateOf(0) } // new key per opened form so a screen never shows old input
     // A route the signed-in user may not use (restored after switching users, or asked for by a shortcut) shows the menu instead.
     val shown = if (allowed(requiredPermission(route))) route else MENU
     BackHandler(enabled = shown != MENU) { route = parentOf(shown) }
     LaunchedEffect(startRoute) {
         if (startRoute != null) {
-            session++
-            route = startRoute
+            if (route != startRoute) {
+                session++
+                route = startRoute
+            }
             onStartConsumed()
         }
     }
@@ -220,36 +229,33 @@ fun MoreRoute(modifier: Modifier = Modifier, startRoute: String? = null, onStart
             val vm: ShopSettingsViewModel = viewModel(key = "shop_$session", factory = ShopSettingsViewModel.Factory)
             ShopSettingsScreen(vm, onBack = { route = MENU }, modifier = modifier)
         }
-        else -> MoreMenu(
-            items = listOf(
-                Triple<Int, Permission?, () -> Unit>(R.string.menu_invoices, null) { session++; route = MoreTargets.INVOICES },
-                Triple(R.string.menu_shifts, Permission.OPERATE_SHIFTS) { session++; route = MoreTargets.SHIFTS },
-                Triple(R.string.menu_reports, Permission.VIEW_PROFIT) { session++; route = MoreTargets.REPORTS },
-                Triple(R.string.menu_suppliers, Permission.MANAGE_PURCHASES) { route = SUPPLIERS },
-                Triple(R.string.menu_expenses, Permission.MANAGE_EXPENSES) { session++; route = MoreTargets.EXPENSES },
-                Triple(R.string.menu_stock_count, Permission.COUNT_STOCK) { session++; route = MoreTargets.COUNTS },
-                Triple(R.string.menu_returns, Permission.PROCESS_RETURN) { session++; route = RETURNS },
-                Triple(R.string.menu_stock_ops, Permission.ADJUST_STOCK) { session++; route = STOCK_OPS },
-                Triple(R.string.menu_movements, Permission.ADJUST_STOCK) { session++; route = MOVEMENTS },
-                Triple<Int, Permission?, () -> Unit>(R.string.menu_alerts, null) { session++; route = ALERTS },
-                Triple<Int, Permission?, () -> Unit>(R.string.menu_printer, null) { session++; route = MoreTargets.PRINTER },
-                Triple(R.string.shop_menu, Permission.MANAGE_USERS) { session++; route = MoreTargets.SHOP },
-                Triple(R.string.menu_users, Permission.MANAGE_USERS) { session++; route = MoreTargets.USERS },
-                Triple(R.string.menu_backup, Permission.MANAGE_BACKUP) { session++; route = MoreTargets.BACKUP },
-                // Appearance: one tap cycles System -> Light -> Dark; the label shows the current choice and the whole app repaints at once.
-                Triple<Int, Permission?, () -> Unit>(themeLabel(themeMode), null) { ThemePreference.next(context) },
-                Triple<Int, Permission?, () -> Unit>(R.string.menu_language, null) { AppLanguage.switch(context) },
-                Triple<Int, Permission?, () -> Unit>(R.string.auth_logout, null) { route = MENU; app.session.signOut() },
-            ).filter { allowed(it.second) },
-            modifier = modifier,
-        )
+        else -> if (embedded) {
+            // The home screen replaces the menu: going back to the menu means going back to the home screen.
+            LaunchedEffect(Unit) { if (startRoute == null) onHome() }
+        } else {
+            MoreMenu(
+                items = listOf(
+                    Triple<Int, Permission?, () -> Unit>(R.string.menu_invoices, null) { session++; route = MoreTargets.INVOICES },
+                    Triple(R.string.menu_shifts, Permission.OPERATE_SHIFTS) { session++; route = MoreTargets.SHIFTS },
+                    Triple(R.string.menu_reports, Permission.VIEW_PROFIT) { session++; route = MoreTargets.REPORTS },
+                    Triple(R.string.menu_suppliers, Permission.MANAGE_PURCHASES) { route = SUPPLIERS },
+                    Triple(R.string.menu_expenses, Permission.MANAGE_EXPENSES) { session++; route = MoreTargets.EXPENSES },
+                    Triple(R.string.menu_stock_count, Permission.COUNT_STOCK) { session++; route = MoreTargets.COUNTS },
+                    Triple(R.string.menu_returns, Permission.PROCESS_RETURN) { session++; route = RETURNS },
+                    Triple(R.string.menu_stock_ops, Permission.ADJUST_STOCK) { session++; route = STOCK_OPS },
+                    Triple(R.string.menu_movements, Permission.ADJUST_STOCK) { session++; route = MOVEMENTS },
+                    Triple<Int, Permission?, () -> Unit>(R.string.menu_alerts, null) { session++; route = ALERTS },
+                    Triple<Int, Permission?, () -> Unit>(R.string.menu_printer, null) { session++; route = MoreTargets.PRINTER },
+                    Triple(R.string.shop_menu, Permission.MANAGE_USERS) { session++; route = MoreTargets.SHOP },
+                    Triple(R.string.menu_users, Permission.MANAGE_USERS) { session++; route = MoreTargets.USERS },
+                    Triple(R.string.menu_backup, Permission.MANAGE_BACKUP) { session++; route = MoreTargets.BACKUP },
+                    Triple<Int, Permission?, () -> Unit>(R.string.menu_language, null) { AppLanguage.switch(context) },
+                    Triple<Int, Permission?, () -> Unit>(R.string.auth_logout, null) { route = MENU; app.session.signOut() },
+                ).filter { allowed(it.second) },
+                modifier = modifier,
+            )
+        }
     }
-}
-
-private fun themeLabel(mode: ThemeMode): Int = when (mode) {
-    ThemeMode.SYSTEM -> R.string.menu_theme_system
-    ThemeMode.LIGHT -> R.string.menu_theme_light
-    ThemeMode.DARK -> R.string.menu_theme_dark
 }
 
 /** The menu is a tile grid (see MoreTileGrid.kt); this only adapts the permission-filtered list. */
