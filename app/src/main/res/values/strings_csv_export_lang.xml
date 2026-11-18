@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="export_csv_arabic">Export CSV (Arabic headers)</string>
+    <string name="export_csv_english">Export CSV (English headers)</string>
+</resources>
