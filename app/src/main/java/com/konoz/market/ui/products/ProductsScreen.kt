@@ -55,6 +55,7 @@ import com.konoz.market.core.Money
 import com.konoz.market.core.Percent
 import com.konoz.market.data.entity.Category
 import com.konoz.market.data.entity.Product
+import com.konoz.market.data.repo.CsvLanguage
 import com.konoz.market.ui.common.ProductImage
 import com.konoz.market.ui.common.formatQty
 import com.konoz.market.ui.common.unitLabelRes
@@ -83,11 +84,13 @@ fun ProductsScreen(
     var menuOpen by remember { mutableStateOf(false) }
     var showBulk by remember { mutableStateOf(false) }
     var pendingDeactivate by remember { mutableStateOf<Product?>(null) }
+    // The language of the file being exported: set by the menu item that opens the save dialog.
+    var exportLanguage by remember { mutableStateOf(CsvLanguage.AR) }
 
     val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { uri ->
         if (uri != null) scope.launch {
             val ok = runCatching {
-                val text = vm.buildCsv()
+                val text = vm.buildCsv(exportLanguage)
                 withContext(Dispatchers.IO) {
                     val out = context.contentResolver.openOutputStream(uri) ?: error("no output stream")
                     out.use { it.write(text.toByteArray(Charsets.UTF_8)) }
@@ -133,8 +136,20 @@ fun ProductsScreen(
                             onClick = { menuOpen = false; importLauncher.launch(arrayOf("*/*")) },
                         )
                         DropdownMenuItem(
-                            text = { Text(stringResource(R.string.export_csv)) },
-                            onClick = { menuOpen = false; exportLauncher.launch("konoz-products.csv") },
+                            text = { Text(stringResource(R.string.export_csv_arabic)) },
+                            onClick = {
+                                menuOpen = false
+                                exportLanguage = CsvLanguage.AR
+                                exportLauncher.launch("konoz-products-ar.csv")
+                            },
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.export_csv_english)) },
+                            onClick = {
+                                menuOpen = false
+                                exportLanguage = CsvLanguage.EN
+                                exportLauncher.launch("konoz-products-en.csv")
+                            },
                         )
                     }
                 }
