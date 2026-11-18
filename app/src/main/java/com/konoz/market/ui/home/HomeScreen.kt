@@ -1,6 +1,11 @@
 package com.konoz.market.ui.home
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
@@ -11,6 +16,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -35,6 +41,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.AssignmentReturn
 import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.BarChart
@@ -57,15 +64,19 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
@@ -79,6 +90,7 @@ import com.konoz.market.R
 import com.konoz.market.domain.Permission
 import com.konoz.market.ui.more.MoreTargets
 import com.konoz.market.ui.theme.ReportCardTokens
+import kotlinx.coroutines.delay
 import kotlin.math.abs
 
 /**
@@ -124,7 +136,7 @@ object HomeCatalog {
 
 /**
  * The home screen: a header (side-menu button at the start, the start-cashier button at the end), the swipeable strip of cards,
- * and below it [content] (the details of the selected card, or the dashboard when nothing is selected).
+ * and under it a sheet that rises from the bottom with [content] (the details of the selected card, or the dashboard).
  */
 @Composable
 fun HomeScreen(
@@ -138,25 +150,39 @@ fun HomeScreen(
 ) {
     Column(modifier.fillMaxSize()) {
         Row(
-            Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp),
+            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            IconButton(onClick = onOpenMenu) {
-                Icon(Icons.Filled.Menu, contentDescription = stringResource(R.string.home_menu), modifier = Modifier.size(28.dp))
+            Surface(
+                onClick = onOpenMenu,
+                shape = RoundedCornerShape(14.dp),
+                color = MaterialTheme.colorScheme.primaryContainer,
+                modifier = Modifier.size(46.dp),
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        Icons.Filled.Menu,
+                        contentDescription = stringResource(R.string.home_menu),
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(26.dp),
+                    )
+                }
             }
             Text(
                 stringResource(R.string.app_name),
-                style = MaterialTheme.typography.titleLarge,
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier.weight(1f),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
             Button(
                 onClick = onStartCashier,
-                shape = RoundedCornerShape(14.dp),
+                shape = RoundedCornerShape(16.dp),
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
-                elevation = ButtonDefaults.buttonElevation(defaultElevation = 3.dp),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp, pressedElevation = 1.dp),
             ) {
                 Icon(Icons.Filled.PointOfSale, contentDescription = null, modifier = Modifier.size(22.dp))
                 Spacer(Modifier.width(8.dp))
@@ -164,7 +190,13 @@ fun HomeScreen(
             }
         }
         HomeStrip(cards, selectedId, onSelect)
-        Box(Modifier.weight(1f).fillMaxWidth()) { content() }
+        Surface(
+            modifier = Modifier.weight(1f).fillMaxWidth(),
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            color = MaterialTheme.colorScheme.surface,
+            contentColor = MaterialTheme.colorScheme.onSurface,
+            shadowElevation = 10.dp,
+        ) { content() }
     }
 }
 
@@ -182,7 +214,7 @@ private fun HomeStrip(cards: List<HomeItem>, selectedId: String?, onSelect: (Hom
     LazyRow(
         state = listState,
         flingBehavior = fling,
-        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 6.dp, bottom = 14.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         items(cards.size, key = { cards[it].id }) { index ->
@@ -216,6 +248,7 @@ private fun HomeStrip(cards: List<HomeItem>, selectedId: String?, onSelect: (Hom
     }
 }
 
+/** A card springs down while pressed, lifts and gets an outline when selected. */
 @Composable
 private fun HomeCard(
     item: HomeItem,
@@ -224,13 +257,22 @@ private fun HomeCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val source = remember { MutableInteractionSource() }
+    val pressed by source.collectIsPressedAsState()
+    val press by animateFloatAsState(if (pressed) 0.95f else 1f, spring(dampingRatio = 0.55f, stiffness = 500f), label = "press")
+    val elevation by animateDpAsState(if (selected) 10.dp else 3.dp, label = "elevation")
+    val outline by animateColorAsState(if (selected) ReportCardTokens.IconDefault else Color.Transparent, label = "outline")
     Card(
         onClick = onClick,
-        modifier = modifier,
-        shape = RoundedCornerShape(22.dp),
+        modifier = modifier.graphicsLayer {
+            scaleX = press
+            scaleY = press
+        },
+        interactionSource = source,
+        shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = style.gradientEnd),
-        elevation = CardDefaults.cardElevation(defaultElevation = if (selected) 8.dp else 3.dp),
-        border = if (selected) BorderStroke(2.dp, ReportCardTokens.IconDefault) else null,
+        elevation = CardDefaults.cardElevation(defaultElevation = elevation),
+        border = BorderStroke(2.dp, outline),
     ) {
         Row(
             Modifier
@@ -240,8 +282,8 @@ private fun HomeCard(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Box(Modifier.size(48.dp).background(ReportCardTokens.IconBadge, CircleShape), contentAlignment = Alignment.Center) {
-                Icon(item.icon, contentDescription = null, tint = style.icon, modifier = Modifier.size(26.dp))
+            Box(Modifier.size(50.dp).background(ReportCardTokens.IconBadge, RoundedCornerShape(16.dp)), contentAlignment = Alignment.Center) {
+                Icon(item.icon, contentDescription = null, tint = style.icon, modifier = Modifier.size(28.dp))
             }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(
@@ -264,7 +306,7 @@ private fun HomeCard(
     }
 }
 
-/** Shown under the strip when nothing is selected and the user has no dashboard (no profit permission). */
+/** Shown in the sheet when nothing is selected and the user has no dashboard (no profit permission). */
 @Composable
 fun HomeHint(modifier: Modifier = Modifier) {
     Box(modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
@@ -278,7 +320,8 @@ fun HomeHint(modifier: Modifier = Modifier) {
 
 /**
  * The side menu with the program settings (users, shop data, backup, printer, language, sign-out). It opens from the start edge
- * (the right in Arabic) and covers 75% of the screen width. Meant to be placed over the whole screen, outside the Scaffold.
+ * (the right in Arabic) and covers 75% of the screen width; its rows come in one after the other. Meant to be placed over the
+ * whole screen, outside the Scaffold.
  */
 @Composable
 fun HomeSideMenu(
@@ -303,14 +346,15 @@ fun HomeSideMenu(
         AnimatedVisibility(
             visible = open,
             modifier = Modifier.align(Alignment.CenterStart).fillMaxHeight().fillMaxWidth(0.75f),
-            enter = slideInHorizontally(initialOffsetX = { if (rtl) it else -it }),
-            exit = slideOutHorizontally(targetOffsetX = { if (rtl) it else -it }),
+            enter = slideInHorizontally(animationSpec = tween(320), initialOffsetX = { if (rtl) it else -it }),
+            exit = slideOutHorizontally(animationSpec = tween(240), targetOffsetX = { if (rtl) it else -it }),
         ) {
             Surface(
                 modifier = Modifier.fillMaxSize(),
                 color = MaterialTheme.colorScheme.surface,
-                shape = RoundedCornerShape(topEnd = 28.dp, bottomEnd = 28.dp),
-                shadowElevation = 12.dp,
+                contentColor = MaterialTheme.colorScheme.onSurface,
+                shape = RoundedCornerShape(topEnd = 32.dp, bottomEnd = 32.dp),
+                shadowElevation = 16.dp,
             ) {
                 Column(
                     Modifier
@@ -319,39 +363,151 @@ fun HomeSideMenu(
                         .navigationBarsPadding()
                         .verticalScroll(rememberScrollState())
                         .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
-                    Text(stringResource(R.string.home_menu_title), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                    Spacer(Modifier.height(8.dp))
-                    entries.forEach { item ->
-                        MenuRow(stringResource(item.labelRes), item.icon, selected = item.id == selectedId, onClick = { onSelect(item) })
+                    Staggered(0) { MenuHero() }
+                    Spacer(Modifier.height(4.dp))
+                    entries.forEachIndexed { i, item ->
+                        Staggered(i + 1) {
+                            MenuRow(
+                                label = stringResource(item.labelRes),
+                                description = stringResource(item.descRes),
+                                icon = item.icon,
+                                selected = item.id == selectedId,
+                                onClick = { onSelect(item) },
+                            )
+                        }
                     }
-                    MenuRow(stringResource(R.string.menu_language), Icons.Filled.Language, selected = false, onClick = onLanguage)
-                    MenuRow(stringResource(R.string.auth_logout), Icons.AutoMirrored.Filled.ExitToApp, selected = false, danger = true, onClick = onLogout)
+                    Staggered(entries.size + 1) {
+                        MenuRow(
+                            label = stringResource(R.string.menu_language),
+                            description = stringResource(R.string.hc_language_desc),
+                            icon = Icons.Filled.Language,
+                            selected = false,
+                            onClick = onLanguage,
+                        )
+                    }
+                    Spacer(Modifier.height(6.dp))
+                    Staggered(entries.size + 2) {
+                        MenuRow(
+                            label = stringResource(R.string.auth_logout),
+                            description = stringResource(R.string.hc_logout_desc),
+                            icon = Icons.AutoMirrored.Filled.ExitToApp,
+                            selected = false,
+                            danger = true,
+                            onClick = onLogout,
+                        )
+                    }
                 }
             }
         }
     }
 }
 
+/** Fades a row in and slides it from the menu's own edge, [index] x 70 ms after the menu opened. */
 @Composable
-private fun MenuRow(label: String, icon: ImageVector, selected: Boolean, onClick: () -> Unit, danger: Boolean = false) {
-    val tint = if (danger) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+private fun Staggered(index: Int, content: @Composable () -> Unit) {
+    val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+    var shown by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        delay(120L + 70L * index)
+        shown = true
+    }
+    val progress by animateFloatAsState(if (shown) 1f else 0f, tween(300), label = "menu row")
+    Box(
+        Modifier.graphicsLayer {
+            alpha = progress
+            translationX = (1f - progress) * 36.dp.toPx() * (if (rtl) 1f else -1f)
+        },
+    ) { content() }
+}
+
+@Composable
+private fun MenuHero() {
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .background(
+                Brush.linearGradient(listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.secondary)),
+                RoundedCornerShape(26.dp),
+            )
+            .padding(20.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+            Box(
+                Modifier.size(54.dp).background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.18f), CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.Filled.Storefront, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(30.dp))
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    stringResource(R.string.app_name),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    stringResource(R.string.home_menu_title),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onPrimary,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun MenuRow(
+    label: String,
+    description: String,
+    icon: ImageVector,
+    selected: Boolean,
+    onClick: () -> Unit,
+    danger: Boolean = false,
+) {
+    val scheme = MaterialTheme.colorScheme
     Surface(
         onClick = onClick,
-        shape = RoundedCornerShape(16.dp),
-        color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
-        modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
+        shape = RoundedCornerShape(20.dp),
+        color = when {
+            selected -> scheme.primaryContainer
+            danger -> scheme.errorContainer
+            else -> scheme.surfaceVariant
+        },
+        border = if (selected) BorderStroke(1.5.dp, scheme.primary) else null,
+        modifier = Modifier.fillMaxWidth().heightIn(min = 64.dp),
     ) {
-        Row(Modifier.padding(horizontal = 14.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(24.dp))
-            Text(
-                label,
-                style = MaterialTheme.typography.titleMedium,
-                color = if (danger) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+        Row(
+            Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Box(Modifier.size(44.dp).background(scheme.surface, RoundedCornerShape(14.dp)), contentAlignment = Alignment.Center) {
+                Icon(icon, contentDescription = null, tint = if (danger) scheme.error else scheme.primary, modifier = Modifier.size(24.dp))
+            }
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    label,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = if (danger) scheme.onErrorContainer else scheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (danger) scheme.onErrorContainer else scheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            if (!danger) {
+                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = scheme.onSurfaceVariant)
+            }
         }
     }
 }

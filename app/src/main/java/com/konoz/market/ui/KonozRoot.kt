@@ -1,24 +1,32 @@
 package com.konoz.market.ui
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Dashboard
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -63,9 +71,9 @@ fun KonozRoot() {
 
 /**
  * Two screens, no bottom bar:
- *  - home: the header, the swipeable cards (products and every former More item), and under them the details of the
+ *  - home: the header, the swipeable cards (products and every former More item), and under them a sheet with the details of the
  *    selected card (the dashboard when nothing is selected). The program settings are in the side menu.
- *  - cashier: opened only by the start-cashier button of the home screen; back returns to the home screen.
+ *  - cashier: opened only by the start-cashier button of the home screen; its back button is a bar at the bottom.
  * What each item needs is unchanged: the dashboard needs VIEW_PROFIT, products need EDIT_PRICES (so only the admin changes prices),
  * and MoreRoute still checks the permission of every route.
  */
@@ -101,81 +109,93 @@ private fun MainApp() {
     BackHandler(enabled = screen == SCREEN_HOME && menuOpen) { menuOpen = false }
     BackHandler(enabled = screen == SCREEN_HOME && !menuOpen && shownId != null) { selectedId = null }
 
-    Box(Modifier.fillMaxSize()) {
-        Scaffold { padding ->
-            if (screen == SCREEN_CASHIER) {
-                Box(Modifier.fillMaxSize().padding(padding)) {
-                    CashierRoute(
-                        // Registering an unknown barcode creates a product with prices: only users who may edit products can do it.
-                        onRegisterBarcode = { code -> if (canEditProducts) { pendingBarcode = code; open(HomeCatalog.PRODUCTS) } },
-                        modifier = Modifier.fillMaxSize(),
-                    )
-                    Surface(
-                        onClick = { screen = SCREEN_HOME },
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
-                        shadowElevation = 4.dp,
-                        modifier = Modifier.align(Alignment.TopCenter).padding(top = 6.dp).size(40.dp),
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                Icons.Filled.Dashboard,
-                                contentDescription = stringResource(R.string.home_back_to_home),
-                                tint = MaterialTheme.colorScheme.primary,
-                            )
-                        }
-                    }
-                }
-            } else {
-                HomeScreen(
-                    cards = stripItems,
-                    selectedId = shownId,
-                    onSelect = ::select,
-                    onStartCashier = { screen = SCREEN_CASHIER },
-                    onOpenMenu = { menuOpen = true },
-                    modifier = Modifier.padding(padding),
-                ) {
-                    when {
-                        shownId == null -> if (canSeeProfit) {
-                            DashboardRoute(
-                                actions = DashboardActions(
-                                    onCashier = { screen = SCREEN_CASHIER },
-                                    onAddProduct = { open(HomeCatalog.PRODUCTS) },
-                                    onStockCount = { open(MoreTargets.COUNTS) },
-                                    onExpenses = { open(MoreTargets.EXPENSES) },
-                                    onReports = { open(MoreTargets.REPORTS) },
-                                ),
+    // One explicit surface under everything, so the text color of every screen always matches the page behind it.
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background,
+        contentColor = MaterialTheme.colorScheme.onBackground,
+    ) {
+        Box(Modifier.fillMaxSize()) {
+            Scaffold(
+                containerColor = MaterialTheme.colorScheme.background,
+                contentColor = MaterialTheme.colorScheme.onBackground,
+            ) { padding ->
+                if (screen == SCREEN_CASHIER) {
+                    Column(Modifier.fillMaxSize().padding(padding)) {
+                        Box(Modifier.weight(1f).fillMaxWidth()) {
+                            CashierRoute(
+                                // Registering an unknown barcode creates a product with prices: only users who may edit products can do it.
+                                onRegisterBarcode = { code -> if (canEditProducts) { pendingBarcode = code; open(HomeCatalog.PRODUCTS) } },
                                 modifier = Modifier.fillMaxSize(),
                             )
-                        } else {
-                            HomeHint()
                         }
-                        shownId == HomeCatalog.PRODUCTS -> ProductsRoute(
-                            modifier = Modifier.fillMaxSize(),
-                            newProductBarcode = pendingBarcode,
-                            onBarcodeConsumed = { pendingBarcode = null },
-                        )
-                        else -> MoreRoute(
-                            modifier = Modifier.fillMaxSize(),
-                            startRoute = moreTarget,
-                            onStartConsumed = { moreTarget = null },
-                            embedded = true,
-                            onHome = { selectedId = null },
-                        )
+                        // Back to the dashboard: at the bottom, never on the camera.
+                        Surface(tonalElevation = 3.dp, shadowElevation = 6.dp) {
+                            FilledTonalButton(
+                                onClick = { screen = SCREEN_HOME },
+                                shape = RoundedCornerShape(16.dp),
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp).height(48.dp),
+                            ) {
+                                Icon(Icons.Filled.Dashboard, contentDescription = null, modifier = Modifier.size(22.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text(stringResource(R.string.home_back_to_home))
+                            }
+                        }
+                    }
+                } else {
+                    HomeScreen(
+                        cards = stripItems,
+                        selectedId = shownId,
+                        onSelect = ::select,
+                        onStartCashier = { screen = SCREEN_CASHIER },
+                        onOpenMenu = { menuOpen = true },
+                        modifier = Modifier.padding(padding),
+                    ) {
+                        Crossfade(targetState = shownId, animationSpec = tween(220), label = "details") { id ->
+                            when {
+                                id == null -> if (canSeeProfit) {
+                                    DashboardRoute(
+                                        actions = DashboardActions(
+                                            onCashier = { screen = SCREEN_CASHIER },
+                                            onAddProduct = { open(HomeCatalog.PRODUCTS) },
+                                            onStockCount = { open(MoreTargets.COUNTS) },
+                                            onExpenses = { open(MoreTargets.EXPENSES) },
+                                            onReports = { open(MoreTargets.REPORTS) },
+                                        ),
+                                        modifier = Modifier.fillMaxSize(),
+                                    )
+                                } else {
+                                    HomeHint()
+                                }
+                                id == HomeCatalog.PRODUCTS -> ProductsRoute(
+                                    modifier = Modifier.fillMaxSize(),
+                                    newProductBarcode = pendingBarcode,
+                                    onBarcodeConsumed = { pendingBarcode = null },
+                                )
+                                else -> MoreRoute(
+                                    modifier = Modifier.fillMaxSize(),
+                                    // A screen that is fading out must not react to the new selection.
+                                    startRoute = if (id == shownId) moreTarget else null,
+                                    onStartConsumed = { moreTarget = null },
+                                    embedded = true,
+                                    onHome = { if (selectedId == id) selectedId = null },
+                                )
+                            }
+                        }
                     }
                 }
             }
-        }
-        if (screen == SCREEN_HOME) {
-            HomeSideMenu(
-                open = menuOpen,
-                entries = menuItems,
-                selectedId = shownId,
-                onSelect = ::select,
-                onLanguage = { menuOpen = false; AppLanguage.switch(context) },
-                onLogout = { menuOpen = false; app.session.signOut() },
-                onClose = { menuOpen = false },
-            )
+            if (screen == SCREEN_HOME) {
+                HomeSideMenu(
+                    open = menuOpen,
+                    entries = menuItems,
+                    selectedId = shownId,
+                    onSelect = ::select,
+                    onLanguage = { menuOpen = false; AppLanguage.switch(context) },
+                    onLogout = { menuOpen = false; app.session.signOut() },
+                    onClose = { menuOpen = false },
+                )
+            }
         }
     }
 }

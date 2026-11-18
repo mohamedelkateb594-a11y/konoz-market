@@ -20,6 +20,8 @@
     <string name="hc_shop_desc">اسم المحل وبياناته</string>
     <string name="hc_backup_desc">نسخ احتياطي واستعادة</string>
     <string name="hc_printer_desc">الطابعة الحرارية</string>
+    <string name="hc_language_desc">تبديل لغة البرنامج</string>
+    <string name="hc_logout_desc">الخروج من هذا الحساب</string>
     <string name="cs_search_chip">ابحث عن المنتج</string>
     <string name="cs_search_close">إغلاق البحث</string>
     <string name="cart_col_qty">الكمية</string>

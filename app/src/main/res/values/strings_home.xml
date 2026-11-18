@@ -20,6 +20,8 @@
     <string name="hc_shop_desc">Shop name and details</string>
     <string name="hc_backup_desc">Backup and restore</string>
     <string name="hc_printer_desc">Thermal printer</string>
+    <string name="hc_language_desc">Switch the app language</string>
+    <string name="hc_logout_desc">Sign out of this account</string>
     <string name="cs_search_chip">Find product</string>
     <string name="cs_search_close">Close search</string>
     <string name="cart_col_qty">Qty</string>
