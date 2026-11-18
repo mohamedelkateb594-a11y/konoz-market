@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -40,6 +41,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.konoz.market.R
@@ -112,7 +114,7 @@ fun ProductDetailScreen(
                         icon = Icons.Rounded.Inventory2,
                         label = stringResource(R.string.pd_stock),
                         value = stringResource(R.string.stock_fmt, formatQty(p.currentQtyMilli), stringResource(unitLabelRes(p.unit))),
-                        valueColor = if (low) MaterialTheme.colorScheme.error else Color.Unspecified,
+                        valueColor = if (low) MaterialTheme.colorScheme.onErrorContainer else Color.Unspecified,
                         onClick = { onOpenSection(ProductDetailSection.STOCK) },
                     )
                 }
@@ -156,7 +158,7 @@ fun ProductDetailScreen(
                         icon = Icons.Rounded.Event,
                         label = stringResource(R.string.pd_expiry),
                         value = p.expiryDate?.let { formatExpiry(it) } ?: stringResource(R.string.pd_none),
-                        valueColor = if (expired) MaterialTheme.colorScheme.error else Color.Unspecified,
+                        valueColor = if (expired) MaterialTheme.colorScheme.onErrorContainer else Color.Unspecified,
                     )
                 }
             }
@@ -224,14 +226,14 @@ fun ProductSectionScreen(
     }
 }
 
-private fun androidx.compose.foundation.lazy.LazyListScope.pricingItems(p: Product) {
+private fun LazyListScope.pricingItems(p: Product) {
     val profit = p.salePrice - p.costPrice
     item { PropertyCard(CardKind.MONEY, Icons.Rounded.Payments, stringResource(R.string.pd_sale_price), Money.format(p.salePrice)) }
     item { PropertyCard(CardKind.NEUTRAL, Icons.Rounded.Payments, stringResource(R.string.pd_cost), Money.format(p.costPrice)) }
     item {
         PropertyCard(
             CardKind.MONEY, Icons.Rounded.Sell, stringResource(R.string.pd_profit), Money.format(profit),
-            valueColor = if (profit < 0) MaterialTheme.colorScheme.error else Color.Unspecified,
+            valueColor = if (profit < 0) MaterialTheme.colorScheme.onErrorContainer else Color.Unspecified,
         )
     }
     if (p.salePrice > 0) {
@@ -242,17 +244,18 @@ private fun androidx.compose.foundation.lazy.LazyListScope.pricingItems(p: Produ
     }
 }
 
-private fun androidx.compose.foundation.lazy.LazyListScope.stockItems(p: Product) {
+private fun LazyListScope.stockItems(p: Product) {
     val low = isLow(p)
-    val unit = stringResource(unitLabelRes(p.unit))
     item {
+        val unit = stringResource(unitLabelRes(p.unit))
         PropertyCard(
             if (low) CardKind.ALERT else CardKind.STOCK, Icons.Rounded.Inventory2, stringResource(R.string.pd_current_qty),
             stringResource(R.string.stock_fmt, formatQty(p.currentQtyMilli), unit),
-            valueColor = if (low) MaterialTheme.colorScheme.error else Color.Unspecified,
+            valueColor = if (low) MaterialTheme.colorScheme.onErrorContainer else Color.Unspecified,
         )
     }
     item {
+        val unit = stringResource(unitLabelRes(p.unit))
         PropertyCard(
             CardKind.NEUTRAL, Icons.Rounded.Inventory2, stringResource(R.string.pd_low_threshold),
             stringResource(R.string.stock_fmt, formatQty(p.lowStockThresholdMilli), unit),
@@ -313,7 +316,7 @@ private fun DetailTopBar(
             style = MaterialTheme.typography.titleLarge,
             modifier = Modifier.weight(1f),
             maxLines = 1,
-            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+            overflow = TextOverflow.Ellipsis,
         )
         if (actionIcon != null) {
             IconButton(onClick = onAction) { Icon(actionIcon, contentDescription = actionDescription, tint = MaterialTheme.colorScheme.primary) }
@@ -364,7 +367,10 @@ private fun GradientCard(kind: CardKind, onClick: (() -> Unit)?, content: @Compo
     }
 }
 
-/** Icon badge + label + value. A chevron shows when the card opens a screen. */
+/**
+ * Icon badge + label + value. A chevron shows when the card opens a screen.
+ * The label is onSurface at 85% (about 6:1 on the darkest mint), because onSurfaceVariant is only 3.5:1 on mint.
+ */
 @Composable
 private fun PropertyCard(
     kind: CardKind,
@@ -374,11 +380,12 @@ private fun PropertyCard(
     valueColor: Color = Color.Unspecified,
     onClick: (() -> Unit)? = null,
 ) {
+    val soft = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.85f)
     GradientCard(kind, onClick) {
         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
             KonozIconBadge(icon)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(label, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(label, style = MaterialTheme.typography.bodyMedium, color = soft)
                 Text(
                     value,
                     style = MaterialTheme.typography.titleMedium,
@@ -387,7 +394,7 @@ private fun PropertyCard(
                 )
             }
             if (onClick != null) {
-                Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null, tint = soft)
             }
         }
     }
