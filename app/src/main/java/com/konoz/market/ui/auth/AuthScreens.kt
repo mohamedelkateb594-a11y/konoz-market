@@ -12,12 +12,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
@@ -34,24 +36,21 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.rotate
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.konoz.market.R
-import com.konoz.market.ui.theme.Brand
 import com.konoz.market.ui.theme.KonozTheme_
 
-// Login look (from the owner's reference): light header with an illustration and rounded bottom corners, the app name in bold
-// accent color, pill-shaped fields, an accent pill button, a pale strip at the bottom.
+// Login look: simple, modern, centered. A soft decorative shape in the corners, the brand mark (a shopping bag) with the
+// program name "تاجر" as a heavy wordmark, then two pill fields and one accent pill button.
 // Every color comes from the theme tokens (KonozTheme_.colors / MaterialTheme.colorScheme), so it follows light and dark mode.
 
 @Composable
@@ -59,10 +58,8 @@ fun LoginScreen(vm: AuthViewModel, modifier: Modifier = Modifier) {
     val ui by vm.login.collectAsStateWithLifecycle()
     val tokens = KonozTheme_.colors
     val scheme = MaterialTheme.colorScheme
-    val pageColor = scheme.background
-    val headerColor = tokens.signInHeader
     val accent = tokens.signInAccent
-    val headerHeight = (LocalConfiguration.current.screenHeightDp * 0.38f).dp
+    val soft = tokens.signInHeader
 
     val fieldColors = OutlinedTextFieldDefaults.colors(
         focusedBorderColor = accent,
@@ -73,32 +70,43 @@ fun LoginScreen(vm: AuthViewModel, modifier: Modifier = Modifier) {
     )
     val pill = RoundedCornerShape(50)
 
-    Column(modifier.fillMaxSize().background(pageColor).imePadding().verticalScroll(rememberScrollState())) {
-        // ---- header: illustration on a light card with rounded bottom corners ----
-        Box(
-            Modifier.fillMaxWidth().height(headerHeight)
-                .clip(RoundedCornerShape(bottomStart = 44.dp, bottomEnd = 44.dp))
-                .background(headerColor),
-        ) {
-            Canvas(Modifier.fillMaxSize().statusBarsPadding().padding(top = 8.dp, bottom = 12.dp)) { drawLoginIllustration(accent) }
+    Box(modifier.fillMaxSize().background(scheme.background).imePadding()) {
+        // soft decorative circles, top end and bottom start
+        Canvas(Modifier.fillMaxSize()) {
+            val r = size.minDimension * 0.62f
+            drawCircle(soft, r, Offset(size.width, 0f))
+            drawCircle(soft, r * 0.7f, Offset(0f, size.height))
         }
 
-        // ---- title and form ----
         Column(
-            Modifier.fillMaxWidth().padding(horizontal = 36.dp).padding(top = 28.dp),
+            Modifier.align(Alignment.Center).fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .statusBarsPadding().navigationBarsPadding()
+                .padding(horizontal = 36.dp, vertical = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            BrandMark(accent = accent, onAccent = tokens.onSignInAccent, soft = soft)
+            Spacer(Modifier.height(4.dp))
             Text(
-                stringResource(R.string.app_name),
-                style = MaterialTheme.typography.headlineMedium.copy(fontSize = 34.sp, fontWeight = FontWeight.ExtraBold),
+                stringResource(R.string.login_brand_name),
+                style = MaterialTheme.typography.displayMedium.copy(fontSize = 52.sp, fontWeight = FontWeight.Black),
                 color = accent,
+                textAlign = TextAlign.Center,
             )
+            Text(
+                stringResource(R.string.login_brand_latin),
+                style = MaterialTheme.typography.labelLarge.copy(letterSpacing = 8.sp, fontWeight = FontWeight.Bold),
+                color = scheme.onSurfaceVariant,
+            )
+            Box(Modifier.width(36.dp).height(4.dp).clip(RoundedCornerShape(50)).background(accent))
             Text(
                 stringResource(R.string.auth_subtitle),
                 style = MaterialTheme.typography.bodyMedium,
                 color = scheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
             )
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(12.dp))
             OutlinedTextField(
                 value = ui.username, onValueChange = vm::onUsername, singleLine = true,
                 placeholder = { Text(stringResource(R.string.auth_username)) },
@@ -115,88 +123,34 @@ fun LoginScreen(vm: AuthViewModel, modifier: Modifier = Modifier) {
                 keyboardActions = KeyboardActions(onDone = { if (!ui.busy) vm.login() }),
                 modifier = Modifier.fillMaxWidth(),
             )
-            ui.error?.let { Text(errorText(it, ui.attemptsLeft, ui.lockedMinutes), color = scheme.error) }
+            ui.error?.let { Text(errorText(it, ui.attemptsLeft, ui.lockedMinutes), color = scheme.error, textAlign = TextAlign.Center) }
             Button(
                 onClick = vm::login,
                 enabled = !ui.busy,
                 shape = pill,
                 colors = ButtonDefaults.buttonColors(containerColor = accent, contentColor = tokens.onSignInAccent),
-                modifier = Modifier.fillMaxWidth().height(50.dp),
+                modifier = Modifier.fillMaxWidth().height(52.dp),
             ) { Text(stringResource(R.string.auth_login), style = MaterialTheme.typography.titleMedium) }
         }
-
-        // ---- pale strip at the bottom, like the reference ----
-        Spacer(Modifier.height(36.dp))
-        Box(Modifier.fillMaxWidth().height(28.dp).background(headerColor))
-        Box(Modifier.fillMaxWidth().navigationBarsPadding().background(headerColor))
     }
 }
 
-/** A phone with a logo, two password lines and a button, a person pointing at it, and a leaf. Drawn from shapes, no image file. */
-private fun DrawScope.drawLoginIllustration(accent: Color) {
-    val h = size.height
-    val phoneH = h * 0.92f
-    val phoneW = phoneH * 0.46f
-    val cx = size.width / 2f
-    val left = cx - phoneW * 0.95f
-    val top = (h - phoneH) / 2f
-    val grey = Brand.IllustrationGrey
-    val faint = Brand.IllustrationFaint
-    val ink = Brand.IllustrationInk
-    val skin = Brand.IllustrationSkin
-
-    // leaf behind the phone
-    rotate(-28f, pivot = Offset(left - phoneW * 0.08f, top + phoneH * 0.86f)) {
-        drawOval(Brand.IllustrationLeaf, Offset(left - phoneW * 0.34f, top + phoneH * 0.68f), Size(phoneW * 0.22f, phoneH * 0.28f))
+/** The brand mark: a rounded accent square with a shopping bag (handle, body, a coin on it). Drawn from shapes, no image file. */
+@Composable
+private fun BrandMark(accent: Color, onAccent: Color, soft: Color, modifier: Modifier = Modifier) {
+    Box(modifier.size(92.dp).clip(RoundedCornerShape(30.dp)).background(accent), contentAlignment = Alignment.Center) {
+        Canvas(Modifier.size(52.dp)) {
+            val w = size.width
+            val h = size.height
+            drawArc(
+                onAccent, 180f, 180f, false,
+                Offset(w * 0.27f, h * 0.06f), Size(w * 0.46f, h * 0.46f),
+                style = Stroke(width = w * 0.075f, cap = StrokeCap.Round),
+            )
+            drawRoundRect(onAccent, Offset(w * 0.08f, h * 0.30f), Size(w * 0.84f, h * 0.66f), CornerRadius(w * 0.16f))
+            drawCircle(soft, w * 0.13f, Offset(w * 0.5f, h * 0.63f))
+        }
     }
-    rotate(18f, pivot = Offset(left - phoneW * 0.02f, top + phoneH * 0.86f)) {
-        drawOval(Brand.IllustrationLeafLight, Offset(left - phoneW * 0.2f, top + phoneH * 0.7f), Size(phoneW * 0.2f, phoneH * 0.26f))
-    }
-
-    // phone body and notch
-    drawRoundRect(Brand.IllustrationWhite, Offset(left, top), Size(phoneW, phoneH), CornerRadius(phoneW * 0.14f))
-    drawRoundRect(faint, Offset(left, top), Size(phoneW, phoneH), CornerRadius(phoneW * 0.14f), style = Stroke(width = 3f))
-    drawRoundRect(faint, Offset(left + phoneW * 0.32f, top), Size(phoneW * 0.36f, phoneH * 0.04f), CornerRadius(phoneW * 0.04f))
-
-    // logo square with three circles
-    val logoSide = phoneW * 0.46f
-    val logoLeft = left + (phoneW - logoSide) / 2f
-    val logoTop = top + phoneH * 0.15f
-    drawRect(Brand.IllustrationWhite, Offset(logoLeft, logoTop), Size(logoSide, logoSide))
-    drawRect(grey, Offset(logoLeft, logoTop), Size(logoSide, logoSide), style = Stroke(width = 2f))
-    val r = logoSide * 0.15f
-    val cy = logoTop + logoSide / 2f
-    drawCircle(grey, r, Offset(logoLeft + logoSide * 0.28f, cy))
-    drawCircle(Brand.IllustrationGreyLight, r, Offset(logoLeft + logoSide * 0.42f, cy))
-    drawCircle(accent, r, Offset(logoLeft + logoSide * 0.62f, cy))
-
-    // two password lines with dots
-    val lineLeft = left + phoneW * 0.14f
-    val lineRight = left + phoneW * 0.86f
-    for (i in 0..1) {
-        val y = top + phoneH * (0.5f + i * 0.1f)
-        for (d in 0..2) drawCircle(accent, 3.2f, Offset(lineLeft + 6f + d * 11f, y - 7f))
-        drawLine(faint, Offset(lineLeft, y), Offset(lineRight, y), strokeWidth = 2f, cap = StrokeCap.Round)
-    }
-    drawRoundRect(accent, Offset(lineRight - phoneW * 0.24f, top + phoneH * 0.72f), Size(phoneW * 0.24f, phoneH * 0.035f), CornerRadius(3f))
-
-    // the person, to the right of the phone
-    val px = left + phoneW + phoneW * 0.5f
-    val footY = top + phoneH * 0.96f
-    val legH = phoneH * 0.3f
-    val legW = phoneW * 0.09f
-    val bodyH = phoneH * 0.26f
-    val bodyW = phoneW * 0.26f
-    val bodyTop = footY - legH - bodyH
-    drawRoundRect(ink, Offset(px - legW * 1.1f, footY - legH), Size(legW, legH), CornerRadius(legW * 0.4f))
-    drawRoundRect(ink, Offset(px + legW * 0.1f, footY - legH), Size(legW, legH), CornerRadius(legW * 0.4f))
-    drawRoundRect(ink, Offset(px - legW * 1.3f, footY - legW * 0.3f), Size(legW * 1.5f, legW * 0.45f), CornerRadius(4f))
-    drawRoundRect(ink, Offset(px - legW * 0.1f, footY - legW * 0.3f), Size(legW * 1.5f, legW * 0.45f), CornerRadius(4f))
-    drawRoundRect(accent, Offset(px - bodyW / 2f, bodyTop), Size(bodyW, bodyH), CornerRadius(bodyW * 0.3f))
-    drawLine(skin, Offset(px - bodyW * 0.45f, bodyTop + bodyH * 0.25f), Offset(left + phoneW * 1.04f, bodyTop + bodyH * 0.18f), strokeWidth = 5f, cap = StrokeCap.Round)
-    val headR = bodyW * 0.3f
-    drawCircle(skin, headR, Offset(px, bodyTop - headR * 1.15f))
-    drawArc(ink, 180f, 180f, true, Offset(px - headR, bodyTop - headR * 2.25f), Size(headR * 2f, headR * 1.5f))
 }
 
 @Composable
