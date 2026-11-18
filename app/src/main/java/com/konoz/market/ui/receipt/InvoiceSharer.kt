@@ -45,9 +45,12 @@ class InvoiceSharer(private val context: Context, private val renderer: InvoiceR
         return file
     }
 
-    /** Short text sent with the file. */
-    fun caption(data: InvoiceData): String =
-        context.getString(R.string.inv_caption_fmt, context.getString(R.string.inv_shop_name), data.number, Money.format(data.total))
+    /** Short text sent with the file; greets the customer by name when the invoice has one. */
+    fun caption(data: InvoiceData): String {
+        val base = context.getString(R.string.inv_caption_fmt, context.getString(R.string.inv_shop_name), data.number, Money.format(data.total))
+        val name = data.customerName ?: return base
+        return context.getString(R.string.inv_caption_customer_fmt, name, base)
+    }
 
     /**
      * [whatsappNumber] = digits with country code (see PhoneNumbers.toWhatsApp). With it, WhatsApp (or WhatsApp Business)

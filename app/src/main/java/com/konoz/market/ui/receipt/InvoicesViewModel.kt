@@ -67,7 +67,7 @@ class InvoicesViewModel(private val app: KonozApp) : ViewModel() {
                         it.copy(
                             selected = data,
                             selectedId = invoiceId,
-                            phone = data.customerPhone?.let(CustomerService::displayPhone).orEmpty(),
+                            phone = data.customerPhone?.let { stored -> CustomerService.displayPhone(stored) }.orEmpty(),
                             name = data.customerName.orEmpty(),
                             message = null,
                         )
