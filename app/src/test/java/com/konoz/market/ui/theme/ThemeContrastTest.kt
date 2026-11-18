@@ -34,8 +34,12 @@ class ThemeContrastTest {
     @Test fun light_text_pairs_reach_AA() {
         text("text on background", Brand.TextMain, Brand.BackgroundLight)
         text("text on surface", Brand.TextMain, Brand.SurfaceLight)
+        text("text on surface variant", Brand.TextMain, Brand.SurfaceVariantLight)
+        text("text on card fill", Brand.TextMain, Brand.ContainerHighestLight)
         text("secondary text on background", Brand.TextSecondary, Brand.BackgroundLight)
         text("secondary text on surface", Brand.TextSecondary, Brand.SurfaceLight)
+        text("secondary text on surface variant", Brand.TextSecondary, Brand.SurfaceVariantLight)
+        text("secondary text on card fill", Brand.TextSecondary, Brand.ContainerHighestLight)
         text("secondary text on accent", Brand.TextSecondary, Brand.Accent)
         text("on primary", Brand.OnBrand, Brand.Primary)
         text("on secondary", Brand.OnBrand, Brand.Secondary)
@@ -56,9 +60,11 @@ class ThemeContrastTest {
         text("text on background", Brand.TextMainDark, Brand.BackgroundDark)
         text("text on surface", Brand.TextMainDark, Brand.SurfaceDark)
         text("text on surface variant", Brand.TextMainDark, Brand.SurfaceVariantDark)
+        text("text on card fill", Brand.TextMainDark, Brand.ContainerHighestDark)
         text("secondary text on background", Brand.TextSecondaryDark, Brand.BackgroundDark)
         text("secondary text on surface", Brand.TextSecondaryDark, Brand.SurfaceDark)
         text("secondary text on surface variant", Brand.TextSecondaryDark, Brand.SurfaceVariantDark)
+        text("secondary text on card fill", Brand.TextSecondaryDark, Brand.ContainerHighestDark)
         text("on primary", Brand.OnPrimaryDark, Brand.PrimaryDarkMode)
         text("on secondary", Brand.OnSecondaryDark, Brand.SecondaryDarkMode)
         text("primary container", Brand.Accent, Brand.PrimaryContainerDark)
@@ -81,6 +87,17 @@ class ThemeContrastTest {
         graphic("dark outline on surface", Brand.OutlineDark, Brand.SurfaceDark)
         graphic("dark outline on background", Brand.OutlineDark, Brand.BackgroundDark)
         graphic("dark outline on surface variant", Brand.OutlineDark, Brand.SurfaceVariantDark)
+    }
+
+    /** The home cards are always light with dark navy text, whatever the app mode: every gradient end must keep both texts readable. */
+    @Test fun home_cards_are_readable() {
+        for ((i, s) in ReportCardTokens.styles.withIndex()) {
+            text("card $i title on gradient end", ReportCardTokens.Title, s.gradientEnd)
+            text("card $i description on gradient end", ReportCardTokens.Description, s.gradientEnd)
+            text("card $i title on gradient start", ReportCardTokens.Title, s.gradientStart)
+            text("card $i description on gradient start", ReportCardTokens.Description, s.gradientStart)
+            graphic("card $i icon on gradient end", s.icon, s.gradientEnd)
+        }
     }
 
     @Test fun backgrounds_are_never_pure_white_or_pure_black() {

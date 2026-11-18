@@ -65,6 +65,8 @@ private val DarkKonozColors = KonozColors(
 
 val LocalKonozColors = staticCompositionLocalOf { LightKonozColors }
 
+// Every role is set on purpose, including the surface containers (Card, chips, sheets read them): the Material defaults for the
+// ones left out are a purple-gray that does not belong to the palette.
 private val LightScheme = lightColorScheme(
     primary = Brand.Primary,
     onPrimary = Brand.OnBrand,
@@ -82,9 +84,16 @@ private val LightScheme = lightColorScheme(
     onBackground = Brand.TextMain,
     surface = Brand.SurfaceLight,
     onSurface = Brand.TextMain,
-    surfaceVariant = Brand.BackgroundLight,
+    surfaceVariant = Brand.SurfaceVariantLight,
     onSurfaceVariant = Brand.TextSecondary,
     surfaceTint = Brand.Primary,
+    surfaceContainerLowest = Brand.ContainerLowestLight,
+    surfaceContainerLow = Brand.ContainerLowLight,
+    surfaceContainer = Brand.ContainerLight,
+    surfaceContainerHigh = Brand.ContainerHighLight,
+    surfaceContainerHighest = Brand.ContainerHighestLight,
+    surfaceBright = Brand.SurfaceLight,
+    surfaceDim = Brand.ContainerLight,
     error = Brand.Error,
     onError = Brand.OnBrand,
     errorContainer = Brand.ErrorContainerLight,
@@ -113,6 +122,13 @@ private val DarkScheme = darkColorScheme(
     surfaceVariant = Brand.SurfaceVariantDark,
     onSurfaceVariant = Brand.TextSecondaryDark,
     surfaceTint = Brand.PrimaryDarkMode,
+    surfaceContainerLowest = Brand.ContainerLowestDark,
+    surfaceContainerLow = Brand.ContainerLowDark,
+    surfaceContainer = Brand.ContainerDark,
+    surfaceContainerHigh = Brand.ContainerHighDark,
+    surfaceContainerHighest = Brand.ContainerHighestDark,
+    surfaceBright = Brand.ContainerHighDark,
+    surfaceDim = Brand.BackgroundDark,
     error = Brand.DangerDarkMode,
     onError = Brand.BackgroundDark,
     errorContainer = Brand.ErrorContainerDark,
