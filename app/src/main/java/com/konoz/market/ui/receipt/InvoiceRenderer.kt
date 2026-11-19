@@ -167,6 +167,7 @@ class InvoiceRenderer(private val context: Context, private val money: (Long) ->
             y += 4f
             row(context.getString(R.string.inv_number_fmt, d.number), dateFormat.format(Date(d.dateMillis)), numberPaint, mutedSmall)
             d.cashier?.let { row(context.getString(R.string.inv_cashier), it, mutedSmall, body) }
+            d.customerName?.let { row(context.getString(R.string.inv_customer), it, mutedSmall, body) }
         }
         y += 8f
 
