@@ -20,8 +20,13 @@ import com.konoz.market.core.Money
 import com.konoz.market.ui.receipt.InvoiceShareDialog
 import com.konoz.market.ui.receipt.InvoicesViewModel
 
+/** [onOpenShifts] is null when the signed-in user may not operate shifts: the shifts button is then not shown. */
 @Composable
-fun CashierRoute(onRegisterBarcode: (String) -> Unit, modifier: Modifier = Modifier) {
+fun CashierRoute(
+    onRegisterBarcode: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    onOpenShifts: (() -> Unit)? = null,
+) {
     // View models outlive a logout (they belong to the activity), and CashierSession reads the signed-in user once when it starts.
     // Keying by user id gives each signed-in user a fresh session, so a cashier never inherits the admin's price-override right.
     val app = LocalContext.current.applicationContext as KonozApp
@@ -48,7 +53,7 @@ fun CashierRoute(onRegisterBarcode: (String) -> Unit, modifier: Modifier = Modif
         }
     }
 
-    CashierScreen(vm = vm, onRegisterBarcode = onRegisterBarcode, modifier = modifier)
+    CashierScreen(vm = vm, onRegisterBarcode = onRegisterBarcode, onOpenShifts = onOpenShifts, modifier = modifier)
     InvoiceShareDialog(
         ui = shareUi,
         vm = shareVm,

@@ -9,6 +9,7 @@ import com.konoz.market.KonozApp
 import com.konoz.market.core.Percent
 import com.konoz.market.data.entity.Category
 import com.konoz.market.data.entity.Product
+import com.konoz.market.data.repo.CsvLanguage
 import com.konoz.market.data.repo.ImportResult
 import com.konoz.market.data.repo.ProductCsvService
 import com.konoz.market.data.repo.ProductRepository
@@ -92,7 +93,8 @@ class ProductsViewModel(
         }
     }
 
-    suspend fun buildCsv(): String = csv.exportCsv()
+    /** The products as CSV text, with Arabic or English headers and unit names. */
+    suspend fun buildCsv(language: CsvLanguage = CsvLanguage.AR): String = csv.exportCsv(language)
 
     fun importCsv(text: String) {
         viewModelScope.launch {

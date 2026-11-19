@@ -27,9 +27,11 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -77,7 +79,9 @@ import java.util.Locale
 
 /**
  * Layout, top to bottom: the camera (exactly the top quarter of the screen, clipped) with the product-search lens on it,
- * the invoice (a fixed header row, then the items as small pill rows), then the bottom panel (total, pay).
+ * the invoice (a fixed header row, then the items as small pill rows), then the bottom panel (total, shifts, pay).
+ * Nothing but the search lens and the camera's close button is drawn over the camera. The shifts button ([onOpenShifts], null when
+ * the user may not operate shifts) sits in the bottom panel beside the pay button.
  * The search lens expands into a field with a drop-down list of products. The receipt after payment is shown by [CashierRoute].
  */
 @Composable
@@ -85,6 +89,7 @@ fun CashierScreen(
     vm: CashierViewModel,
     onRegisterBarcode: (String) -> Unit,
     modifier: Modifier = Modifier,
+    onOpenShifts: (() -> Unit)? = null,
 ) {
     val cart by vm.cart.collectAsStateWithLifecycle()
     val held by vm.held.collectAsStateWithLifecycle()
@@ -212,7 +217,7 @@ fun CashierScreen(
                 }
             }
 
-            // ---- bottom panel: total, pay ----
+            // ---- bottom panel: total, shifts, pay ----
             Surface(tonalElevation = 3.dp, shadowElevation = 6.dp) {
                 Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     if (totals != null) {
@@ -224,19 +229,32 @@ fun CashierScreen(
                             Text(stringResource(R.string.tax_fmt, Money.format(totals.taxAmount)), style = MaterialTheme.typography.bodyMedium)
                         }
                     }
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Column(Modifier.weight(1f)) {
                             Text(stringResource(R.string.total_label), style = MaterialTheme.typography.titleSmall)
                             Text(
                                 Money.format(totals?.total ?: 0L),
                                 style = MaterialTheme.typography.headlineMedium,
                                 color = MaterialTheme.colorScheme.primary,
+                                maxLines = 1,
                             )
+                        }
+                        // Opens the shifts (open or close the daily session, cash count); back returns to the cashier.
+                        if (onOpenShifts != null) {
+                            FilledTonalButton(
+                                onClick = onOpenShifts,
+                                modifier = Modifier.weight(0.9f).height(56.dp),
+                                contentPadding = PaddingValues(horizontal = 8.dp),
+                            ) {
+                                Icon(Icons.Rounded.Schedule, contentDescription = null, modifier = Modifier.size(20.dp))
+                                Spacer(Modifier.width(4.dp))
+                                Text(stringResource(R.string.menu_shifts), style = MaterialTheme.typography.labelLarge, maxLines = 1)
+                            }
                         }
                         Button(
                             onClick = { showPay = true },
                             enabled = !cart.isEmpty,
-                            modifier = Modifier.weight(1f).height(56.dp),
+                            modifier = Modifier.weight(1.1f).height(56.dp),
                         ) { Text(stringResource(R.string.pay), style = MaterialTheme.typography.titleMedium) }
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

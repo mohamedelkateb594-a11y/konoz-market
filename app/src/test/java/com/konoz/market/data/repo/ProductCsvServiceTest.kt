@@ -51,12 +51,12 @@ class ProductCsvServiceTest {
         )
     }
 
-    @Test fun export_has_the_header_and_one_row_per_product() = runBlocking {
+    @Test fun export_has_the_arabic_header_and_one_row_per_product() = runBlocking {
         seedMilk()
         val rows = Csv.parse(csv.exportCsv())
-        assertEquals(ProductCsvService.HEADERS, rows[0])
+        assertEquals(ProductCsvService.EXPORT_HEADERS, rows[0])
         assertEquals(
-            listOf("Milk", "M1", "Dairy", "PIECE", "10.00", "15.00", "0", "", "111|CARTON*12", "5", "", "1"),
+            listOf("Milk", "M1", "Dairy", "قطعة", "10.00", "15.00", "0", "", "111|CARTON*12", "5", "", "1"),
             rows[1],
         )
         assertEquals(2, rows.size)
@@ -84,6 +84,20 @@ class ProductCsvServiceTest {
         } finally {
             db2.close()
         }
+    }
+
+    @Test fun arabic_headers_and_arabic_units_are_accepted() = runBlocking {
+        val text = "الاسم,الكود,التصنيف,الوحدة,سعر الشراء,سعر البيع,الباركود,الكمية,مفعل\n" +
+            "أرز مصري,R1,بقالة,كيلو,30,35,6221111111111,10,نعم\n"
+        val result = csv.importCsv(text, null)
+        assertEquals(emptyList<ImportError>(), result.errors)
+        assertEquals(1, result.created)
+        val p = db.products().findByInternalCode("R1")!!
+        assertEquals("أرز مصري", p.name)
+        assertEquals(UnitType.KG, p.unit)
+        assertEquals(3500L, p.salePrice)
+        assertEquals(10_000L, p.currentQtyMilli)
+        assertEquals(true, p.isActive)
     }
 
     @Test fun importing_an_existing_product_updates_it_but_never_touches_its_stock() = runBlocking {

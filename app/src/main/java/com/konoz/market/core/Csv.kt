@@ -1,13 +1,31 @@
 package com.konoz.market.core
 
+import java.nio.ByteBuffer
+import java.nio.charset.CharacterCodingException
+import java.nio.charset.Charset
+import java.nio.charset.CodingErrorAction
+
 /**
  * Minimal RFC 4180 CSV reader/writer.
+ *  - decode: bytes of a file to text. UTF-8 first; a file that is not valid UTF-8 (Excel's plain "CSV (Comma delimited)" in an
+ *    Arabic Windows is Windows-1256) is read as Windows-1256, so Arabic names are not turned into question marks.
  *  - parse: strips a UTF-8 BOM, auto-detects the delimiter (comma, semicolon or tab; Excel in Arabic locales
  *    saves with semicolons), supports quoted fields containing delimiters, quotes and line breaks.
  *  - write: UTF-8 BOM + CRLF so Excel opens Arabic text correctly.
  */
 object Csv {
     private const val BOM = "\uFEFF"
+
+    fun decode(bytes: ByteArray): String {
+        val strictUtf8 = Charsets.UTF_8.newDecoder()
+            .onMalformedInput(CodingErrorAction.REPORT)
+            .onUnmappableCharacter(CodingErrorAction.REPORT)
+        return try {
+            strictUtf8.decode(ByteBuffer.wrap(bytes)).toString()
+        } catch (e: CharacterCodingException) {
+            String(bytes, Charset.forName("windows-1256"))
+        }
+    }
 
     fun parse(input: String): List<List<String>> {
         val text = input.removePrefix(BOM)

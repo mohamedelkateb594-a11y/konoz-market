@@ -4,25 +4,16 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Dashboard
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.konoz.market.KonozApp
@@ -50,6 +41,7 @@ import com.konoz.market.ui.theme.ThemePreference
 
 private const val SCREEN_HOME = "home"
 private const val SCREEN_CASHIER = "cashier"
+private const val SCREEN_PAGE = "page"
 
 /** Login first; the temporary admin PIN must be replaced; then the app. */
 @Composable
@@ -70,10 +62,14 @@ private fun themeLabel(mode: ThemeMode): Int = when (mode) {
 }
 
 /**
- * Two screens, no bottom bar:
+ * Three screens, no bottom bar:
  *  - home: the header, the swipeable cards (products and every former More item), and under them the details of the
  *    selected card (the dashboard when nothing is selected). The program settings are in the side menu.
- *  - cashier: opened only by the start-cashier button of the home screen; back returns to the home screen.
+ *  - cashier: opened only by the start-cashier button of the home screen; the phone's back button returns to the home screen
+ *    (there is no on-screen button over the camera). The shifts button sits in the bottom panel beside the pay button and opens
+ *    the shifts (the daily cash session) as a separate page, then returns to the cashier.
+ *  - page: a separate full screen for one program setting (users, shop data, backup, printer) or for the shifts opened from
+ *    the cashier. Back returns to where it was opened from (home or cashier).
  * What each item needs is unchanged: the dashboard needs VIEW_PROFIT, products need EDIT_PRICES (so only the admin changes prices),
  * and MoreRoute still checks the permission of every route.
  */
@@ -86,12 +82,16 @@ private fun MainApp() {
     fun allowed(permission: Permission?) = permission == null || user?.let { Permissions.has(it.role, permission) } == true
     val canSeeProfit = allowed(Permission.VIEW_PROFIT)
     val canEditProducts = allowed(Permission.EDIT_PRICES)
+    val canOperateShifts = allowed(Permission.OPERATE_SHIFTS)
 
     var screen by rememberSaveable { mutableStateOf(SCREEN_HOME) }
     var selectedId by rememberSaveable { mutableStateOf<String?>(null) }
     var moreTarget by rememberSaveable { mutableStateOf<String?>(null) }
     var pendingBarcode by rememberSaveable { mutableStateOf<String?>(null) }
     var menuOpen by remember { mutableStateOf(false) }
+    // The separate page: which More route it shows, and which screen (home or cashier) back returns to.
+    var pageRoute by rememberSaveable { mutableStateOf<String?>(null) }
+    var pageReturn by rememberSaveable { mutableStateOf(SCREEN_HOME) }
 
     val stripItems = remember(user) { HomeCatalog.strip.filter { allowed(it.permission) } }
     val menuItems = remember(user) { HomeCatalog.menu.filter { allowed(it.permission) } }
@@ -106,37 +106,39 @@ private fun MainApp() {
     }
     fun select(item: HomeItem) = open(item.id)
 
+    /** Opens a More route as its own full screen; back returns to [returnTo]. */
+    fun openPage(route: String, returnTo: String) {
+        pageRoute = route
+        pageReturn = returnTo
+        screen = SCREEN_PAGE
+        menuOpen = false
+    }
+
     BackHandler(enabled = screen == SCREEN_CASHIER) { screen = SCREEN_HOME }
     BackHandler(enabled = screen == SCREEN_HOME && menuOpen) { menuOpen = false }
     BackHandler(enabled = screen == SCREEN_HOME && !menuOpen && shownId != null) { selectedId = null }
 
     Box(Modifier.fillMaxSize()) {
-        Scaffold { padding ->
-            if (screen == SCREEN_CASHIER) {
-                Box(Modifier.fillMaxSize().padding(padding)) {
-                    CashierRoute(
-                        // Registering an unknown barcode creates a product with prices: only users who may edit products can do it.
-                        onRegisterBarcode = { code -> if (canEditProducts) { pendingBarcode = code; open(HomeCatalog.PRODUCTS) } },
-                        modifier = Modifier.fillMaxSize(),
+        Scaffold(containerColor = MaterialTheme.colorScheme.background) { padding ->
+            when (screen) {
+                SCREEN_CASHIER -> CashierRoute(
+                    // Registering an unknown barcode creates a product with prices: only users who may edit products can do it.
+                    onRegisterBarcode = { code -> if (canEditProducts) { pendingBarcode = code; open(HomeCatalog.PRODUCTS) } },
+                    // Opens the shifts (open or close the daily session, cash count) without leaving the cashier for good.
+                    onOpenShifts = if (canOperateShifts) ({ openPage(MoreTargets.SHIFTS, SCREEN_CASHIER) }) else null,
+                    modifier = Modifier.fillMaxSize().padding(padding),
+                )
+                SCREEN_PAGE -> {
+                    // Closing the page (its back arrow or the phone's back button) lands here through onHome and returns to the opener.
+                    MoreRoute(
+                        modifier = Modifier.fillMaxSize().padding(padding),
+                        startRoute = pageRoute,
+                        onStartConsumed = { pageRoute = null },
+                        embedded = true,
+                        onHome = { screen = pageReturn },
                     )
-                    Surface(
-                        onClick = { screen = SCREEN_HOME },
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
-                        shadowElevation = 4.dp,
-                        modifier = Modifier.align(Alignment.TopCenter).padding(top = 6.dp).size(40.dp),
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                Icons.Filled.Dashboard,
-                                contentDescription = stringResource(R.string.home_back_to_home),
-                                tint = MaterialTheme.colorScheme.primary,
-                            )
-                        }
-                    }
                 }
-            } else {
-                HomeScreen(
+                else -> HomeScreen(
                     cards = stripItems,
                     selectedId = shownId,
                     onSelect = ::select,
@@ -179,8 +181,9 @@ private fun MainApp() {
             HomeSideMenu(
                 open = menuOpen,
                 entries = menuItems,
-                selectedId = shownId,
-                onSelect = ::select,
+                selectedId = null,
+                // A program setting opens as its own screen, away from the home screen.
+                onSelect = { item -> openPage(item.moreRoute ?: item.id, SCREEN_HOME) },
                 onLanguage = { menuOpen = false; AppLanguage.switch(context) },
                 onLogout = { menuOpen = false; app.session.signOut() },
                 onClose = { menuOpen = false },

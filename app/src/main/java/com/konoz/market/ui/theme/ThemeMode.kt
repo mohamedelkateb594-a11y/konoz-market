@@ -10,18 +10,22 @@ enum class ThemeMode { SYSTEM, LIGHT, DARK }
 /**
  * Keeps the appearance choice (same small SharedPreferences file as the language choice). The current value is a Compose
  * state, so changing it repaints the whole app at once without recreating the activity.
+ * The default (nothing saved yet) is LIGHT: the app opens with the light Mint & Cream background, and dark mode is one tap
+ * away in the side menu.
  */
 object ThemePreference {
     private const val PREFS = "konoz_ui_prefs"
     private const val KEY = "theme_mode"
 
-    private val current = mutableStateOf(ThemeMode.SYSTEM)
+    private val DEFAULT = ThemeMode.LIGHT
+
+    private val current = mutableStateOf(DEFAULT)
     val mode: State<ThemeMode> get() = current
 
     /** Reads the saved choice; call once before the UI is drawn. */
     fun load(context: Context) {
         val saved = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(KEY, null)
-        current.value = ThemeMode.values().firstOrNull { it.name == saved } ?: ThemeMode.SYSTEM
+        current.value = ThemeMode.values().firstOrNull { it.name == saved } ?: DEFAULT
     }
 
     fun set(context: Context, mode: ThemeMode) {
