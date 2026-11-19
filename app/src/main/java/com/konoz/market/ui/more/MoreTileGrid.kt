@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.AssignmentReturn
 import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.BrightnessMedium
+import androidx.compose.material.icons.filled.Contacts
 import androidx.compose.material.icons.filled.FactCheck
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.LocalShipping
@@ -96,6 +97,7 @@ private fun TileCard(tile: MoreTile) {
 /** Entries added later by other tasks (printer, language, shop settings) get the settings icon until they are listed here. */
 private fun iconFor(labelRes: Int): ImageVector = when (labelRes) {
     R.string.menu_invoices -> Icons.Filled.Receipt
+    R.string.menu_customers -> Icons.Filled.Contacts
     R.string.menu_shifts -> Icons.Filled.Schedule
     R.string.menu_reports -> Icons.Filled.BarChart
     R.string.menu_suppliers -> Icons.Filled.LocalShipping

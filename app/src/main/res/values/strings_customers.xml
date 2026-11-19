@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="menu_customers">Customers</string>
+    <string name="cust_title">Customers</string>
+    <string name="cust_search">Search by name or phone</string>
+    <string name="cust_empty">No customers yet. A customer is saved automatically when you send an invoice to them, or tap + to add one.</string>
+    <string name="cust_no_match">No customer matches your search.</string>
+    <string name="cust_count_fmt">%1$d customers</string>
+    <string name="cust_add">Add customer</string>
+    <string name="cust_edit">Edit customer</string>
+    <string name="cust_name">Customer name</string>
+    <string name="cust_phone">Phone number (WhatsApp)</string>
+    <string name="cust_delete">Delete</string>
+    <string name="cust_delete_confirm_fmt">Delete %1$s from the list? Invoices already sent to this customer keep their name.</string>
+    <string name="cust_err_name">Enter the customer name.</string>
+    <string name="cust_err_phone">Enter a valid mobile number, for example 01012345678.</string>
+    <string name="cust_err_taken">This number is already saved for another customer.</string>
+    <string name="cust_err_failed">Could not save. Please try again.</string>
+
+    <string name="inv_customer_name">Customer name</string>
+    <string name="inv_customer">Customer</string>
+    <string name="inv_err_name">Enter the customer name before sending.</string>
+    <string name="inv_caption_customer_fmt">Hello %1$s, %2$s</string>
+</resources>

@@ -10,12 +10,13 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-/** The invoice as plain text for a WhatsApp message: shop name, number, items, totals. */
+/** The invoice as plain text for a WhatsApp message: shop name, number, customer, items, totals. */
 object InvoiceText {
     fun build(context: Context, d: InvoiceData, money: (Long) -> String = { Money.format(it) }): String = buildString {
         appendLine(ShopProfile.displayName(context))
         appendLine(context.getString(R.string.inv_number_fmt, d.number))
         appendLine(SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.US).format(Date(d.dateMillis)))
+        d.customerName?.let { appendLine(context.getString(R.string.inv_customer) + ": " + it) }
         appendLine("--------------------")
         for (l in d.lines) {
             appendLine(l.name)

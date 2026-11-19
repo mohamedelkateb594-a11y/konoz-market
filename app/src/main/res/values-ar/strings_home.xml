@@ -7,6 +7,7 @@
     <string name="home_pick_hint">اختر بندًا من الشريط لعرض تفاصيله هنا</string>
     <string name="hc_products_desc">الأصناف والأسعار والكميات</string>
     <string name="hc_invoices_desc">فواتير البيع ومشاركتها وطباعتها</string>
+    <string name="hc_customers_desc">العملاء المحفوظون وأرقام هواتفهم</string>
     <string name="hc_shifts_desc">فتح الوردية وإغلاقها وجرد الخزينة</string>
     <string name="hc_reports_desc">الأرباح والمبيعات وأداء المنتجات</string>
     <string name="hc_suppliers_desc">الموردون وفواتير الشراء والحسابات</string>

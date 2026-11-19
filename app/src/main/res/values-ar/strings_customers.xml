@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="menu_customers">العملاء</string>
+    <string name="cust_title">قائمة العملاء</string>
+    <string name="cust_search">ابحث بالاسم أو الرقم</string>
+    <string name="cust_empty">لا يوجد عملاء بعد. يُحفظ العميل تلقائيًا عند إرسال فاتورة له، أو اضغط + لإضافته.</string>
+    <string name="cust_no_match">لا يوجد عميل مطابق للبحث.</string>
+    <string name="cust_count_fmt">%1$d عميل</string>
+    <string name="cust_add">إضافة عميل</string>
+    <string name="cust_edit">تعديل العميل</string>
+    <string name="cust_name">اسم العميل</string>
+    <string name="cust_phone">رقم الهاتف (واتساب)</string>
+    <string name="cust_delete">حذف</string>
+    <string name="cust_delete_confirm_fmt">حذف %1$s من القائمة؟ الفواتير التي أُرسلت له سابقًا تبقى باسمه.</string>
+    <string name="cust_err_name">اكتب اسم العميل.</string>
+    <string name="cust_err_phone">أدخل رقم موبايل صحيحًا، مثل 01012345678.</string>
+    <string name="cust_err_taken">هذا الرقم محفوظ لعميل آخر.</string>
+    <string name="cust_err_failed">تعذّر الحفظ. حاول مرة أخرى.</string>
+
+    <string name="inv_customer_name">اسم العميل</string>
+    <string name="inv_customer">العميل</string>
+    <string name="inv_err_name">اكتب اسم العميل قبل الإرسال.</string>
+    <string name="inv_caption_customer_fmt">أهلًا %1$s، %2$s</string>
+</resources>
