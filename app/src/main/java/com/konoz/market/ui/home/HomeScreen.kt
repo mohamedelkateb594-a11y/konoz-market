@@ -38,6 +38,7 @@ import androidx.compose.material.icons.rounded.AssignmentReturn
 import androidx.compose.material.icons.rounded.Backup
 import androidx.compose.material.icons.rounded.BarChart
 import androidx.compose.material.icons.rounded.BrightnessMedium
+import androidx.compose.material.icons.rounded.Contacts
 import androidx.compose.material.icons.rounded.FactCheck
 import androidx.compose.material.icons.rounded.Group
 import androidx.compose.material.icons.rounded.Inventory2
@@ -101,6 +102,7 @@ object HomeCatalog {
     val strip: List<HomeItem> = listOf(
         HomeItem(PRODUCTS, R.string.nav_products, R.string.hc_products_desc, Icons.Rounded.Inventory2, Permission.EDIT_PRICES, null),
         HomeItem(MoreTargets.INVOICES, R.string.menu_invoices, R.string.hc_invoices_desc, Icons.Rounded.Receipt, null, MoreTargets.INVOICES),
+        HomeItem(MoreTargets.CUSTOMERS, R.string.menu_customers, R.string.hc_customers_desc, Icons.Rounded.Contacts, null, MoreTargets.CUSTOMERS),
         HomeItem(MoreTargets.SHIFTS, R.string.menu_shifts, R.string.hc_shifts_desc, Icons.Rounded.Schedule, Permission.OPERATE_SHIFTS, MoreTargets.SHIFTS),
         HomeItem(MoreTargets.REPORTS, R.string.menu_reports, R.string.hc_reports_desc, Icons.Rounded.BarChart, Permission.VIEW_PROFIT, MoreTargets.REPORTS),
         HomeItem("suppliers", R.string.menu_suppliers, R.string.hc_suppliers_desc, Icons.Rounded.LocalShipping, Permission.MANAGE_PURCHASES, "suppliers"),
