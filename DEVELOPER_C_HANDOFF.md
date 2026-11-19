@@ -1,35 +1,34 @@
 # DEVELOPER_C_HANDOFF.md
 
-_Developer C. الفرع الحالي: `claude/developer-c-4-2b` (مبني على `claude/developer-b` @ ddf8a8b). لم أعدّل `DEVELOPER_A_HANDOFF.md` ولا `DEVELOPER_B_HANDOFF.md`. لا يعمل مطور آخر حاليًا (حسب المالك)._
+## آخر تحديث (2026-11-19): مراجعة دمج «قائمة العملاء» (عمل B منقول فوق main بواسطة A)
+**الفرع:** `claude/developer-c-customers` (من `claude/developer-a-customers-on-main` @ 69c5b63؛ لم أعدّل فرع A). main = 5518269 وهو سلف الفرع (لا تعارض).
 
-## تنبيه تكرار
-كتبت 4.2 على `claude/developer-c` (af23c02) بينما كتب B نفسها على `claude/developer-b`. **تنفيذ B هو المعتمد. لا تُدمج `claude/developer-c`** (مهمل ويتعارض). كل العمل الجديد على `claude/developer-c-4-2b`.
+### ما فُحص (قراءة يدوية، لا بناء)
+- كل ملفات البند 1 من ملاحظة A موجودة بالفعل على فرع A: `Scrollbar.kt`، `CustomersScreen/ViewModel`، `strings_customers.xml` (EN/AR)، `CustomerServiceTest`، مسار `CUSTOMERS` في `MoreRoute`، بطاقة «العملاء» في `MoreTileGrid` والرئيسية.
+- `op_failed` استُبدل بـ `cust_err_failed` في شاشة العملاء. (`op_failed` نفسه موجود في main ويستخدمه المنتجات والموردون، لا مشكلة.)
+- `ShareMessage.NAME_REQUIRED`: الـ`when` الوحيد عليه في `InvoicesScreen` ويغطي كل القيم. `CashierRoute/CashierScreen/CashierViewModel` لا يستخدمان `ShareMessage` ويستدعيان `InvoiceShareDialog` بنفس التوقيع. لا خطأ.
+- `KonozDatabase`: version=3، `MIGRATION_2_3` مسجّلة في `addMigrations`، كيان `Customer` مضاف، عمودا `customerName/customerPhone` في `SalesInvoice`.
+- لا أسماء نصوص مكررة بين `strings_customers.xml` والملفات الأخرى.
 
-## قرارات المالك (2026-11-13) وتطبيقها
-1. **لا مهلة خمول نهائيًا** — لا شيء يُبنى (هذا الوضع الحالي).
-2. **البيع يحتاج وردية مفتوحة:** `CashierSession.completeLocked` يرفض الدفع برسالة `CashierMessage.NoOpenShift` (السلة تبقى). المسودة/التعليق مسموحان. نص الرسالة في `strings_shift_gate.xml` (EN/AR) وفرع `NoOpenShift` في `CashierScreen.infoText`. `CashierSessionTest` يفتح وردية في `setUp` وفيه اختباران جديدان (ربط البيع بالوردية، منع البيع بلا وردية).
-3. **سداد الموردين يؤثر على الخزينة:**
-   - جدول جديد `supplier_payments` (`SupplierPayment`: مبلغ موقّع، موجب = دفعنا للمورد، سالب = استرداد مرتجع)، ليس مصروفًا فلا يدخل في تقارير الأرباح.
-   - **قاعدة البيانات صارت الإصدار 2** مع `KonozDatabase.MIGRATION_1_2` المكتوب يدويًا (CREATE TABLE فقط، لا تمس البيانات الموجودة). **خطر:** إن لم يطابق SQL الهجرة ما تولّده Room سيظهر خطأ «Migration didn't properly handle» عند تشغيل تطبيق مثبّت سابقًا على v1 (الاختبارات لا تكشفه لأنها تبني قاعدة في الذاكرة). التحقق اليدوي: تثبيت نسخة v1 ثم تحديث فوقها.
-   - `PurchaseService` يسجّل الدفع عند `approve` (لا يكرّر مع نفس uuid) وعند `settle`، مربوطًا بالوردية المفتوحة (لا وردية = `shiftId` null ولا خزينة تتأثر).
-   - `ShiftService`/`ShiftSummary`/`ShiftMath`: `expectedCash = opening + cashSales - cashRefunds - cashExpenses - supplierPayments`، وحقل `supplierPayments` في `ShiftSummary` (بقيمة افتراضية 0) والملخص الحي يُعاد حسابه عند أي دفع لمورد.
-   - اختبارات: `SupplierPaymentShiftTest` (7).
-   - **ناقص:** شاشة الورديات لا تعرض سطر «مدفوع للموردين» بعد (المتوقع يحتسبه، لكن المستخدم لا يرى سبب النقص). ملفا `ShiftScreen.kt` وموردات النصوص يحتاجان سطرًا.
+### خطأ ترجمة وُجد وأُصلح
+- `HomeScreen.kt` يستخدم `R.string.hc_customers_desc` وهو غير معرّف. أضيف في `values/strings_home.xml` و`values-ar/strings_home.xml` (commit e600f21 على هذا الفرع).
 
-## المنجز على هذا الفرع
-- إصلاح `ReportService` (4a4da7e)، ورديات 11.2 (في فرع B).
-- 4.2b: `CashierSession` يفرض `EDIT_PRICES`/`GIVE_LARGE_DISCOUNT`؛ صلاحية `MANAGE_PRODUCTS` (المدير ومسؤول المخزون) تخفي تبويب المنتجات وزر تسجيل الباركود الغائب عن الكاشير.
-- قرارات المالك أعلاه.
-- **كل هذا لم يُبنَ ولم تُختبر اختباراته.**
+### غير مُتحقَّق
+- لم يُشغَّل بناء ولا اختبارات (لا شبكة/Gradle هنا). يجب تشغيل `build-apk.yml` على PR هذا الفرع وإرسال أي `e:`.
+- هجرة 2→3 تحتاج تجربة يدوية: تثبيت نسخة v2 ثم التحديث فوقها.
+- لم أحدّث `PROJECT_STATE.md` و`TASK_LOG.md` و`DEVELOPER_A_HANDOFF.md` ولم أحذف ملفات LOCK (تُفعل عند الدمج النهائي).
 
-## ما لم يُنجز
-- سطر «مدفوع للموردين» في `ShiftScreen` وتقرير الوردية.
-- فرض الصلاحية داخل `StockCountService`/`StockAdjustmentService`.
-- 4.3 مشاركة/طباعة الفواتير وتصدير التقارير (PDF/Excel/CSV)، فترة مخصصة في التقارير.
-- 4.4 النسخ الاحتياطي (يشمل `receipts` و`product_images` وقاعدة البيانات v2).
-- المرحلة 5 (اختبارات/أداء/APK).
-- تحديث `PROJECT_STATE.md` و`TASK_LOG.md` و`CLAUDE.md` (عند 8b).
+### الخطوة التالية بالضبط
+1. PR من `claude/developer-c-customers` إلى `main`، وانتظار نتيجة البناء في Actions.
+2. إصلاح أي أخطاء `e:` تظهر، ثم الدمج.
+3. بعد الدمج: تحديث `PROJECT_STATE.md` و`TASK_LOG.md`، وحذف `LOCK_TASK_*.md` المنتهية، وتجربة هجرة v2→v3 على جهاز.
 
-## الخطوة التالية بالضبط
-1. بناء `claude/developer-c-4-2b` وتشغيل `./gradlew testDebugUnitTest` وإصلاح الأخطاء.
-2. سطر الموردين في ShiftScreen، ثم 4.3.
+---
+
+## سجل سابق (2026-11-13): فرع `claude/developer-c-4-2b`
+_(مبني على `claude/developer-b` @ ddf8a8b؛ ما بعده دُمج لاحقًا في main حسب PROJECT_STATE.md، راجعه قبل الاعتماد على القوائم التالية.)_
+
+- **تنبيه:** `claude/developer-c` (af23c02) مهمل ولا يُدمج؛ تنفيذ B للمهمة 4.2 هو المعتمد.
+- قرارات المالك: لا مهلة خمول؛ البيع يحتاج وردية مفتوحة (`CashierMessage.NoOpenShift`)؛ سداد الموردين يؤثر على الخزينة (`supplier_payments`، `MIGRATION_1_2`، `expectedCash = opening + cashSales - cashRefunds - cashExpenses - supplierPayments`).
+- 4.2b: فرض `EDIT_PRICES`/`GIVE_LARGE_DISCOUNT` في `CashierSession`، وصلاحية `MANAGE_PRODUCTS`.
+- ناقص وقتها: سطر «مدفوع للموردين» في `ShiftScreen`، فرض الصلاحية في `StockCountService`/`StockAdjustmentService`، المرحلة 5.
