@@ -7,6 +7,7 @@
     <string name="home_pick_hint">Pick an item from the strip to see its details here</string>
     <string name="hc_products_desc">Items, prices and quantities</string>
     <string name="hc_invoices_desc">Sales invoices, sharing and printing</string>
+    <string name="hc_customers_desc">Saved customers and their phone numbers</string>
     <string name="hc_shifts_desc">Open and close shifts, cash count</string>
     <string name="hc_reports_desc">Profit, sales and product performance</string>
     <string name="hc_suppliers_desc">Suppliers, purchase invoices, accounts</string>
