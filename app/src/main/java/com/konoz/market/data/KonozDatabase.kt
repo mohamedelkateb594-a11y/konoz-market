@@ -10,6 +10,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import com.konoz.market.data.dao.AuditDao
 import com.konoz.market.data.dao.BarcodeDao
 import com.konoz.market.data.dao.CategoryDao
+import com.konoz.market.data.dao.CustomerDao
 import com.konoz.market.data.dao.ExpenseDao
 import com.konoz.market.data.dao.ProductDao
 import com.konoz.market.data.dao.PurchaseDao
@@ -26,6 +27,7 @@ import com.konoz.market.data.entity.AppSetting
 import com.konoz.market.data.entity.AuditLog
 import com.konoz.market.data.entity.Barcode
 import com.konoz.market.data.entity.Category
+import com.konoz.market.data.entity.Customer
 import com.konoz.market.data.entity.Expense
 import com.konoz.market.data.entity.InventoryMovement
 import com.konoz.market.data.entity.Payment
@@ -54,8 +56,9 @@ import com.konoz.market.data.entity.User
         SalesReturn::class, ReturnItem::class,
         User::class, Shift::class, AuditLog::class, AppSetting::class,
         SupplierPayment::class,
+        Customer::class,
     ],
-    version = 2,
+    version = 3,
     exportSchema = true,
 )
 abstract class KonozDatabase : RoomDatabase() {
@@ -74,6 +77,7 @@ abstract class KonozDatabase : RoomDatabase() {
     abstract fun settings(): SettingsDao
     abstract fun reports(): ReportDao
     abstract fun supplierPayments(): SupplierPaymentDao
+    abstract fun customers(): CustomerDao
 
     /** Run [block] atomically; any exception rolls everything back. */
     suspend fun <R> tx(block: suspend () -> R): R = withTransaction(block)
@@ -92,6 +96,23 @@ abstract class KonozDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * v3: the customers list, and the name and phone an invoice was sent with (two nullable columns on sales_invoices).
+         * Existing rows are untouched: old invoices simply have no customer.
+         */
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `customers` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        "`name` TEXT NOT NULL, `phone` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL)"
+                )
+                db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_customers_phone` ON `customers` (`phone`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_customers_name` ON `customers` (`name`)")
+                db.execSQL("ALTER TABLE `sales_invoices` ADD COLUMN `customerName` TEXT")
+                db.execSQL("ALTER TABLE `sales_invoices` ADD COLUMN `customerPhone` TEXT")
+            }
+        }
+
         @Volatile private var instance: KonozDatabase? = null
 
         fun get(context: Context): KonozDatabase = instance ?: synchronized(this) {
@@ -100,7 +121,7 @@ abstract class KonozDatabase : RoomDatabase() {
             )
                 // Never fallbackToDestructiveMigration: shop data must survive app updates.
                 // Add explicit Migration objects here whenever `version` is increased.
-                .addMigrations(MIGRATION_1_2)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                 .build()
                 .also { instance = it }
         }

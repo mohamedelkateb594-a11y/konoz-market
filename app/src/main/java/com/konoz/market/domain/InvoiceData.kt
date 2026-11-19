@@ -25,6 +25,10 @@ class InvoiceData(
     val paid: Long,
     val changeDue: Long,
     val notes: String?,
+    /** Who the invoice was sent to (printed on it), null when no customer was recorded. */
+    val customerName: String? = null,
+    /** The customer's phone as WhatsApp digits; shown only in the share dialog, not printed. */
+    val customerPhone: String? = null,
 )
 
 /** Reads completed invoices for display. Held and unknown invoices give null. */
@@ -61,6 +65,8 @@ class InvoiceLoader(private val db: KonozDatabase) {
             paid = payments.sumOf { it.amount },
             changeDue = invoice.changeDue,
             notes = invoice.notes?.trim()?.ifEmpty { null },
+            customerName = invoice.customerName?.trim()?.ifEmpty { null },
+            customerPhone = invoice.customerPhone,
         )
     }
 }
